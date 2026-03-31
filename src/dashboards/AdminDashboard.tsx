@@ -3607,7 +3607,7 @@ const AdminDashboard: React.FC<Props> = ({
                         ? 'bg-slate-100 text-slate-400 border border-slate-200'
                         : dataBackupDone
                           ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                          : 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10'
+                          : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20'
                     }`}
                   >
                     <Download className="w-4 h-4" />
@@ -5513,7 +5513,7 @@ const AdminDashboard: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={logout}
-                  className={`w-full flex items-center gap-3 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 active:scale-95 group ${
+                  className={`w-full flex items-center gap-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 group ${
                     adminNavCollapsed ? 'justify-center px-3 py-3' : 'justify-center px-5 py-2.5'
                   }`}
                   aria-label="Sign out"

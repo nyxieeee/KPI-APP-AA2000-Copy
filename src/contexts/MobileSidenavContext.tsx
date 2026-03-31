@@ -102,25 +102,25 @@ function MobileSidenavDrawer() {
                     config.onSelect(item.id);
                     close();
                   }}
-                  className={`w-full flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${
-                    active ? 'bg-blue-900 text-white shadow-lg' : 'text-slate-700 hover:bg-slate-50'
+                  className={`w-full flex items-center gap-3 rounded-2xl px-3 py-3 text-left border transition-colors ${
+                    active ? 'bg-blue-50 border-blue-200 text-blue-800 shadow-sm' : 'border-transparent text-slate-700 hover:bg-slate-50'
                   }`}
                   aria-current={active ? 'page' : undefined}
                 >
                   <span
                     className={`flex h-10 w-10 items-center justify-center rounded-2xl border shadow-sm ${
-                      active ? 'border-white/15 bg-white/10' : 'border-slate-200 bg-white'
+                      active ? 'border-blue-200 bg-white' : 'border-slate-200 bg-white'
                     }`}
                   >
-                    <Icon className={`h-5 w-5 ${active ? 'text-white' : 'text-slate-700'}`} aria-hidden />
+                    <Icon className={`h-5 w-5 ${active ? 'text-blue-600' : 'text-slate-700'}`} aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className={`block text-[11px] font-black uppercase tracking-widest truncate ${active ? 'text-white' : 'text-slate-900'}`}>
+                    <span className={`block text-[11px] font-black uppercase tracking-widest truncate ${active ? 'text-blue-800' : 'text-slate-900'}`}>
                       {item.label}
                     </span>
                     {badge != null && badge > 0 ? (
                       <span className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${
-                        active ? 'bg-white/15 text-white' : 'bg-blue-50 text-blue-700 border border-blue-100'
+                        active ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 border border-blue-100'
                       }`}>
                         {badge} pending
                       </span>
@@ -140,7 +140,7 @@ function MobileSidenavDrawer() {
                 close();
                 logout();
               }}
-              className="w-full flex items-center justify-center gap-3 rounded-2xl px-4 py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
+              className="w-full flex items-center justify-center gap-3 rounded-2xl px-4 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-colors"
             >
               Sign out
             </button>

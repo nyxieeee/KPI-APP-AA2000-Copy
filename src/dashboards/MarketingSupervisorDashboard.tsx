@@ -179,6 +179,7 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
   const [announcementMsg, setAnnouncementMsg] = useState('');
   const [queueTab, setQueueTab] = useState<'pending' | 'history' | 'rejected'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
+  const [teamSearchTerm, setTeamSearchTerm] = useState('');
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [registryElastic, setRegistryElastic] = useState<'top' | 'bottom' | null>(null);
   const [teamElastic, setTeamElastic] = useState<'top' | 'bottom' | null>(null);
@@ -235,9 +236,9 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
       ariaLabel: 'Supervisor navigation',
       items: [
         { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-        { id: 'queue', label: 'Registry', icon: ListTodo, badge: pendingCount },
-        { id: 'team', label: 'Unit', icon: Users },
-        { id: 'incentives', label: 'Yield', icon: Trophy },
+        { id: 'queue', label: 'Submissions', icon: ListTodo, badge: pendingCount },
+        { id: 'team', label: 'Team', icon: Users },
+        { id: 'incentives', label: 'Incentives', icon: Trophy },
       ],
       activeId: currentPage,
       onSelect: (id) => {
@@ -330,6 +331,16 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
       ...others
     ];
   }, [deptMembers, user]);
+
+  const filteredTeam = useMemo(() => {
+    const term = teamSearchTerm.trim().toLowerCase();
+    if (!term) return sortedTeam;
+    return sortedTeam.filter((member: any) =>
+      member.name.toLowerCase().includes(term) ||
+      String(member.role).toLowerCase().includes(term) ||
+      String(member.department || '').toLowerCase().includes(term)
+    );
+  }, [sortedTeam, teamSearchTerm]);
 
   const calculateInitialScores = (item: Transmission): MarketingGrading => {
     const allData = item.allSalesData || {};
@@ -853,10 +864,10 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">
-              Department Audit
+              Work Status
             </p>
             <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">
-              Department Audit Overview
+              Team Work Overview
             </h2>
           </div>
           <div className="hidden md:flex items-center gap-2">
@@ -876,7 +887,7 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
             aria-label="Show pending audits in registry"
             aria-pressed={queueTab === 'pending'}
           >
-            <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'pending' ? 'text-blue-700' : 'text-slate-400'}`}>Pending Review</p>
+            <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'pending' ? 'text-blue-700' : 'text-slate-400'}`}>Needs Review</p>
             <p className={`text-[9px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'pending' ? 'text-blue-600/90' : 'text-slate-500'}`}>Marketing Department</p>
             <div className="relative flex items-center justify-center w-40 h-40">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
@@ -936,9 +947,9 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><ListTodo className="w-5 h-5 text-white" /></div>
           <div>
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Submissions</h3>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Work Items</h3>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-              {queueTab === 'pending' ? 'Awaiting Review' : queueTab === 'history' ? 'Approved Records' : 'Rejected Records'}
+              {queueTab === 'pending' ? 'Waiting for your review' : queueTab === 'history' ? 'Approved items' : 'Returned items'}
             </p>
           </div>
         </div>
@@ -947,7 +958,7 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
             <input
               type="text"
-              placeholder="SEARCH MARKETING REGISTRY..."
+              placeholder="Search team records..."
               className="pl-9 pr-5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-black tracking-[0.05em] focus:outline-none focus:ring-4 focus:ring-blue-500/15 w-full md:w-80 lg:w-96 transition-all focus:bg-white focus:border-blue-200"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -1055,16 +1066,16 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
   };
 
   const renderTeam = () => {
-    const supervisorCount = sortedTeam.filter(m => m.isSupervisor).length;
-    const employeeCount = sortedTeam.length - supervisorCount;
+    const supervisorCount = sortedTeam.filter(m => m.isSupervisor || m.role === UserRole.SUPERVISOR).length;
+    const employeeCount = sortedTeam.filter(m => m.role === UserRole.EMPLOYEE).length;
     return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-lg border border-slate-100 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><Users className="w-5 h-5 text-white" /></div>
           <div>
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Marketing Unit Matrix</h3>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">Department roster and roles</p>
+            <h3 className="text-base font-black text-slate-900 tracking-tight">Marketing Team Matrix</h3>
+            <p className="text-xs font-semibold text-slate-500 mt-0.5">Team members, roles, and status</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -1072,6 +1083,16 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
             <span className="text-[9px] font-black uppercase tracking-wide">{sortedTeam.length} team members</span>
           </div>
         </div>
+      </div>
+      <div className="relative group">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
+        <input
+          type="text"
+          placeholder="Search team members..."
+          className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/15 w-full transition-all focus:bg-white focus:border-blue-200"
+          value={teamSearchTerm}
+          onChange={(e) => setTeamSearchTerm(e.target.value)}
+        />
       </div>
       <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-100">
         <p className="text-[9px] font-black text-slate-500 uppercase tracking-wide">
@@ -1097,13 +1118,13 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
         }}
       >
         <div className={`registry-list-inner space-y-3 py-1 ${teamElastic ? `elastic-${teamElastic}` : ''}`}>
-        {sortedTeam.length === 0 ? (
+        {filteredTeam.length === 0 ? (
           <div className="py-20 text-center bg-white rounded-lg border border-slate-50 border-dashed mx-1">
             <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-4"><Users className="w-8 h-8 text-slate-200" /></div>
-            <p className="text-[10px] font-black text-slate-300 uppercase tracking-wide">No team members in this department</p>
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-wide">{teamSearchTerm.trim() ? 'No team members match your search' : 'No team members in this department'}</p>
           </div>
         ) : (
-          sortedTeam.map((member, idx) => (
+          filteredTeam.map((member, idx) => (
             <div key={idx} className={`group flex items-center justify-between p-6 rounded-lg border transition-all ${member.isSupervisor ? 'bg-blue-50 border-blue-200 shadow-sm shadow-blue-50' : 'bg-white border-slate-50 hover:shadow-md hover:-translate-y-0.5'}`}>
               <div className="flex items-center gap-6">
                 <div className={`w-14 h-14 rounded-lg flex items-center justify-center font-black transition-colors shrink-0 ${member.isSupervisor ? 'bg-blue-600 text-white ring-2 ring-blue-200' : 'bg-slate-100 text-slate-600 ring-2 ring-slate-100'}`}>
@@ -1192,8 +1213,8 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
         <div className="bg-slate-100 rounded-xl p-5 border border-slate-200 shadow-sm">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
-              <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">Yield</p>
-              <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">Marketing Yield</h2>
+              <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">Incentives</p>
+              <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">Marketing Incentives</h2>
               <p className="mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
                 <Calendar className="w-3 h-3" />
                 Quarterly cycle: {qInfo.q} ({qInfo.months}) · Payout Est. {qInfo.payout}
@@ -1623,9 +1644,9 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
         <div className="hidden lg:hidden flex flex-wrap bg-white p-1.5 rounded-lg border border-slate-100 shadow-sm w-fit ml-auto" role="navigation" aria-label="Supervisor navigation">
           {[
             { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-            { id: 'queue', label: 'Registry', icon: ListTodo, badge: countPendingReviewAudits(filteredPending) },
-            { id: 'team', label: 'Unit', icon: Users },
-            { id: 'incentives', label: 'Yield', icon: PesoCircleIcon }
+            { id: 'queue', label: 'Submissions', icon: ListTodo, badge: countPendingReviewAudits(filteredPending) },
+            { id: 'team', label: 'Team', icon: Users },
+            { id: 'incentives', label: 'Incentives', icon: PesoCircleIcon }
           ].map(item => {
             const Icon = item.icon;
             return (
@@ -1653,10 +1674,10 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
         <RoleSidenav
           roleLabel="Supervisor"
           items={[
-            { id: 'dashboard', label: 'Overview', description: 'Department overview', icon: LayoutDashboard },
-            { id: 'queue', label: 'Registry', description: countPendingReviewAudits(filteredPending) ? `${countPendingReviewAudits(filteredPending)} pending` : 'Review queue', icon: ListTodo, badge: countPendingReviewAudits(filteredPending) },
-            { id: 'team', label: 'Unit', description: 'Team view', icon: Users },
-            { id: 'incentives', label: 'Yield', description: 'Yield & tiers', icon: PesoCircleIcon },
+            { id: 'dashboard', label: 'Overview', description: 'Team summary', icon: LayoutDashboard },
+            { id: 'queue', label: 'Submissions', description: countPendingReviewAudits(filteredPending) ? `${countPendingReviewAudits(filteredPending)} for review` : 'Items to review', icon: ListTodo, badge: countPendingReviewAudits(filteredPending) },
+            { id: 'team', label: 'Team', description: 'People and roles', icon: Users },
+            { id: 'incentives', label: 'Incentives', description: 'Payout levels', icon: PesoCircleIcon },
           ]}
           activeId={currentPage}
           onSelect={(id) => {

@@ -375,9 +375,9 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
       ariaLabel: 'Supervisor navigation',
       items: [
         { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-        { id: 'queue', label: 'Registry', icon: ListTodo, badge: pendingBadgeCount },
-        { id: 'team', label: 'Unit', icon: Users },
-        { id: 'incentives', label: 'Yield', icon: PesoCircleIcon },
+        { id: 'queue', label: 'Submissions', icon: ListTodo, badge: pendingBadgeCount },
+        { id: 'team', label: 'Team', icon: Users },
+        { id: 'incentives', label: 'Incentives', icon: PesoCircleIcon },
       ],
       activeId: currentPage,
       onSelect: (id) => {
@@ -1012,10 +1012,10 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">
-              Department Audit
+              Work Status
             </p>
             <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">
-              Department Audit Overview
+              Team Work Overview
             </h2>
           </div>
           <div className="hidden md:flex items-center gap-2">
@@ -1035,7 +1035,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
             aria-label="Show pending audits in registry"
             aria-pressed={queueTab === 'pending'}
           >
-            <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'pending' ? 'text-blue-700' : 'text-slate-400'}`}>Pending Review</p>
+            <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'pending' ? 'text-blue-700' : 'text-slate-400'}`}>Needs Review</p>
             <p className={`text-[9px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'pending' ? 'text-blue-600/90' : 'text-slate-500'}`}>Technical Department</p>
             <div className="relative flex items-center justify-center w-40 h-40">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
@@ -1094,14 +1094,14 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-lg border border-slate-100">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><ListTodo className="w-5 h-5 text-white" /></div>
-          <div><h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Submissions</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{queueTab === 'pending' ? 'Awaiting Review' : queueTab === 'history' ? 'Approved Records' : 'Rejected Records'}</p></div>
+          <div><h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Work Items</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{queueTab === 'pending' ? 'Waiting for your review' : queueTab === 'history' ? 'Approved items' : 'Returned items'}</p></div>
         </div>
         <div className="flex items-center gap-4 md:gap-6">
           <div className="relative group w-full md:w-auto">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
             <input 
               type="text" 
-              placeholder="SEARCH TECH REGISTRY..."
+              placeholder="Search team records..."
               className="pl-9 pr-5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-black tracking-[0.05em] focus:outline-none focus:ring-4 focus:ring-blue-500/15 w-full md:w-80 lg:w-96 transition-all focus:bg-white focus:border-blue-200"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -1216,14 +1216,14 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-lg border border-slate-100">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><Users className="w-5 h-5 text-white" /></div>
-          <div><h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Technical Unit Matrix</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Department roster and roles</p></div>
+          <div><h3 className="text-base font-black text-slate-900 tracking-tight">Technical Team Matrix</h3><p className="text-xs font-semibold text-slate-500">Team members, roles, and status</p></div>
         </div>
         <div className="flex items-center gap-4 md:gap-6">
           <div className="relative group w-full md:w-auto">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
             <input
               type="text"
-              placeholder="SEARCH TECHNICAL TEAM..."
+              placeholder="Search team members..."
               className="pl-9 pr-5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-black tracking-[0.05em] focus:outline-none focus:ring-4 focus:ring-blue-500/15 w-full md:w-80 lg:w-96 transition-all focus:bg-white focus:border-blue-200"
               value={teamSearchTerm}
               onChange={(e) => setTeamSearchTerm(e.target.value)}
@@ -1342,12 +1342,12 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
 
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
-        {/* Yield header — matches Department Audit Overview / Registry panel style */}
+        {/* Incentives header — matches Department Audit Overview / Registry panel style */}
         <div className="bg-slate-100 rounded-xl p-5 border border-slate-200 shadow-sm">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
-              <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">Yield</p>
-              <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">Technical Yield</h2>
+              <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">Incentives</p>
+              <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">Technical Incentives</h2>
               <p className="mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
                 <Calendar className="w-3 h-3" />
                 Quarterly cycle: {qInfo.q} ({qInfo.months}) · Payout Est. {qInfo.payout}
@@ -1718,10 +1718,10 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
         <RoleSidenav
           roleLabel="Supervisor"
           items={[
-            { id: 'dashboard', label: 'Overview', description: 'Department overview', icon: LayoutDashboard },
-            { id: 'queue', label: 'Registry', description: pendingCount ? `${pendingCount} pending` : 'Review queue', icon: ListTodo, badge: pendingCount },
-            { id: 'team', label: 'Unit', description: 'Team view', icon: Users },
-            { id: 'incentives', label: 'Yield', description: 'Yield & tiers', icon: PesoCircleIcon },
+            { id: 'dashboard', label: 'Overview', description: 'Team summary', icon: LayoutDashboard },
+            { id: 'queue', label: 'Submissions', description: pendingCount ? `${pendingCount} for review` : 'Items to review', icon: ListTodo, badge: pendingCount },
+            { id: 'team', label: 'Team', description: 'People and roles', icon: Users },
+            { id: 'incentives', label: 'Incentives', description: 'Payout levels', icon: PesoCircleIcon },
           ]}
           activeId={currentPage}
           onSelect={(id) => {

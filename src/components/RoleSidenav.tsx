@@ -64,33 +64,33 @@ export function RoleSidenav<T extends string>({
                 key={item.id}
                 type="button"
                 onClick={() => onSelect(item.id)}
-                className={`group relative w-full flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
+                className={`group relative w-full flex items-center gap-3 rounded-2xl px-3 py-3 text-left border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
                   collapsed ? 'justify-center' : ''
-                } ${active ? 'bg-blue-900 text-white shadow-lg' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                } ${active ? 'bg-blue-50 border-blue-200 text-blue-800 shadow-sm' : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
                 title={collapsed ? item.label : undefined}
                 aria-current={active ? 'page' : undefined}
               >
                 <span
                   className={`flex h-10 w-10 items-center justify-center rounded-2xl border shadow-sm transition-colors ${
-                    active ? 'border-white/15 bg-white/10' : 'border-slate-200 bg-white group-hover:bg-slate-50'
+                    active ? 'border-blue-200 bg-white' : 'border-slate-200 bg-white group-hover:bg-slate-50'
                   }`}
                 >
-                  <Icon className={`h-5 w-5 ${active ? 'text-white' : 'text-slate-700'}`} aria-hidden />
+                  <Icon className={`h-5 w-5 ${active ? 'text-blue-600' : 'text-slate-700'}`} aria-hidden />
                 </span>
 
                 {!collapsed && (
                   <span className="min-w-0 flex-1">
-                    <span className={`block text-[11px] font-black uppercase tracking-widest truncate ${active ? 'text-white' : 'text-slate-800'}`}>
+                    <span className={`block text-[11px] font-black uppercase tracking-widest truncate ${active ? 'text-blue-800' : 'text-slate-800'}`}>
                       {item.label}
                     </span>
-                    <span className={`block text-[9px] font-bold uppercase tracking-widest mt-0.5 ${active ? 'text-white/70' : 'text-slate-400'}`}>
+                    <span className={`block text-[9px] font-bold uppercase tracking-widest mt-0.5 ${active ? 'text-blue-600' : 'text-slate-400'}`}>
                       {item.description ?? (badge != null ? `${badge} pending` : '')}
                     </span>
                   </span>
                 )}
 
                 {!collapsed && badge != null && badge > 0 && (
-                  <span className="ml-auto inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-xl bg-white/15 text-white text-[10px] font-black">
+                  <span className={`ml-auto inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-xl text-[10px] font-black ${active ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
                     {badge}
                   </span>
                 )}
@@ -115,7 +115,7 @@ export function RoleSidenav<T extends string>({
             <button
               type="button"
               onClick={logout}
-              className={`w-full flex items-center gap-3 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 active:scale-95 group ${
+              className={`w-full flex items-center gap-3 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 group ${
                 collapsed ? 'justify-center px-3 py-3' : 'justify-center px-5 py-2.5'
               }`}
               aria-label="Sign out"
