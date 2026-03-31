@@ -1,0 +1,26 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M50 5C74.8528 5 95 25.1472 95 50C95 74.8528 74.8528 95 50 95C25.1472 95 5 74.8528 5 50" stroke="url(#ring-grad-1)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M50 15C69.33 15 85 30.67 85 50C85 69.33 69.33 85 50 85" stroke="url(#ring-grad-2)" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="50" cy="50" r="28" fill="url(#eye-iris-grad)"/>
+  <circle cx="42" cy="40" r="10" fill="url(#reflect-grad)" fill-opacity="0.6"/>
+  <circle cx="38" cy="36" r="4" fill="white" fill-opacity="0.5"/>
+  <defs>
+    <linearGradient id="ring-grad-1" x1="5" y1="5" x2="95" y2="95" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0ea5e9"/>
+      <stop offset="1" stop-color="#1e40af"/>
+    </linearGradient>
+    <linearGradient id="ring-grad-2" x1="15" y1="15" x2="85" y2="85" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <radialGradient id="eye-iris-grad" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 50) rotate(90) scale(28)">
+      <stop stop-color="#1e40af"/>
+      <stop offset="0.7" stop-color="#0369a1"/>
+      <stop offset="1" stop-color="#0c4a6e"/>
+    </radialGradient>
+    <radialGradient id="reflect-grad" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(42 40) rotate(90) scale(10)">
+      <stop stop-color="#7dd3fc"/>
+      <stop offset="1" stop-color="transparent"/>
+    </radialGradient>
+  </defs>
+</svg>
