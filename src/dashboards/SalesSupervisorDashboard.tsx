@@ -1759,7 +1759,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                   setCurrentPage(item.id as Page);
                   if (item.id === 'queue') { setQueueTab('pending'); setSearchTerm(''); }
                 }}
-                className={`relative flex items-center gap-2.5 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-wide transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${currentPage === item.id ? 'z-10 bg-blue-900 text-white shadow-lg' : 'z-0 text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+                className={`relative flex items-center gap-2.5 px-5 py-3 rounded-xl border text-[10px] font-black uppercase tracking-wide transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${currentPage === item.id ? 'z-10 bg-blue-50 border-blue-200 text-blue-800 shadow-sm' : 'z-0 border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
                 aria-current={currentPage === item.id ? 'page' : undefined}
                 aria-label={item.badge != null ? `${item.label} (${item.badge} pending)` : item.label}
               >

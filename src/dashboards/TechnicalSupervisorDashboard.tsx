@@ -1211,11 +1211,13 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
   );
 
   const renderTeam = () => {
+    const supervisorCount = sortedTeam.filter(m => m.isSupervisor || m.role === UserRole.SUPERVISOR).length;
+    const employeeCount = sortedTeam.filter(m => m.role === UserRole.EMPLOYEE).length;
     return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-lg border border-slate-100">
+    <div className="space-y-5 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><Users className="w-5 h-5 text-white" /></div>
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm"><Users className="w-5 h-5 text-white" /></div>
           <div><h3 className="text-base font-black text-slate-900 tracking-tight">Technical Team Matrix</h3><p className="text-xs font-semibold text-slate-500">Team members, roles, and status</p></div>
         </div>
         <div className="flex items-center gap-4 md:gap-6">
@@ -1230,6 +1232,11 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
             />
           </div>
         </div>
+      </div>
+      <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-100">
+        <p className="text-[11px] font-semibold text-slate-500">
+          {supervisorCount} Supervisor{supervisorCount !== 1 ? 's' : ''} · {employeeCount} Employee{employeeCount !== 1 ? 's' : ''}
+        </p>
       </div>
       <div
         className="registry-list-scroll h-[19rem] min-h-[19rem] rounded-lg border border-slate-200 bg-slate-50/50 shadow-sm"
