@@ -95,15 +95,15 @@ const CHECKLIST_CONTENT: Record<string, string[]> = {
 };
 
 const DEFAULT_TECHNICAL_CATEGORIES = [
-  { name: 'Project Execution Quality', label: 'PEQ', weightPct: 40, maxPoints: 100, color: 'bg-[#4CAF50]', textColor: 'text-[#4CAF50]' },
-  { name: 'Client Satisfaction & Turnover', label: 'CST', weightPct: 25, maxPoints: 100, color: 'bg-[#3F51B5]', textColor: 'text-[#3F51B5]' },
-  { name: 'Team Leadership & Accountability', label: 'TLA', weightPct: 15, maxPoints: 100, color: 'bg-[#FF9800]', textColor: 'text-[#FF9800]' },
-  { name: 'Sales Support & Lead Development', label: 'SSL', weightPct: 10, maxPoints: 100, color: 'bg-[#9C27B0]', textColor: 'text-[#9C27B0]' },
+  { name: 'System Reliability & Uptime', label: 'SRU', weightPct: 30, maxPoints: 100, color: 'bg-[#4CAF50]', textColor: 'text-[#4CAF50]' },
+  { name: 'Technical Support Quality', label: 'TSQ', weightPct: 25, maxPoints: 100, color: 'bg-[#3F51B5]', textColor: 'text-[#3F51B5]' },
+  { name: 'Security & Compliance', label: 'SEC', weightPct: 20, maxPoints: 100, color: 'bg-[#FF9800]', textColor: 'text-[#FF9800]' },
+  { name: 'Project & Development Delivery', label: 'PDD', weightPct: 15, maxPoints: 100, color: 'bg-[#9C27B0]', textColor: 'text-[#9C27B0]' },
   { name: 'Administrative Excellence', label: 'AEX', weightPct: 5, maxPoints: 100, color: 'bg-[#F44336]', textColor: 'text-[#F44336]' },
   { name: 'Attendance & Discipline', label: 'ATD', weightPct: 5, maxPoints: 100, color: 'bg-[#757575]', textColor: 'text-[#757575]' }
 ];
 
-const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights, onDeleteSubmission, onEditSubmission }) => {
+const ITDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights, onDeleteSubmission, onEditSubmission }) => {
   const [activeStep, setActiveStep] = useState(1);
   const [navCollapsed, setNavCollapsed] = useState(false);
   const { setConfig: setMobileNavConfig } = useMobileSidenav();
@@ -312,7 +312,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
   });
 
   useEffect(() => {
-    const list = departmentWeights?.Technical;
+    const list = departmentWeights?.IT;
     if (!list?.length) return;
     setFormData((prev) => {
       if (list.some((c) => c.label === prev.jobType)) return prev;
@@ -330,7 +330,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
       }));
       return;
     }
-    const cat = departmentWeights?.Technical?.find((c) => c.label === formData.jobType);
+    const cat = departmentWeights?.IT?.find((c) => c.label === formData.jobType);
     if (cat?.content?.length) {
       setFormData(prev => ({
         ...prev,
@@ -547,7 +547,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
       ratings: {
         ...suggestedGrades, finalScore: 0, incentivePct: 0
       },
-      gradingConfigSignature: computeGradingConfigSignature('Technical', departmentWeights),
+      gradingConfigSignature: computeGradingConfigSignature('IT', departmentWeights),
     };
 
     setTimeout(() => {
@@ -602,8 +602,8 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
   };
 
   const categoriesFromProgram = useMemo(() => {
-    if (departmentWeights?.Technical?.length) {
-      return departmentWeights.Technical.map((c, i) => ({
+    if (departmentWeights?.IT?.length) {
+      return departmentWeights.IT.map((c, i) => ({
         name: c.label,
         label: DEFAULT_TECHNICAL_CATEGORIES[i]?.label ?? c.label.slice(0, 3),
         weightPct: c.weightPct,
@@ -616,8 +616,8 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
   }, [departmentWeights]);
 
   const CLASSIFICATIONS = useMemo(() => {
-    if (departmentWeights?.Technical?.length) {
-      return departmentWeights.Technical.map((c) => ({
+    if (departmentWeights?.IT?.length) {
+      return departmentWeights.IT.map((c) => ({
         name: c.label,
         description: `${c.weightPct}% Weight`,
         weight: `${c.weightPct}%`,
@@ -629,7 +629,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
   }, [departmentWeights]);
 
   const selectedCategoryConfig = useMemo((): CategoryWeightItem | undefined => {
-    return departmentWeights?.Technical?.find((c) => c.label === formData.jobType);
+    return departmentWeights?.IT?.find((c) => c.label === formData.jobType);
   }, [departmentWeights, formData.jobType]);
 
   /** Draft snapshot for Verify (step 2): ref + latest Core edits for current category; not persisted until Broadcast. */
@@ -643,7 +643,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
       }
       return checklist;
     };
-    const tech = departmentWeights?.Technical;
+    const tech = departmentWeights?.IT;
     if (tech?.length) {
       const out: Record<string, { checklist: Record<string, unknown>; status: string }> = {};
       for (const cat of tech) {
@@ -664,11 +664,11 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
     return out;
   }, [draftRevision, activeStep, formData.jobType, pmForVerifyMerge, departmentWeights]);
 
-  /** Log detail modal + PDF: scores from `allSalesData` + admin `departmentWeights.Technical` content (same as Core audit). */
+  /** Log detail modal + PDF: scores from `allSalesData` + admin `departmentWeights.IT` content (same as Core audit). */
   const buildTechnicalLogPdfCategoryScores = useCallback(
     (log: Transmission): { categoryScores: CategoryScoreForPdf[]; weightedSumApprox: number } => {
       const allData = log.allSalesData || {};
-      const tech = departmentWeights?.Technical;
+      const tech = departmentWeights?.IT;
       const categoryOrder = tech?.length ? tech.map((c) => c.label) : Object.keys(allData);
       const categoryScores: CategoryScoreForPdf[] = [];
 
@@ -736,7 +736,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
 
   const getReviewTotalScoreLegacy = (category: string, checklist: any): number => {
     if (!checklist) return 0;
-    if (departmentWeights?.Technical?.length) {
+    if (departmentWeights?.IT?.length) {
       return sumChecklistTaskScores(checklist);
     }
     if (category === 'Project Execution Quality') return getProjectExecutionQualityScore(checklist);
@@ -783,7 +783,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
     const categories = categoriesFromProgram;
 
     const getCategoryScore = (allData: any, categoryName: string) => {
-      if (departmentWeights?.Technical?.length) {
+      if (departmentWeights?.IT?.length) {
         const checklist = allData?.[categoryName]?.checklist;
         if (!checklist) return 0;
         return sumChecklistTaskScores(checklist);
@@ -844,7 +844,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
     const getCategoryScoreFallback = (t: Transmission, categoryName: string) => {
       const allData: any = t.allSalesData || {};
       const maxPoints = categoriesFromProgram.find((x: any) => x.name === categoryName)?.maxPoints ?? 0;
-      if (departmentWeights?.Technical?.length) {
+      if (departmentWeights?.IT?.length) {
         const pts = sumChecklistTaskScores(allData?.[categoryName]?.checklist);
         return maxPoints > 0 ? (Number(pts) / Number(maxPoints)) * 100 : 0;
       }
@@ -1084,7 +1084,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
                         <FileText className={`w-6 h-6 ${selectedLog.status === 'validated' ? 'text-emerald-600' : selectedLog.status === 'rejected' ? 'text-red-600' : 'text-white'}`} />
                       </div>
                       <div className="min-w-0">
-                        <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">Technical Log Review</h2>
+                        <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">IT Log Review</h2>
                         <p className="text-xs font-black text-slate-400 uppercase tracking-wide truncate">{selectedLog.id} • {new Date(selectedLog.timestamp).toLocaleString()}</p>
                       </div>
                     </div>
@@ -1101,8 +1101,8 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
                             const { categoryScores } = buildTechnicalLogPdfCategoryScores(selectedLog);
                             const finalScore = getWeightedKpiScore(selectedLog);
                             const opts = {
-                              title: 'Technical Log Review',
-                              filename: getLogDetailPdfFilename(selectedLog, 'Technical'),
+                              title: 'IT Log Review',
+                              filename: getLogDetailPdfFilename(selectedLog, 'IT'),
                               categoryScores: categoryScores.length ? categoryScores : undefined,
                               finalScore: Number.isFinite(finalScore) ? finalScore : undefined
                             };
@@ -1192,7 +1192,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
 
                     <TechnicalLogDetailAuditReview
                       selectedLog={selectedLog}
-                      departmentKey="Technical"
+                      departmentKey="IT"
                       departmentWeights={departmentWeights}
                       CLASSIFICATIONS={CLASSIFICATIONS}
                       CHECKLIST_CONTENT={CHECKLIST_CONTENT}
@@ -1269,7 +1269,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
                   getValidatedScore={(t) =>
                     t.status === 'validated' && t.ratings?.finalScore != null ? t.ratings.finalScore : undefined
                   }
-                  isGradingExpired={(t) => isPendingGradingConfigExpired(t, 'Technical', departmentWeights)}
+                  isGradingExpired={(t) => isPendingGradingConfigExpired(t, 'IT', departmentWeights)}
                   onDelete={onDeleteSubmission}
                   onEdit={onEditSubmission}
                 />
@@ -1323,7 +1323,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
                   <div className="p-5 mt-6 rounded-lg border border-amber-200 bg-amber-50/90 text-center space-y-3">
                     <p className="text-sm font-black text-amber-900 uppercase tracking-tight">Department grading not configured</p>
                     <p className="text-xs text-amber-800/90 max-w-lg mx-auto leading-relaxed">
-                      This category has no audit criteria from the administrator yet. Configure <span className="font-bold">Department grading breakdown</span> for Technical in admin.
+                      This category has no audit criteria from the administrator yet. Configure <span className="font-bold">Department grading breakdown</span> for IT in admin.
                     </p>
                   </div>
                   )}
@@ -1342,11 +1342,11 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
                   </div>
                   
                   <div className="grid grid-cols-1 gap-6">
-                    {(departmentWeights?.Technical?.length
-                      ? departmentWeights.Technical.map((c) => [c.label, verifyDraftSnapshot[c.label]] as const)
+                    {(departmentWeights?.IT?.length
+                      ? departmentWeights.IT.map((c) => [c.label, verifyDraftSnapshot[c.label]] as const)
                       : (Object.entries(verifyDraftSnapshot) as [string, { checklist: Record<string, unknown>; status: string }][])
                     ).map(([cat, data]) => {
-                      const catCfg = departmentWeights?.Technical?.find((w) => w.label === cat);
+                      const catCfg = departmentWeights?.IT?.find((w) => w.label === cat);
                       const checklist = (data?.checklist ?? {}) as Record<string, unknown>;
                       const hasAdminCriteria = Boolean(catCfg?.content?.length);
                       const agg = hasAdminCriteria && catCfg
@@ -1623,4 +1623,4 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
   );
 };
 
-export default TechnicalDashboard;
+export default ITDashboard;

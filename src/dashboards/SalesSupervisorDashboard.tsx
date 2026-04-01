@@ -194,7 +194,6 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
   const [announcementMsg, setAnnouncementMsg] = useState('');
   const [queueTab, setQueueTab] = useState<'pending' | 'history' | 'rejected'>('pending');
   const [searchTerm, setSearchTerm] = useState('');
-  const [teamSearchTerm, setTeamSearchTerm] = useState('');
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [registryElastic, setRegistryElastic] = useState<'top' | 'bottom' | null>(null);
   const [teamElastic, setTeamElastic] = useState<'top' | 'bottom' | null>(null);
@@ -256,9 +255,9 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
       ariaLabel: 'Supervisor navigation',
       items: [
         { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-        { id: 'queue', label: 'Submissions', icon: ListTodo, badge: pendingCount },
-        { id: 'team', label: 'Team', icon: Users },
-        { id: 'incentives', label: 'Incentives', icon: PesoCircleIcon },
+        { id: 'queue', label: 'Registry', icon: ListTodo, badge: pendingCount },
+        { id: 'team', label: 'Unit', icon: Users },
+        { id: 'incentives', label: 'Yield', icon: PesoCircleIcon },
       ],
       activeId: currentPage,
       onSelect: (id) => {
@@ -460,16 +459,6 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
     ];
   }, [deptMembers, user]);
 
-  const filteredTeam = useMemo(() => {
-    const term = teamSearchTerm.trim().toLowerCase();
-    if (!term) return sortedTeam;
-    return sortedTeam.filter((member: any) =>
-      member.name.toLowerCase().includes(term) ||
-      String(member.role).toLowerCase().includes(term) ||
-      String(member.department || '').toLowerCase().includes(term)
-    );
-  }, [sortedTeam, teamSearchTerm]);
-
   /** Same per-category 0–100 scores as employee Sales KPI + admin Department grading (`allSalesData` keys = admin labels). */
   const calculateInitialScores = (item: Transmission) => {
     const raw = getDepartmentCategoryRawScoresForSupervisor(
@@ -643,7 +632,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
               </div>
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 border border-slate-200 shadow-sm">
                 <Activity className="w-3.5 h-3.5 text-blue-500" />
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-wide">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wide">
                   Live average
                 </span>
               </div>
@@ -685,7 +674,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                   <span className="text-[10px] font-black uppercase tracking-wide text-slate-400">
                     Average score
                   </span>
-                  <span className="text-3xl font-black tabular-nums leading-none text-blue-700 mt-1">
+                  <span className="text-xl font-black tabular-nums leading-none text-blue-700 mt-1">
                     {companyAuditCount > 0
                       ? `${productivityDisplayScore.toFixed(1)}%`
                       : '—'}
@@ -712,12 +701,12 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                 <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">
                   {user.department} employees
                 </h2>
-                <p className="mt-1 text-[9px] font-bold text-slate-500 uppercase tracking-wide">
+                <p className="mt-1 text-[10px] font-bold text-slate-500 uppercase tracking-wide">
                   Ranked by average final score in {leaderboardQuarter}
                 </p>
               </div>
               <div className="flex flex-col items-end">
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
                   Select quarter
                 </p>
                 <div className="flex w-full max-w-[22rem] bg-slate-100/90 p-2 rounded-lg gap-2 shadow-inner border border-slate-200/60">
@@ -767,7 +756,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                         <p className="text-xs font-bold text-slate-900 truncate">
                           {entry.name}
                         </p>
-                        <p className="text-[9px] font-medium text-slate-400 uppercase tracking-wide">
+                        <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
                           {entry.auditCount} audit
                           {entry.auditCount === 1 ? '' : 's'} ·{' '}
                           {entry.avgScore.toFixed(1)}%
@@ -806,7 +795,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                 <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">Message to your team</p>
                 <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight">New announcement</h2>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-slate-200 text-[9px] font-black text-slate-500 uppercase tracking-wide shadow-sm">This department only</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wide shadow-sm">This department only</span>
             </div>
             <div className="flex-1 min-h-0 flex flex-col gap-4 bg-white rounded-lg p-6 border border-slate-200/80 shadow-sm overflow-hidden">
               <textarea
@@ -834,7 +823,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                 <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight">Announcements sent</h2>
               </div>
               {activeAnnouncements.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[9px] font-black text-blue-700 uppercase tracking-wide">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-700 uppercase tracking-wide">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                   {activeAnnouncements.length} active
                 </span>
@@ -868,14 +857,14 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                         Supervisor: {a.senderName}
                       </p>
                       <div className="flex items-center justify-between gap-3 pt-4 mt-4 border-t border-slate-200/80">
-                        <span className="inline-flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-wide">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wide">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
                           {new Date(a.timestamp).toLocaleString(undefined, {
                             dateStyle: 'medium',
                             timeStyle: 'short'
                           })}
                         </span>
-                        <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-[8px] font-black uppercase rounded-full border border-blue-100">
+                        <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase rounded-full border border-blue-100">
                           Active
                         </span>
                       </div>
@@ -902,16 +891,16 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">
-              Work Status
+              Department Audit
             </p>
             <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">
-              Team Work Overview
+              Department Audit Overview
             </h2>
           </div>
           <div className="hidden md:flex items-center gap-2">
             <div className="h-10 px-4 rounded-full bg-white/80 border border-slate-200 shadow-sm flex items-center gap-2">
               <span className="inline-flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[9px] font-black uppercase tracking-wide text-slate-500">
+              <span className="text-[10px] font-black uppercase tracking-wide text-slate-500">
                 Live audit status
               </span>
             </div>
@@ -925,8 +914,8 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
             aria-label="Show pending audits in registry"
             aria-pressed={queueTab === 'pending'}
           >
-            <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'pending' ? 'text-blue-700' : 'text-slate-400'}`}>Needs Review</p>
-            <p className={`text-[9px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'pending' ? 'text-blue-600/90' : 'text-slate-500'}`}>Sales Department</p>
+            <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'pending' ? 'text-blue-700' : 'text-slate-400'}`}>Pending Review</p>
+            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'pending' ? 'text-blue-600/90' : 'text-slate-500'}`}>Sales Department</p>
             <div className="relative flex items-center justify-center w-40 h-40">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgb(226 232 240)" strokeWidth="10" />
@@ -934,7 +923,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className={`text-2xl font-black tabular-nums leading-none ${queueTab === 'pending' ? 'text-blue-700' : 'text-blue-600'}`}>{salesPendingCount}/{salesTotalAudits}</span>
-                <span className={`text-[9px] font-bold uppercase tracking-wide mt-1 ${queueTab === 'pending' ? 'text-blue-600' : 'text-slate-400'}`}>submitted</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wide mt-1 ${queueTab === 'pending' ? 'text-blue-600' : 'text-slate-400'}`}>submitted</span>
               </div>
             </div>
           </button>
@@ -946,7 +935,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
             aria-pressed={queueTab === 'history'}
           >
             <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'history' ? 'text-blue-700' : 'text-slate-400'}`}>Approved</p>
-            <p className={`text-[9px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'history' ? 'text-blue-600/90' : 'text-slate-500'}`}>Sales Department</p>
+            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'history' ? 'text-blue-600/90' : 'text-slate-500'}`}>Sales Department</p>
             <div className="relative flex items-center justify-center w-40 h-40">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgb(226 232 240)" strokeWidth="10" />
@@ -954,7 +943,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className={`text-2xl font-black tabular-nums leading-none ${queueTab === 'history' ? 'text-blue-700' : 'text-blue-600'}`}>{salesValidatedCount}/{salesTotalAudits}</span>
-                <span className={`text-[9px] font-bold uppercase tracking-wide mt-1 ${queueTab === 'history' ? 'text-blue-600' : 'text-slate-400'}`}>validated</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wide mt-1 ${queueTab === 'history' ? 'text-blue-600' : 'text-slate-400'}`}>validated</span>
               </div>
             </div>
           </button>
@@ -966,7 +955,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
             aria-pressed={queueTab === 'rejected'}
           >
             <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'rejected' ? 'text-red-700' : 'text-slate-400'}`}>Rejected</p>
-            <p className={`text-[9px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'rejected' ? 'text-red-600/90' : 'text-slate-500'}`}>Sales Department</p>
+            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'rejected' ? 'text-red-600/90' : 'text-slate-500'}`}>Sales Department</p>
             <div className="relative flex items-center justify-center w-40 h-40">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgb(226 232 240)" strokeWidth="10" />
@@ -974,7 +963,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className={`text-2xl font-black tabular-nums leading-none ${queueTab === 'rejected' ? 'text-red-700' : 'text-red-500'}`}>{salesRejectedCount}/{salesTotalAudits}</span>
-                <span className={`text-[9px] font-bold uppercase tracking-wide mt-1 ${queueTab === 'rejected' ? 'text-red-600' : 'text-slate-400'}`}>rejected</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wide mt-1 ${queueTab === 'rejected' ? 'text-red-600' : 'text-slate-400'}`}>rejected</span>
               </div>
             </div>
           </button>
@@ -984,14 +973,14 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-lg border border-slate-100">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><ListTodo className="w-5 h-5 text-white" /></div>
-          <div><h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Work Items</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{queueTab === 'pending' ? 'Waiting for your review' : queueTab === 'history' ? 'Approved items' : 'Returned items'}</p></div>
+          <div><h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Submissions</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{queueTab === 'pending' ? 'Awaiting Review' : queueTab === 'history' ? 'Approved Records' : 'Rejected Records'}</p></div>
         </div>
         <div className="flex items-center gap-4 md:gap-6">
           <div className="relative group w-full md:w-auto">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
             <input 
               type="text" 
-              placeholder="Search team records..."
+              placeholder="SEARCH SALES REGISTRY..."
               className="pl-9 pr-5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-black tracking-[0.05em] focus:outline-none focus:ring-4 focus:ring-blue-500/15 w-full md:w-80 lg:w-96 transition-all focus:bg-white focus:border-blue-200"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -1037,12 +1026,12 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-black text-slate-900">{item.userName}</p>
-                      {roleMap[item.userName]?.role === UserRole.ADMIN && <span className="px-2 py-0.5 bg-slate-900 text-white text-[8px] font-black rounded">ADMIN</span>}
+                      {roleMap[item.userName]?.role === UserRole.ADMIN && <span className="px-2 py-0.5 bg-slate-900 text-white text-[10px] font-black rounded">ADMIN</span>}
                     </div>
                     <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mt-1">
                       <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md border w-fit bg-slate-50 border-slate-100 text-slate-400">
                         <Clock className="w-2.5 h-2.5" />
-                        <span className="text-[8px] font-black uppercase tracking-wide">{formattedTime}</span>
+                        <span className="text-[10px] font-black uppercase tracking-wide">{formattedTime}</span>
                       </div>
                       {!(queueTab === 'rejected') && (
                         <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border w-fit ${
@@ -1050,7 +1039,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                           item.status === 'rejected' ? 'bg-red-50 border-red-100 text-red-600' :
                           'bg-amber-50 border-amber-100 text-amber-600'
                         }`}>
-                          <span className="text-[8px] font-black uppercase tracking-wide">
+                          <span className="text-[10px] font-black uppercase tracking-wide">
                             {item.status === 'validated' ? 'VALIDATED' : item.status === 'rejected' ? 'REJECTED' : 'PENDING'}
                           </span>
                         </div>
@@ -1068,7 +1057,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                     const kpiBg = kpiVal >= 90 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : kpiVal >= 70 ? 'bg-blue-50 border-blue-100 text-blue-700' : kpiVal >= 50 ? 'bg-amber-50 border-amber-100 text-amber-700' : 'bg-red-50 border-red-100 text-red-700';
                     return (
                       <div className={`w-[6.5rem] min-w-[6.5rem] py-2 rounded-xl flex flex-col items-center justify-center border shrink-0 ${kpiBg}`}>
-                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Initial Score</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Initial Score</p>
                         <p className="text-sm font-black leading-none tabular-nums">{Number(kpiVal).toFixed(1)}%</p>
                       </div>
                     );
@@ -1079,14 +1068,14 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                     const finalDisplay = f === 100 ? '100%' : `${Number(f).toFixed(1)}%`;
                     return (
                       <div className={`w-[8rem] min-w-[8rem] py-2.5 rounded-xl flex flex-col items-center justify-center border shrink-0 ${finalBg}`}>
-                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Final Score</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Final Score</p>
                         <p className="text-base font-extrabold leading-none tabular-nums">{finalDisplay}</p>
                       </div>
                     );
                   })()}
                   {queueTab === 'rejected' && (
                     <div className="w-[8rem] min-w-[8rem] py-2.5 rounded-xl flex flex-col items-center justify-center border shrink-0 bg-red-50 border-red-100 text-red-700">
-                      <p className="text-[8px] font-black text-slate-500 uppercase tracking-wide">Status</p>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Status</p>
                       <p className="text-sm font-extrabold leading-none uppercase">REJECTED</p>
                     </div>
                   )}
@@ -1109,53 +1098,28 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
   };
 
   const renderTeam = () => {
-    const supervisorCount = sortedTeam.filter(m => m.isSupervisor || m.role === UserRole.SUPERVISOR).length;
-    const employeeCount = sortedTeam.filter(m => m.role === UserRole.EMPLOYEE).length;
-    const activeCount = sortedTeam.filter((m: any) => m.isActive !== false).length;
+    const supervisorCount = sortedTeam.filter(m => m.isSupervisor).length;
+    const employeeCount = sortedTeam.length - supervisorCount;
     return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-lg border border-slate-100 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><Users className="w-5 h-5 text-white" /></div>
           <div>
-            <h3 className="text-base font-black text-slate-900 tracking-tight">Sales Team Matrix</h3>
-            <p className="text-xs font-semibold text-slate-500 mt-0.5">Team members, roles, and status</p>
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Sales Unit Matrix</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">Department roster and roles</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
-            <span className="text-[9px] font-black uppercase tracking-wide">{sortedTeam.length} team members</span>
-          </div>
-          <div className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
-            <span className="text-[9px] font-black uppercase tracking-wide">{activeCount} active</span>
+            <span className="text-[10px] font-black uppercase tracking-wide">{sortedTeam.length} team members</span>
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="bg-white rounded-lg border border-slate-100 p-4 shadow-sm">
-          <p className="text-[11px] font-semibold text-slate-500">Supervisors</p>
-          <p className="text-2xl font-black text-slate-900 tabular-nums leading-none mt-1">{supervisorCount}</p>
-        </div>
-        <div className="bg-white rounded-lg border border-slate-100 p-4 shadow-sm">
-          <p className="text-[11px] font-semibold text-slate-500">Employees</p>
-          <p className="text-2xl font-black text-slate-900 tabular-nums leading-none mt-1">{employeeCount}</p>
-        </div>
-        <div className="bg-white rounded-lg border border-slate-100 p-4 shadow-sm">
-          <p className="text-[11px] font-semibold text-slate-500">Active</p>
-          <p className="text-2xl font-black text-slate-900 tabular-nums leading-none mt-1">{activeCount}</p>
-        </div>
-      </div>
-      <div className="bg-white rounded-lg border border-slate-100 p-3 shadow-sm">
-        <div className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
-          <input
-            type="text"
-            placeholder="Search team members..."
-            className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-500/15 w-full transition-all focus:bg-white focus:border-blue-200"
-            value={teamSearchTerm}
-            onChange={(e) => setTeamSearchTerm(e.target.value)}
-          />
-        </div>
+      <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-100">
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">
+          {supervisorCount} Supervisor{supervisorCount !== 1 ? 's' : ''} · {employeeCount} Employee{employeeCount !== 1 ? 's' : ''}
+        </p>
       </div>
       <div
         className="registry-list-scroll h-[19rem] min-h-[19rem] rounded-lg border border-slate-200 bg-slate-50/50 shadow-sm"
@@ -1176,13 +1140,13 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
         }}
       >
         <div className={`registry-list-inner space-y-3 py-1 ${teamElastic ? `elastic-${teamElastic}` : ''}`}>
-        {filteredTeam.length === 0 ? (
+        {sortedTeam.length === 0 ? (
           <div className="py-20 text-center bg-white rounded-lg border border-slate-50 border-dashed mx-1">
             <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-4"><Users className="w-8 h-8 text-slate-200" /></div>
-            <p className="text-[10px] font-black text-slate-300 uppercase tracking-wide">{teamSearchTerm.trim() ? 'No team members match your search' : 'No team members in this department'}</p>
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-wide">No team members in this department</p>
           </div>
         ) : (
-          filteredTeam.map((member, idx) => (
+          sortedTeam.map((member, idx) => (
             <div key={idx} className={`group flex items-center justify-between p-6 rounded-lg border transition-all ${member.isSupervisor ? 'bg-blue-50 border-blue-200 shadow-sm shadow-blue-50' : 'bg-white border-slate-50 hover:shadow-md hover:-translate-y-0.5'}`}>
               <div className="flex items-center gap-6">
                 <div className={`w-14 h-14 rounded-lg flex items-center justify-center font-black transition-colors shrink-0 ${member.isSupervisor ? 'bg-blue-600 text-white ring-2 ring-blue-200' : 'bg-slate-100 text-slate-600 ring-2 ring-slate-100'}`}>
@@ -1191,14 +1155,9 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
                     <p className={`font-black text-slate-900 ${member.isSupervisor ? 'text-base' : 'text-sm'}`}>{member.name}</p>
-                    {member.name === user.name && member.isSupervisor && <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[8px] font-black rounded uppercase">YOU</span>}
+                    {member.name === user.name && member.isSupervisor && <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-black rounded uppercase">YOU</span>}
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[9px] font-bold uppercase tracking-wide">{member.role}</span>
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wide ${member.isActive !== false ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200'}`}>
-                      <Circle className="w-2.5 h-2.5 fill-current" /> {member.isActive !== false ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
+                  <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wide mt-1">{member.role}</span>
                 </div>
               </div>
               {member.isSupervisor && (
@@ -1276,8 +1235,8 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
         <div className="bg-slate-100 rounded-xl p-5 border border-slate-200 shadow-sm">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
-              <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">Incentives</p>
-              <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">Sales Incentives</h2>
+              <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">Yield</p>
+              <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">Sales Yield</h2>
               <p className="mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
                 <Calendar className="w-3 h-3" />
                 Quarterly cycle: {qInfo.q} ({qInfo.months}) · Payout Est. {qInfo.payout}
@@ -1286,7 +1245,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
             <div className="flex flex-wrap items-center gap-2">
               {schedules.map(s => (
                 <div key={s.q} className={`px-4 py-2.5 rounded-xl border flex flex-col items-center min-w-[90px] ${s.q === qInfo.q ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500'}`}>
-                  <span className="text-[9px] font-black uppercase tracking-wide">{s.q}</span>
+                  <span className="text-[10px] font-black uppercase tracking-wide">{s.q}</span>
                   <span className={`text-[10px] font-black ${s.q === qInfo.q ? 'text-blue-100' : 'text-slate-700'}`}>{s.payout}</span>
                 </div>
               ))}
@@ -1313,7 +1272,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
             <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-wide">Employee Performance Tracking</h4>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-slate-100">
               <Activity className="w-3.5 h-3.5 text-blue-500" />
-              <span className="text-[9px] font-black text-slate-600 uppercase tracking-wide">Real-Time Aggregation</span>
+              <span className="text-[10px] font-black text-slate-600 uppercase tracking-wide">Real-Time Aggregation</span>
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -1337,7 +1296,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                         </div>
                         <div>
                           <p className="text-sm font-black text-slate-900">{emp.name}</p>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Last audit: {emp.lastUpdated ? new Date(emp.lastUpdated).toLocaleDateString() : 'None'}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Last audit: {emp.lastUpdated ? new Date(emp.lastUpdated).toLocaleDateString() : 'None'}</p>
                         </div>
                       </div>
                     </td>
@@ -1357,11 +1316,11 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                       </div>
                     </td>
                     <td className="px-6 py-2">
-                      <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wide border ${emp.tierColor}`}>{emp.tier}</span>
+                      <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide border ${emp.tierColor}`}>{emp.tier}</span>
                     </td>
                     <td className="px-6 py-2 text-right">
                       <p className={`text-sm font-black ${emp.avgScore >= 70 ? 'text-slate-900' : 'text-slate-300'}`}>{emp.potentialAmount}</p>
-                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">Est. {qInfo.payout}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">Est. {qInfo.payout}</p>
                     </td>
                   </tr>
                 ))}
@@ -1387,11 +1346,11 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="p-6 bg-blue-50 rounded-lg border border-blue-100">
               <p className="text-[10px] font-black text-blue-600 uppercase tracking-wide mb-1">Validated</p>
-              <p className="text-3xl font-black text-slate-900 tabular-nums">{recentValidated}</p>
+              <p className="text-xl font-black text-slate-900 tabular-nums">{recentValidated}</p>
             </div>
             <div className="p-6 bg-red-50 rounded-lg border border-red-100">
               <p className="text-[10px] font-black text-red-600 uppercase tracking-wide mb-1">Rejected</p>
-              <p className="text-3xl font-black text-slate-900 tabular-nums">{recentRejected}</p>
+              <p className="text-xl font-black text-slate-900 tabular-nums">{recentRejected}</p>
             </div>
           </div>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-6">Export and detailed reports coming soon.</p>
@@ -1419,11 +1378,11 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
             {isReadOnly && (
               <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${selectedItem.status === 'rejected' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
                 {selectedItem.status === 'rejected' ? <X className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
-                <span className="text-[9px] font-black uppercase tracking-wide">{selectedItem.status === 'rejected' ? 'Rejected' : 'Validated'}</span>
+                <span className="text-[10px] font-black uppercase tracking-wide">{selectedItem.status === 'rejected' ? 'Rejected' : 'Validated'}</span>
               </div>
             )}
             {!isReadOnly && (
-               <div className={`px-4 py-2 rounded-xl border text-[9px] font-black uppercase tracking-wide flex items-center gap-2 ${calculatedScore.incentivePct >= 1 ? 'bg-blue-50 text-blue-600 border-blue-100 animate-pulse' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+               <div className={`px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-wide flex items-center gap-2 ${calculatedScore.incentivePct >= 1 ? 'bg-blue-50 text-blue-600 border-blue-100 animate-pulse' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
                  {calculatedScore.incentivePct >= 1 ? <Trophy className="w-3.5 h-3.5" /> : <Activity className="w-3.5 h-3.5" />}
                  {calculatedScore.incentivePct >= 1 ? 'Incentive target met' : 'Below incentive target'}
                </div>
@@ -1444,7 +1403,7 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                     {!isReadOnly && (
                       <button 
                         onClick={() => setGrading(calculateInitialScores(selectedItem))}
-                        className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-[9px] font-black uppercase tracking-wide rounded-lg transition-all border border-blue-500/30 flex items-center gap-2"
+                        className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-[10px] font-black uppercase tracking-wide rounded-lg transition-all border border-blue-500/30 flex items-center gap-2"
                       >
                         <Cpu className="w-3 h-3" />
                         Auto-Calculate
@@ -1706,8 +1665,8 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                       <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
                         <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center shrink-0">{file.type.includes('image') ? <FileImage className="w-5 h-5 text-blue-500" /> : <FileIcon className="w-5 h-5 text-slate-400" />}</div>
                         <div className="overflow-hidden min-w-0 flex-1">
-                          <p className="text-[9px] font-black text-slate-900 truncate uppercase">{file.name}</p>
-                          <p className="text-[8px] font-bold text-slate-400">{file.size}</p>
+                          <p className="text-[10px] font-black text-slate-900 truncate uppercase">{file.name}</p>
+                          <p className="text-[10px] font-bold text-slate-400">{file.size}</p>
                         </div>
                       </div>
                       <button 
@@ -1755,20 +1714,20 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
       )}
 
       <div
-        className={`mb-6 md:mb-8 flex flex-col gap-6 
+        className={`mb-6 md:mb-8 flex flex-col gap-6 sticky top-0 z-40 bg-slate-50/90 backdrop-blur-md border-b border-slate-200/60 
         -mt-4 sm:-mt-6 md:-mt-8 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8
         py-2 sm:py-6 md:py-8
         lg:mx-0 lg:px-0 lg:mt-0 ${navCollapsed ? 'lg:pl-[92px]' : 'lg:pl-[272px]'}`}
       >
         <div>
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none">Sales Supervisor</h1>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none">Sales Supervisor</h1>
         </div>
         <div className="hidden lg:hidden flex flex-wrap bg-white p-1.5 rounded-lg border border-slate-100 shadow-sm w-fit ml-auto" role="navigation" aria-label="Supervisor navigation">
           {[
             { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-            { id: 'queue', label: 'Submissions', icon: ListTodo, badge: countPendingReviewAudits(filteredPending) },
-            { id: 'team', label: 'Team', icon: Users },
-            { id: 'incentives', label: 'Incentives', icon: PesoCircleIcon }
+            { id: 'queue', label: 'Registry', icon: ListTodo, badge: countPendingReviewAudits(filteredPending) },
+            { id: 'team', label: 'Unit', icon: Users },
+            { id: 'incentives', label: 'Yield', icon: PesoCircleIcon }
           ].map(item => {
             const Icon = item.icon;
             return (
@@ -1779,13 +1738,13 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                   setCurrentPage(item.id as Page);
                   if (item.id === 'queue') { setQueueTab('pending'); setSearchTerm(''); }
                 }}
-                className={`relative flex items-center gap-2.5 px-5 py-3 rounded-xl border text-[10px] font-black uppercase tracking-wide transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${currentPage === item.id ? 'z-10 bg-blue-50 border-blue-200 text-blue-800 shadow-sm' : 'z-0 border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+                className={`relative flex items-center gap-2.5 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-wide transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${currentPage === item.id ? 'z-10 bg-blue-900 text-white shadow-lg' : 'z-0 text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
                 aria-current={currentPage === item.id ? 'page' : undefined}
                 aria-label={item.badge != null ? `${item.label} (${item.badge} pending)` : item.label}
               >
                 <Icon className="w-4 h-4 shrink-0" aria-hidden />
                 <span>{item.label}</span>
-                {item.badge != null && item.badge > 0 ? <span className="ml-0.5 bg-blue-600 text-white px-1.5 py-0.5 rounded text-[8px]">{item.badge}</span> : null}
+                {item.badge != null && item.badge > 0 ? <span className="ml-0.5 bg-blue-600 text-white px-1.5 py-0.5 rounded text-[10px]">{item.badge}</span> : null}
               </button>
             );
           })}
@@ -1796,10 +1755,10 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
         <RoleSidenav
           roleLabel="Supervisor"
           items={[
-            { id: 'dashboard', label: 'Overview', description: 'Team summary', icon: LayoutDashboard },
-            { id: 'queue', label: 'Submissions', description: countPendingReviewAudits(filteredPending) ? `${countPendingReviewAudits(filteredPending)} for review` : 'Items to review', icon: ListTodo, badge: countPendingReviewAudits(filteredPending) },
-            { id: 'team', label: 'Team', description: 'People and roles', icon: Users },
-            { id: 'incentives', label: 'Incentives', description: 'Payout levels', icon: PesoCircleIcon },
+            { id: 'dashboard', label: 'Overview', description: 'Department overview', icon: LayoutDashboard },
+            { id: 'queue', label: 'Registry', description: countPendingReviewAudits(filteredPending) ? `${countPendingReviewAudits(filteredPending)} pending` : 'Review queue', icon: ListTodo, badge: countPendingReviewAudits(filteredPending) },
+            { id: 'team', label: 'Unit', description: 'Team view', icon: Users },
+            { id: 'incentives', label: 'Yield', description: 'Yield & tiers', icon: PesoCircleIcon },
           ]}
           activeId={currentPage}
           onSelect={(id) => {

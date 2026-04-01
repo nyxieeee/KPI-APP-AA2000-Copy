@@ -14,6 +14,8 @@ interface DashboardProps {
   auditLogs: AuditEntry[];
   announcements: Announcement[];
   onTransmit: (t: Transmission) => void;
+  onDeleteSubmission?: (t: Transmission) => void;
+  onEditSubmission?: (t: Transmission) => void;
   onValidate: (id: string, overrides?: SystemStats, status?: 'validated' | 'rejected') => void;
   /**
    * Supervisor grades but does NOT finalize.
@@ -48,6 +50,8 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
             transmissionHistory={props.transmissionHistory}
             announcements={props.announcements}
             onTransmit={props.onTransmit}
+            onDeleteSubmission={props.onDeleteSubmission}
+            onEditSubmission={props.onEditSubmission}
             validatedStats={props.validatedStats[user.id]}
             departmentWeights={props.departmentWeights}
           />

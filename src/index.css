@@ -223,11 +223,41 @@ button.py-5 {
   .min-w-\[20rem\] { min-width: unset !important; }
 }
 
-/* Navbar height — 80px is a bit tall, trim to 60px */
-nav.h-20 { height: 3.75rem !important; }
+/* Navbar height — keep consistent at 80px to match sidenav top-20 */
+/* nav.h-20 override removed — keeping h-20 (5rem) to match APP_NAV_SIDENAV_TOP */
 
 /* Reduce the large stat numbers' surrounding padding */
 .tabular-nums.text-3xl,
 .tabular-nums.text-6xl {
   line-height: 1.1 !important;
+}
+
+/* ============================================================
+   TYPOGRAPHY UNIFORMITY — normalize heading/label sizes
+   ============================================================ */
+
+/* Normalize dashboard section titles to one consistent size */
+h3.text-xl.font-black,
+h3.text-2xl.font-black {
+  font-size: 1rem !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* Normalize oversized stat numbers in tiles */
+.text-5xl.font-black,
+.text-6xl.font-black {
+  font-size: 2rem !important;
+  line-height: 1.1 !important;
+}
+.text-4xl.font-black {
+  font-size: 1.6rem !important;
+  line-height: 1.15 !important;
+}
+
+/* Consistent body text across dashboards */
+p.text-sm, span.text-sm, div.text-sm {
+  font-size: 0.8125rem !important;
+}
+p.text-xs, span.text-xs, label.text-xs {
+  font-size: 0.75rem !important;
 }

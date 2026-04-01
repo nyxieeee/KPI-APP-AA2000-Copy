@@ -180,7 +180,7 @@ const DEFAULT_TECH_CATEGORY_LABELS = [
 
 type Page = 'dashboard' | 'queue' | 'validation' | 'team' | 'incentives';
 
-const TechnicalSupervisorDashboard: React.FC<Props> = ({ 
+const ITSupervisorDashboard: React.FC<Props> = ({ 
   user, 
   pendingTransmissions: _pendingTransmissions, 
   transmissionHistory: _transmissionHistory,
@@ -193,7 +193,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
   onPostAnnouncement,
   onDeleteAnnouncement
 }) => {
-  const dept = user.department || 'Technical';
+  const dept = user.department || 'IT';
   const deptBucket = getDepartmentBucketForSupervisor(auditBuckets, dept, _pendingTransmissions, _transmissionHistory);
   const pendingTransmissions = deptBucket.pending || [];
   const transmissionHistory = deptBucket.history || [];
@@ -453,7 +453,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
       systemStatus: item.systemStatus
     });
     
-    const raw = getDepartmentCategoryRawScoresForSupervisor(item, departmentWeights, 'Technical', CHECKLIST_CONTENT);
+    const raw = getDepartmentCategoryRawScoresForSupervisor(item, departmentWeights, 'IT', CHECKLIST_CONTENT);
     const labels = departmentWeights?.Technical?.map((c) => c.label) ?? DEFAULT_TECH_CATEGORY_LABELS;
     let next: Record<string, number> = {};
     const tm = (item.ratings as { technicalMetrics?: Record<string, unknown> } | undefined)?.technicalMetrics;
@@ -1036,7 +1036,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
             aria-pressed={queueTab === 'pending'}
           >
             <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'pending' ? 'text-blue-700' : 'text-slate-400'}`}>Pending Review</p>
-            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'pending' ? 'text-blue-600/90' : 'text-slate-500'}`}>Technical Department</p>
+            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'pending' ? 'text-blue-600/90' : 'text-slate-500'}`}>IT Department</p>
             <div className="relative flex items-center justify-center w-40 h-40">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgb(226 232 240)" strokeWidth="10" />
@@ -1056,7 +1056,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
             aria-pressed={queueTab === 'history'}
           >
             <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'history' ? 'text-emerald-700' : 'text-slate-400'}`}>Approved</p>
-            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'history' ? 'text-emerald-600/90' : 'text-slate-500'}`}>Technical Department</p>
+            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'history' ? 'text-emerald-600/90' : 'text-slate-500'}`}>IT Department</p>
             <div className="relative flex items-center justify-center w-40 h-40">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgb(226 232 240)" strokeWidth="10" />
@@ -1076,7 +1076,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
             aria-pressed={queueTab === 'rejected'}
           >
             <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'rejected' ? 'text-red-700' : 'text-slate-400'}`}>Rejected</p>
-            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'rejected' ? 'text-red-600/90' : 'text-slate-500'}`}>Technical Department</p>
+            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'rejected' ? 'text-red-600/90' : 'text-slate-500'}`}>IT Department</p>
             <div className="relative flex items-center justify-center w-40 h-40">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgb(226 232 240)" strokeWidth="10" />
@@ -1162,7 +1162,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {queueTab === 'pending' && isPendingGradingConfigExpired(item, 'Technical', departmentWeights) ? (
+                  {queueTab === 'pending' && isPendingGradingConfigExpired(item, 'IT', departmentWeights) ? (
                     <GradingExpiredBadge />
                   ) : null}
                   {(() => {
@@ -1216,7 +1216,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-lg border border-slate-100">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><Users className="w-5 h-5 text-white" /></div>
-          <div><h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Technical Unit Matrix</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Department roster and roles</p></div>
+          <div><h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">IT Unit Matrix</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Department roster and roles</p></div>
         </div>
         <div className="flex items-center gap-4 md:gap-6">
           <div className="relative group w-full md:w-auto">
@@ -1346,7 +1346,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
               <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">Yield</p>
-              <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">Technical Yield</h2>
+              <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">IT Yield</h2>
               <p className="mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
                 <Calendar className="w-3 h-3" />
                 Quarterly cycle: {qInfo.q} ({qInfo.months}) · Payout Est. {qInfo.payout}
@@ -1363,7 +1363,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
           </div>
         </div>
 
-        <SupervisorIncentiveMatrixPanel tiers={incentiveTiers} departmentLabel="Technical" />
+        <SupervisorIncentiveMatrixPanel tiers={incentiveTiers} departmentLabel="IT" />
 
         {/* Policy note */}
         <div className="bg-blue-50/80 border border-blue-100 rounded-lg p-6 flex items-start gap-4">
@@ -1391,7 +1391,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-wide">Technical Personnel</th>
+                  <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-wide">IT Personnel</th>
                   <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-wide text-center">Audits ({qInfo.q})</th>
                   <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-wide text-center">Quarterly Avg</th>
                   <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-wide">Tier Status</th>
@@ -1454,7 +1454,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
         <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide mb-6">Technical Department — Last 30 Days</h3>
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide mb-6">IT Department — Last 30 Days</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="p-6 bg-emerald-50 rounded-lg border border-emerald-100">
               <p className="text-[10px] font-black text-emerald-600 uppercase tracking-wide mb-1">Validated</p>
@@ -1508,7 +1508,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
                   <div className="flex items-center justify-between mb-8 relative z-10">
                     <div className="flex items-center gap-4">
                       <ShieldCheck className="w-6 h-6 text-blue-400" />
-                      <h4 className="text-sm font-black uppercase tracking-wide">Technical Grading Matrix</h4>
+                      <h4 className="text-sm font-black uppercase tracking-wide">IT Grading Matrix</h4>
                     </div>
                     {!isReadOnly && (
                       <button 
@@ -1517,7 +1517,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
                           const raw = getDepartmentCategoryRawScoresForSupervisor(
                             selectedItem,
                             departmentWeights,
-                            'Technical',
+                            'IT',
                             CHECKLIST_CONTENT
                           );
                           const next: Record<string, number> = {};
@@ -1645,7 +1645,7 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
 
             <TechnicalLogDetailAuditReview
               selectedLog={selectedItem}
-              departmentKey="Technical"
+              departmentKey="IT"
               departmentWeights={departmentWeights}
               CLASSIFICATIONS={techLogDetailClassifications}
               CHECKLIST_CONTENT={CHECKLIST_CONTENT}
@@ -1746,4 +1746,4 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
   );
 };
 
-export default TechnicalSupervisorDashboard;
+export default ITSupervisorDashboard;

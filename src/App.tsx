@@ -25,8 +25,9 @@ import {
   moveAudit,
   type AuditBuckets,
 } from './utils/auditStore';
+import { notifyDepartmentSupervisorsOnSubmission } from './utils/notificationUtils';
 
-const VALID_DEPARTMENTS = ['technical', 'sales', 'marketing', 'accounting', 'admin'];
+const VALID_DEPARTMENTS = ['technical', 'sales', 'marketing', 'accounting', 'admin', 'it'];
 const deptSlug = (d: string) => (d || 'technical').toLowerCase();
 const genId = (len = 8) => Math.random().toString(36).substr(2, len).toUpperCase();
 const SESSION_USER_STORAGE_KEY = 'aa2000-session-user';
@@ -61,15 +62,19 @@ const INITIAL_REGISTRY = [
   { name: 'supervisor technical', password: 'supervisor', department: 'Technical', role: UserRole.SUPERVISOR, isActive: true },
   { name: 'employee marketing', password: '123', department: 'Marketing', role: UserRole.EMPLOYEE, isActive: true },
   { name: 'supervisor marketing', password: 'supervisor', department: 'Marketing', role: UserRole.SUPERVISOR, isActive: true },
-  { name: 'employee IT', password: '123', department: 'Technical', role: UserRole.EMPLOYEE, isActive: true },
-  { name: 'supervisor IT', password: 'supervisor', department: 'Technical', role: UserRole.SUPERVISOR, isActive: true },
+  { name: 'employee IT', password: '123', department: 'IT', role: UserRole.EMPLOYEE, isActive: true },
+  { name: 'supervisor IT', password: 'supervisor', department: 'IT', role: UserRole.SUPERVISOR, isActive: true },
+  { name: 'employee accounting', password: '123', department: 'Accounting', role: UserRole.EMPLOYEE, isActive: true },
+  { name: 'supervisor accounting', password: 'supervisor', department: 'Accounting', role: UserRole.SUPERVISOR, isActive: true },
   { name: 'admin', password: 'admin', department: 'Admin', role: UserRole.ADMIN, isActive: true }
 ];
 
 const INITIAL_ADMIN_USERS: Record<string, string[]> = {
-  'Technical': ['employee technical', 'supervisor technical', 'employee IT', 'supervisor IT'],
+  'Technical': ['employee technical', 'supervisor technical'],
+  'IT': ['employee IT', 'supervisor IT'],
   'Sales': ['employee sales', 'supervisor sales'],
   'Marketing': ['employee marketing', 'supervisor marketing'],
+  'Accounting': ['employee accounting', 'supervisor accounting'],
   'Admin': ['admin']
 };
 
@@ -582,6 +587,14 @@ const App: React.FC = () => {
       { label: 'Administrative Excellence', weightPct: 5 },
       { label: 'Attendance & Discipline', weightPct: 5 },
     ],
+    IT: [
+      { label: 'System Reliability & Uptime', weightPct: 30 },
+      { label: 'Technical Support Quality', weightPct: 25 },
+      { label: 'Security & Compliance', weightPct: 20 },
+      { label: 'Project & Development Delivery', weightPct: 15 },
+      { label: 'Administrative Excellence', weightPct: 5 },
+      { label: 'Attendance & Discipline', weightPct: 5 },
+    ],
     Sales: [
       { label: 'Revenue Score', weightPct: 40 },
       { label: 'Accounts Score', weightPct: 20 },
@@ -591,11 +604,11 @@ const App: React.FC = () => {
       { label: 'Additional Responsibility', weightPct: 5 },
     ],
     Marketing: [
-      { label: 'Accounting Excellence', weightPct: 40 },
-      { label: 'Purchasing Excellence', weightPct: 30 },
-      { label: 'Administrative Excellence', weightPct: 25 },
-      { label: 'Additional Responsibilities', weightPct: 3 },
-      { label: 'Attendance & Discipline', weightPct: 2 },
+      { label: 'Campaign Execution & Quality', weightPct: 35 },
+      { label: 'Lead Generation & Sales Support', weightPct: 30 },
+      { label: 'Digital & Social Media Performance', weightPct: 25 },
+      { label: 'Additional Responsibilities', weightPct: 5 },
+      { label: 'Attendance & Discipline', weightPct: 5 },
     ],
     Accounting: [
       { label: 'Accounting Excellence', weightPct: 40 },
@@ -726,6 +739,7 @@ const App: React.FC = () => {
   const handleLogout = useCallback(() => {
     addAuditEntry('SESSION_TERM', 'Disconnected', 'INFO');
     setUser(null);
+    setNotifications([]);
     try {
       localStorage.removeItem(SESSION_USER_STORAGE_KEY);
     } catch {
@@ -745,9 +759,18 @@ const App: React.FC = () => {
       upsertAudit(next, dept, 'pending', withDept);
       return next;
     });
-    addNotification(`TX ${transmission.id} submitted.`, user.id, 'INFO');
+
+    // Notify only supervisors of the same department
+    const deptNotifications = notifyDepartmentSupervisorsOnSubmission(
+      withDept,
+      dept,
+      registry,
+      user.id
+    );
+    setNotifications(prev => [...deptNotifications, ...prev].slice(0, 100));
+
     addAuditEntry('DATA_TRANSMIT', `${transmission.id} queued`, 'INFO', transmission.userName);
-  }, [user, addAuditEntry, addNotification]);
+  }, [user, registry, addAuditEntry, setNotifications]);
 
   /**
    * Two-step grading flow:
@@ -823,6 +846,53 @@ const App: React.FC = () => {
       }
     }
   }, [pendingTransmissions, user, addAuditEntry, addNotification]);
+
+  const handleDeleteSubmission = useCallback((transmission: Transmission) => {
+    if (!user) return;
+    const dept = transmission.department || user.department || 'Unknown';
+    setAuditBuckets((prev) => {
+      const next = { ...prev };
+      const b = next[dept] ?? { pending: [], history: [] };
+      next[dept] = {
+        pending: (b.pending || []).filter((t: Transmission) => t.id !== transmission.id),
+        history: (b.history || []).filter((t: Transmission) => t.id !== transmission.id),
+      };
+      return next;
+    });
+    addAuditEntry('DATA_DELETE', `Submission ${transmission.id} deleted by ${user.name}`, 'WARN', user.name);
+
+    // Notify supervisor(s) of this department
+    const deptSupervisors = registry.filter((u: any) => u.department === dept && u.role === UserRole.SUPERVISOR && u.isActive);
+    deptSupervisors.forEach((sup: any) => {
+      const supId = btoa(sup.name).substring(0, 12);
+      addNotification(`${user.name} deleted submission ${transmission.id}.`, supId, 'ALERT');
+    });
+    // Notify admin
+    const admins = adminUsers['Admin'] || [];
+    admins.forEach((adminName: string) => {
+      const adminId = btoa(adminName).substring(0, 12);
+      addNotification(`${user.name} (${dept}) deleted submission ${transmission.id}.`, adminId, 'ALERT');
+    });
+  }, [user, registry, adminUsers, addAuditEntry, addNotification]);
+
+  const handleEditSubmission = useCallback((transmission: Transmission) => {
+    if (!user) return;
+    const dept = transmission.department || user.department || 'Unknown';
+    addAuditEntry('DATA_EDIT', `Submission ${transmission.id} edited by ${user.name}`, 'INFO', user.name);
+
+    // Notify supervisor(s)
+    const deptSupervisors = registry.filter((u: any) => u.department === dept && u.role === UserRole.SUPERVISOR && u.isActive);
+    deptSupervisors.forEach((sup: any) => {
+      const supId = btoa(sup.name).substring(0, 12);
+      addNotification(`${user.name} edited submission ${transmission.id}.`, supId, 'INFO');
+    });
+    // Notify admin
+    const admins = adminUsers['Admin'] || [];
+    admins.forEach((adminName: string) => {
+      const adminId = btoa(adminName).substring(0, 12);
+      addNotification(`${user.name} (${dept}) edited submission ${transmission.id}.`, adminId, 'INFO');
+    });
+  }, [user, registry, adminUsers, addAuditEntry, addNotification]);
 
   const handlePostAnnouncement = useCallback((message: string) => {
     if (!user?.department) return;
@@ -950,11 +1020,11 @@ const App: React.FC = () => {
                     validatedStats={validatedStats[user.id]}
                     registry={registry}
                     onUpdateRegistry={handleUpdateRegistry}
-                    notifications={notifications.filter(n => n.targetUserId === user.id)}
+                    notifications={notifications.filter(n => n.targetUserId === user.id || (user.role === UserRole.ADMIN))}
                     onDeleteNotification={deleteNotification}
                   />
                   <main className="flex-1 flex flex-col min-h-0 w-full max-w-[1800px] mx-auto overflow-hidden">
-                    <div className="px-4 sm:px-6 md:px-8 lg:px-0 py-4 sm:py-6 md:py-8 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+                    <div className="px-4 sm:px-6 md:px-8 lg:px-0 py-4 sm:py-4 md:py-6 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
                       <Dashboard
                         user={user}
                         pendingTransmissions={pendingTransmissions}
@@ -968,6 +1038,8 @@ const App: React.FC = () => {
                         departmentWeights={departmentWeights}
                         onUpdateDepartmentWeights={setDepartmentWeights}
                         onTransmit={handleTransmit}
+                        onDeleteSubmission={handleDeleteSubmission}
+                        onEditSubmission={handleEditSubmission}
                         onValidate={handleValidate}
                         onSupervisorGrade={handleSupervisorGrade}
                         onPostAnnouncement={handlePostAnnouncement}

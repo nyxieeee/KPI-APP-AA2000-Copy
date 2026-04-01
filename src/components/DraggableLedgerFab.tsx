@@ -162,7 +162,7 @@ export const DraggableLedgerFab: React.FC<DraggableLedgerFabProps> = ({
       <div className="overflow-hidden max-w-0 group-hover:max-w-[180px] transition-all duration-300 ease-out text-left">
         <div className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-[opacity,transform] duration-300 delay-100 py-0.5">
           <p className="text-[11px] font-bold uppercase tracking-widest text-white leading-tight whitespace-nowrap">
-            LEDGER HISTORY
+            SUBMISSION HISTORY
           </p>
           <p className="text-[10px] font-normal text-slate-300 leading-tight whitespace-nowrap">View Log History</p>
         </div>

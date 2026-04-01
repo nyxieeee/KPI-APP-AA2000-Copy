@@ -51,6 +51,8 @@ interface Props {
   transmissionHistory: Transmission[];
   announcements: Announcement[];
   onTransmit: (t: Transmission) => void;
+  onDeleteSubmission?: (t: Transmission) => void;
+  onEditSubmission?: (t: Transmission) => void;
   departmentWeights?: DepartmentWeights;
 }
 
@@ -83,7 +85,7 @@ const DEFAULT_SALES_CLASSIFICATIONS = [
   { name: 'Additional Responsibility', description: '5% Weight', weight: '5%', tooltip: 'Weighted impact: 5%', icon: Handshake },
 ];
 
-const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights }) => {
+const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights, onDeleteSubmission, onEditSubmission }) => {
   const [activeStep, setActiveStep] = useState(1);
   const [navCollapsed, setNavCollapsed] = useState(false);
   const { setConfig: setMobileNavConfig } = useMobileSidenav();
@@ -128,7 +130,7 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
         { id: '4', label: 'Submit', icon: Megaphone },
         {
           id: 'ledger',
-          label: 'Ledger',
+          label: 'Submission History',
           icon: History,
           badge: ledgerEntryCount > 0 ? ledgerEntryCount : null,
         },
@@ -255,7 +257,7 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
   }, [formData.totalQuotes]);
 
   const isStep1Complete = true; 
-  const isStep3Complete = formData.projectReport.length > 20 && formData.attachments.length > 0;
+  const isStep3Complete = formData.attachments.length > 0;
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -484,7 +486,7 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
 
   const handleTransmit = () => {
     if (!isStep1Complete || !isStep3Complete) {
-      alert("Please add a report (at least 20 characters) and at least one attachment before submitting.");
+      alert("Please add at least one attachment before submitting.");
       return;
     }
     
@@ -866,7 +868,7 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
   return (
     <div
       className={`w-full max-w-full xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:pr-8 space-y-6 sm:space-y-8 pb-6 sm:pb-12 min-h-0 flex flex-col ${
-        navCollapsed ? 'lg:pl-[92px]' : 'lg:pl-[272px]'
+        navCollapsed ? 'lg:pl-[104px] lg:pr-6' : 'lg:pl-[288px] lg:pr-6'
       }`}
     >
       <DirectDirectiveModal
@@ -882,7 +884,7 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
         <div className="fixed top-24 right-8 z-[9999] animate-in slide-in-from-right-full fade-in duration-500">
           <div className="bg-[#0b1222] text-white px-6 py-2 rounded-lg shadow-sm border border-blue-500/30 flex items-center gap-4">
             <CheckCircle2 className="w-6 h-6 text-blue-500" />
-            <div><p className="text-[11px] font-black uppercase tracking-wide mb-1">Submission sent</p><p className="text-[9px] font-bold text-blue-400 uppercase tracking-tighter">Your supervisor can review it next</p></div>
+            <div><p className="text-[11px] font-black uppercase tracking-wide mb-1">Submission sent</p><p className="text-[10px] font-bold text-blue-400 uppercase tracking-tighter">Your supervisor can review it next</p></div>
           </div>
         </div>
       )}
@@ -938,8 +940,8 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
                 { id: '4', label: 'Submit', description: 'Send to supervisor', icon: Megaphone },
                 {
                   id: 'ledger',
-                  label: 'Ledger history',
-                  description: 'Submissions & log',
+                  label: 'Submission History',
+                  description: 'Your submission log',
                   icon: History,
                   badge: ledgerEntryCount > 0 ? ledgerEntryCount : null,
                 },
@@ -979,7 +981,7 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
                   </div>
                 ))}
               </div>
-              <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg"><ShieldCheck className="w-3 h-3" /><p className="text-[9px] font-black uppercase tracking-wide">Signed in</p></div>
+              <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg"><ShieldCheck className="w-3 h-3" /><p className="text-[10px] font-black uppercase tracking-wide">Signed in</p></div>
             </div>
 
             <div className="flex-grow p-5 space-y-8 flex flex-col min-h-0">
@@ -991,7 +993,7 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
                         <FileText className={`w-6 h-6 ${selectedLog.status === 'validated' ? 'text-emerald-600' : selectedLog.status === 'rejected' ? 'text-red-600' : 'text-white'}`} />
                       </div>
                       <div className="min-w-0">
-                        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Sales Log Review</h2>
+                        <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">Sales Log Review</h2>
                         <p className="text-xs font-black text-slate-400 uppercase tracking-wide truncate">{selectedLog.id} • {new Date(selectedLog.timestamp).toLocaleString()}</p>
                       </div>
                     </div>
@@ -1082,7 +1084,7 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
                         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
                         <div className="relative z-[1] flex items-center justify-between">
                           <div>
-                            <h3 className="text-3xl font-black text-white uppercase tracking-tight mb-2">Final Assessment Grade</h3>
+                            <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Final Assessment Grade</h3>
                             <p className="text-emerald-400 text-sm font-bold uppercase tracking-wide">Official Performance Score</p>
                           </div>
                           <div className="text-right">
@@ -1129,8 +1131,8 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
                               <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
                                 {file.type?.includes('image') ? <FileImage className="w-4 h-4 text-blue-500 shrink-0" /> : <FileIcon className="w-4 h-4 text-slate-400 shrink-0" />}
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-[9px] font-black text-slate-900 truncate uppercase">{file.name}</p>
-                                  <p className="text-[8px] font-bold text-slate-400">{file.size}</p>
+                                  <p className="text-[10px] font-black text-slate-900 truncate uppercase">{file.name}</p>
+                                  <p className="text-[10px] font-bold text-slate-400">{file.size}</p>
                                 </div>
                               </div>
                               <button type="button" onClick={() => handleDownload(file)} className="p-2 shrink-0 opacity-0 group-hover/file:opacity-100 text-slate-400 hover:text-blue-600 transition-all">
@@ -1173,6 +1175,8 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
                     t.status === 'validated' && t.ratings?.finalScore != null ? t.ratings.finalScore : undefined
                   }
                   isGradingExpired={(t) => isPendingGradingConfigExpired(t, 'Sales', departmentWeights)}
+                  onDelete={onDeleteSubmission}
+                  onEdit={onEditSubmission}
                 />
               ) : (
                 <>
@@ -1239,7 +1243,7 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
                   <div className="space-y-8 animate-in slide-in-from-left-4 fade-in duration-500 pb-10">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-6">
                       <div>
-                        <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Review & Verification</h3>
+                        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Review & Verification</h3>
                         <p className="text-slate-400 text-sm font-medium mt-1">Please verify all inputs before proceeding to evidence submission.</p>
                       </div>
                       <div className="px-6 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-black uppercase tracking-wide border border-blue-100">
@@ -1362,10 +1366,8 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
                 <div className="space-y-8 animate-in slide-in-from-left-4 fade-in duration-500">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-black text-slate-400 uppercase tracking-wide ml-1">Project report *</label>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${formData.projectReport.length >= 20 ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'}`}>
-                        {formData.projectReport.length >= 20 ? 'OK' : 'Need 20+ characters'}
-                      </span>
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-wide ml-1">Project report</label>
+                      <span className="text-xs text-slate-500">{formData.projectReport.length} characters</span>
                     </div>
                     <textarea
                       placeholder="Summarize the primary metrics achieved, client interactions, or specific account progress..."
@@ -1413,7 +1415,7 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
                                   </div>
                                   <div className="overflow-hidden min-w-0">
                                     <p className="text-[10px] font-black text-slate-900 truncate uppercase">{file.name}</p>
-                                    <p className="text-[8px] font-bold text-slate-400">{file.size}</p>
+                                    <p className="text-[10px] font-bold text-slate-400">{file.size}</p>
                                   </div>
                                 </div>
                                 <button type="button" onClick={() => removeFile(idx)} className="p-2 text-slate-300 hover:text-red-500 transition-colors shrink-0">
@@ -1431,7 +1433,7 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
               {activeStep === 4 && (
                 <div className="flex flex-col items-center justify-center py-10 space-y-10 animate-in zoom-in-95 duration-500">
                   <div className="w-24 h-24 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm animate-pulse"><FileCheck className="w-12 h-12 text-white" /></div>
-                  <div className="text-center space-y-3"><h3 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Ready to Submit</h3><p className="text-slate-400 text-base font-medium">Review your details, then submit your KPI log for supervisor review.</p></div>
+                  <div className="text-center space-y-3"><h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Ready to Submit</h3><p className="text-slate-400 text-base font-medium">Review your details, then submit your KPI log for supervisor review.</p></div>
                   <div className="w-full max-sm bg-slate-50 border border-slate-100 p-5 rounded-xl space-y-4">
                     <div className="flex justify-between items-center text-xs font-black uppercase tracking-wide"><span className="text-slate-400">Submission status</span><span className="text-blue-500">{isTransmitting ? 'Sending…' : 'Ready to send'}</span></div>
                     <div className="flex justify-between items-center text-xs font-black uppercase tracking-wide"><span className="text-slate-400">Submitted by</span><span className="text-blue-600">{user.name}</span></div>

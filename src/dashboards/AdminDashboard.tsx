@@ -94,6 +94,9 @@ import {
 } from 'lucide-react';
 import { useAuthActions } from '../contexts/AuthActionsContext';
 import { useMobileSidenav } from '../contexts/MobileSidenavContext';
+import { ValidationTabs } from '../components/ValidationTabs';
+import { GradingWeightControl } from '../components/GradingWeightControl';
+import { AnnualSummaryPanel } from '../components/AnnualSummaryPanel';
 
 function getCriterionGradingSystemIdx(elements: unknown[], mode: 'textbox' | 'checkbox'): number {
   if (mode === 'checkbox') {
@@ -123,7 +126,7 @@ interface Props {
   onValidate: (id: string, overrides?: SystemStats, status?: 'validated' | 'rejected') => void;
 }
 
-const INITIAL_DEPARTMENTS = ['Technical', 'Sales', 'Marketing', 'Admin', 'Accounting'];
+const INITIAL_DEPARTMENTS = ['Technical', 'IT', 'Sales', 'Marketing', 'Accounting', 'Admin'];
 const DEFAULT_NODE_PASSKEY = "123";
 const ADMIN_PROVISION_KEY = "123";
 
@@ -245,7 +248,7 @@ function enforceCheckboxGradingFiniteMax(checkpoints: GradingCheckpoint[]): Grad
   });
 }
 
-type AdminTab = 'registry' | 'validation' | 'grading' | 'data' | 'performance';
+type AdminTab = 'registry' | 'validation' | 'grading' | 'data' | 'performance' | 'summary';
 
 const AdminDashboard: React.FC<Props> = ({
   user,
@@ -278,10 +281,11 @@ const AdminDashboard: React.FC<Props> = ({
       ariaLabel: 'Admin navigation',
       items: [
         { id: 'registry', label: 'Users', icon: Users },
-        { id: 'validation', label: 'Grade Approval', icon: ShieldCheck },
-        { id: 'grading', label: 'Grading Setup', icon: Scale },
+        { id: 'validation', label: 'Approve Grades', icon: ShieldCheck },
+        { id: 'grading', label: 'Scoring Rules', icon: Scale },
         { id: 'performance', label: 'Performance', icon: Trophy },
-        { id: 'data', label: 'Data Tools', icon: Database },
+        { id: 'data', label: 'Data & Backup', icon: Database },
+        { id: 'summary', label: 'Year-End Summary', icon: CalendarCheck },
       ],
       activeId: activeTab,
       onSelect: (id) => setActiveTab(id as AdminTab),
@@ -544,7 +548,7 @@ const AdminDashboard: React.FC<Props> = ({
     // Execute purge once countdown finishes
     onClearEmployeeAudits();
     onAddAuditEntry('DATA_PURGE', 'Admin purged employee audit submissions (pending + history)', 'WARN', user.name);
-    triggerToast('Data purge', 'Employee audits cleared from memory.');
+    triggerToast('Records cleared', 'All employee audit records have been removed.');
     setDataDeleteCountdownOpen(false);
     setDataPurgePwd('');
     setDataPurgeErr(null);
@@ -855,26 +859,6 @@ const AdminDashboard: React.FC<Props> = ({
       'Attendance': [{ label: 'Attendance & discipline', maxPoints: 100 }],
       'Additional Responsibility': [{ label: 'Additional responsibilities', maxPoints: 100 }],
     },
-    Marketing: {
-      'Accounting Excellence': [
-        { label: 'Financial accuracy', maxPoints: 35 },
-        { label: 'Timeliness & reporting', maxPoints: 30 },
-        { label: 'AR management', maxPoints: 25 },
-        { label: 'Reconciliation & close', maxPoints: 10 },
-      ],
-      'Purchasing Excellence': [
-        { label: 'Cost savings', maxPoints: 40 },
-        { label: 'Vendor management', maxPoints: 35 },
-        { label: 'PO speed & accuracy', maxPoints: 25 },
-      ],
-      'Administrative Excellence': [
-        { label: 'Task completion & SLA', maxPoints: 35 },
-        { label: 'Accuracy & quality', maxPoints: 35 },
-        { label: 'Internal satisfaction', maxPoints: 30 },
-      ],
-      'Additional Responsibilities': [{ label: 'Special projects & flexibility', maxPoints: 100 }],
-      'Attendance & Discipline': [{ label: 'Reliability and compliance', maxPoints: 100 }],
-    },
     Accounting: {
       'Accounting Excellence': [
         { label: 'Financial reports submitted accurately and on time', maxPoints: 17 },
@@ -902,6 +886,58 @@ const AdminDashboard: React.FC<Props> = ({
       ],
       'Additional Responsibility': [{ label: 'Special projects and flexibility', maxPoints: 100 }],
       'Attendance': [{ label: 'Attendance and discipline', maxPoints: 100 }],
+    },
+    IT: {
+      'System Reliability & Uptime': [
+        { label: 'Network and server uptime maintained above SLA', maxPoints: 35 },
+        { label: 'Incident response time within agreed thresholds', maxPoints: 30 },
+        { label: 'Zero critical system outages caused by negligence', maxPoints: 20 },
+        { label: 'Preventive maintenance tasks completed on schedule', maxPoints: 15 },
+      ],
+      'Technical Support Quality': [
+        { label: 'Help desk tickets resolved within SLA', maxPoints: 40 },
+        { label: 'First-contact resolution rate', maxPoints: 30 },
+        { label: 'User satisfaction score on support cases', maxPoints: 30 },
+      ],
+      'Security & Compliance': [
+        { label: 'Security policies and patch management followed', maxPoints: 40 },
+        { label: 'Zero security incidents attributable to user', maxPoints: 35 },
+        { label: 'Data backup and recovery procedures executed correctly', maxPoints: 25 },
+      ],
+      'Project & Development Delivery': [
+        { label: 'IT projects delivered on time and within scope', maxPoints: 40 },
+        { label: 'Code quality and documentation standards met', maxPoints: 35 },
+        { label: 'Effective cross-department IT coordination', maxPoints: 25 },
+      ],
+      'Administrative Excellence': [
+        { label: 'IT reports and documentation submitted on time', maxPoints: 60 },
+        { label: 'Asset inventory and records accuracy', maxPoints: 40 },
+      ],
+      'Attendance & Discipline': [
+        { label: 'Absence', maxPoints: 50 },
+        { label: 'Punctuality', maxPoints: 30 },
+        { label: 'Unpreparedness', maxPoints: 20 },
+      ],
+    },
+    Marketing: {
+      'Campaign Execution & Quality': [
+        { label: 'Marketing campaigns launched on time and on budget', maxPoints: 35 },
+        { label: 'Content quality and brand consistency', maxPoints: 30 },
+        { label: 'Campaign performance vs. target metrics', maxPoints: 20 },
+        { label: 'Accuracy of marketing materials', maxPoints: 15 },
+      ],
+      'Lead Generation & Sales Support': [
+        { label: 'Qualified leads generated vs. target', maxPoints: 40 },
+        { label: 'Sales enablement materials delivered', maxPoints: 35 },
+        { label: 'Marketing-to-sales handoff effectiveness', maxPoints: 25 },
+      ],
+      'Digital & Social Media Performance': [
+        { label: 'Social media engagement and growth', maxPoints: 35 },
+        { label: 'Digital ad performance and ROI', maxPoints: 35 },
+        { label: 'Website traffic and conversion contribution', maxPoints: 30 },
+      ],
+      'Additional Responsibilities': [{ label: 'Special projects and flexibility', maxPoints: 100 }],
+      'Attendance & Discipline': [{ label: 'Reliability and compliance', maxPoints: 100 }],
     },
   };
 
@@ -962,8 +998,9 @@ const AdminDashboard: React.FC<Props> = ({
   const DEFAULT_CATEGORY_ICONS: Record<string, string[]> = {
     Technical: ['Wrench', 'Handshake', 'Users2', 'TrendingUp', 'FileStack', 'ShieldCheck'],
     Sales: ['DollarSign', 'Target', 'Activity', 'FileText', 'CalendarCheck', 'Handshake'],
-    Marketing: ['Calculator', 'Activity', 'FileStack', 'Handshake', 'CalendarCheck'],
+    Marketing: ['TrendingUp', 'Handshake', 'Activity', 'FileStack', 'CalendarCheck'],
     Accounting: ['Calculator', 'FileText', 'FileStack', 'Handshake', 'CalendarCheck'],
+    IT: ['Cpu', 'ShieldCheck', 'ShieldCheck', 'FileStack', 'FileText', 'CalendarCheck'],
   };
 
   const [gradingEditDraft, setGradingEditDraft] = useState<CategoryWeightItem[] | null>(null);
@@ -995,6 +1032,13 @@ const AdminDashboard: React.FC<Props> = ({
       { label: 'Team Leadership & Accountability', weightPct: 15 },
       { label: 'Sales Support & Lead Development', weightPct: 10 },
       { label: 'Administrative Excellence', weightPct: 5 },
+      { label: 'Attendance & Discipline', weightPct: 5 },
+    ],
+    IT: [
+      { label: 'System Uptime & Reliability', weightPct: 35 },
+      { label: 'Incident Response & Resolution', weightPct: 25 },
+      { label: 'Security & Compliance', weightPct: 20 },
+      { label: 'Infrastructure & Project Delivery', weightPct: 15 },
       { label: 'Attendance & Discipline', weightPct: 5 },
     ],
     Sales: [
@@ -1292,7 +1336,7 @@ const AdminDashboard: React.FC<Props> = ({
     saveIncentiveTiersToStorage(incentiveTiers);
     window.dispatchEvent(new Event(INCENTIVE_Tiers_UPDATED_EVENT));
     onAddAuditEntry('ADMIN_CONFIG', 'Incentive eligibility matrix modified and committed to core', 'OK');
-    triggerToast('Protocol Committed', 'Global incentive standards have been synchronized.');
+    triggerToast('Saved', 'Incentive settings have been saved successfully.');
   };
 
   const handleSaveGradingAsStandard = () => {
@@ -1831,7 +1875,7 @@ const AdminDashboard: React.FC<Props> = ({
     }
 
     if (registry.some((u: any) => u.name.toLowerCase() === name.toLowerCase())) {
-      triggerToast('Provision Refused', 'Identity already exists in network.');
+      triggerToast('Already Exists', 'A user with this name already exists.');
       return;
     }
 
@@ -2164,6 +2208,123 @@ const AdminDashboard: React.FC<Props> = ({
             );
           })()}
         </div>
+
+        {/* Per-Employee Individual Performance Charts */}
+        <div>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
+              <Activity className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">Individual Performance</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Score breakdown per employee — all time</p>
+            </div>
+          </div>
+
+          {(() => {
+            // Group all validated submissions by employee
+            const byEmployee: Record<string, { name: string; dept: string; scores: number[]; latestScore: number }> = {};
+            validated.forEach(t => {
+              const score = t.ratings?.finalScore;
+              if (score == null) return;
+              if (!byEmployee[t.userName]) {
+                byEmployee[t.userName] = {
+                  name: t.userName,
+                  dept: t.department || '—',
+                  scores: [],
+                  latestScore: 0,
+                };
+              }
+              byEmployee[t.userName].scores.push(score);
+            });
+            // Compute latest score and sort
+            Object.values(byEmployee).forEach(emp => {
+              emp.latestScore = emp.scores[emp.scores.length - 1] ?? 0;
+            });
+            const employees = Object.values(byEmployee).sort((a, b) => b.latestScore - a.latestScore);
+
+            if (employees.length === 0) return (
+              <div className="bg-white border border-slate-100 rounded-3xl p-8 text-center shadow-sm">
+                <Activity className="w-12 h-12 text-slate-200 mx-auto mb-3" />
+                <p className="text-sm font-bold text-slate-400">No employee scores yet</p>
+                <p className="text-xs text-slate-300 mt-1">Charts will appear once submissions are validated</p>
+              </div>
+            );
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {employees.map(emp => {
+                  const avg = emp.scores.length > 0
+                    ? Math.round(emp.scores.reduce((a, b) => a + b, 0) / emp.scores.length)
+                    : 0;
+                  const best = Math.max(...emp.scores);
+                  const worst = Math.min(...emp.scores);
+                  const barColor = emp.latestScore >= 90 ? 'bg-emerald-500' : emp.latestScore >= 75 ? 'bg-blue-500' : emp.latestScore >= 60 ? 'bg-amber-500' : 'bg-red-400';
+                  const textColor = emp.latestScore >= 90 ? 'text-emerald-600' : emp.latestScore >= 75 ? 'text-blue-600' : emp.latestScore >= 60 ? 'text-amber-600' : 'text-red-500';
+
+                  return (
+                    <div key={emp.name} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <p className="text-sm font-black text-slate-900">{emp.name}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">{emp.dept} · {emp.scores.length} submission{emp.scores.length !== 1 ? 's' : ''}</p>
+                        </div>
+                        <span className={`text-xl font-black tabular-nums ${textColor}`}>{emp.latestScore}%</span>
+                      </div>
+
+                      {/* Progress bar for latest score */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Latest score</span>
+                        </div>
+                        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${barColor}`}
+                            style={{ width: `${Math.min(emp.latestScore, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Mini score history bars */}
+                      {emp.scores.length > 1 && (
+                        <div className="mb-3">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Submission history</span>
+                          <div className="flex items-end gap-1 mt-1.5 h-10">
+                            {emp.scores.slice(-10).map((s, i) => (
+                              <div
+                                key={i}
+                                className={`flex-1 rounded-sm ${barColor} opacity-80`}
+                                style={{ height: `${Math.max(10, s)}%` }}
+                                title={`${s}%`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Stats row */}
+                      <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-50">
+                        <div className="text-center">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Average</p>
+                          <p className="text-sm font-black text-slate-700 tabular-nums">{avg}%</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Best</p>
+                          <p className="text-sm font-black text-emerald-600 tabular-nums">{best}%</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Lowest</p>
+                          <p className="text-sm font-black text-slate-400 tabular-nums">{worst}%</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
       </div>
     );
   };
@@ -2201,7 +2362,7 @@ const AdminDashboard: React.FC<Props> = ({
                 <Database className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">Administrative Dataset</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">Submission Records</p>
                 <h2 className="text-xl font-black text-[#1e293b] uppercase tracking-tight leading-none">ADMIN DATA CONTROL</h2>
                 <p className="mt-1 text-[10px] font-bold text-slate-400 uppercase tracking-wide">Exports and data distribution controls.</p>
               </div>
@@ -2281,7 +2442,7 @@ const AdminDashboard: React.FC<Props> = ({
     window.dispatchEvent(new Event(INCENTIVE_Tiers_UPDATED_EVENT));
     setIncentiveTiers(DEFAULT_INCENTIVE_TIERS);
     onAddAuditEntry('ADMIN_CONFIG', 'Grading coefficients and Matrix reset to defaults', 'INFO');
-    triggerToast('Protocol Reset', 'Global grading standards restored.');
+    triggerToast('Reset Complete', 'Scoring standards have been restored to default.');
   };
 
   const renderRegistry = () => {
@@ -2493,7 +2654,7 @@ const AdminDashboard: React.FC<Props> = ({
                 {activeDept} department
               </h3>
                 <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wide mt-1">
-                {activeNodes} active · {inactiveNodes} disabled
+                {activeNodes} active · {inactiveNodes} inactive
               </p>
             </div>
           </div>
@@ -3004,6 +3165,16 @@ const AdminDashboard: React.FC<Props> = ({
 
     return (
       <div className="bg-transparent rounded-none p-0 shadow-none border-0 animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col space-y-6">
+        {/* Validation Tabs Summary */}
+        <ValidationTabs
+          pendingTransmissions={pendingTransmissions}
+          validatedTransmissions={transmissionHistory.filter(tx => tx.status === 'validated')}
+          rejectedTransmissions={transmissionHistory.filter(tx => tx.status === 'rejected')}
+          registry={registry}
+          activeTab={activeDept}
+          onTabChange={setActiveDept}
+        />
+
         <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4 min-w-0">
@@ -3020,25 +3191,11 @@ const AdminDashboard: React.FC<Props> = ({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={activeDept}
-                onChange={(e) => setActiveDept(e.target.value)}
-                className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-[10px] font-black text-slate-700 outline-none"
-              >
-                {availableDepts
-                  .filter((d) => d !== 'Admin')
-                  .map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-              </select>
-
               <input
                 type="text"
                 value={validationSearch}
                 onChange={(e) => setValidationSearch(e.target.value)}
-                placeholder="SEARCH user / TX ID..."
+                placeholder="Search by name or submission ID..."
                 className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-[10px] font-black text-slate-800 outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-300"
               />
             </div>
@@ -3085,7 +3242,7 @@ const AdminDashboard: React.FC<Props> = ({
                           <div className="min-w-0">
                             <p className="text-sm font-black text-[#1e293b] truncate">{t.userName}</p>
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide">
-                              TX ID: {t.id} • {t.jobType || '—'}
+                              Submission ID: {t.id} • {t.jobType || '—'}
                             </p>
                           </div>
                         </div>
@@ -3105,7 +3262,7 @@ const AdminDashboard: React.FC<Props> = ({
                           type="button"
                           onClick={() => {
                             onValidate(t.id, undefined, 'validated');
-                            triggerToast('Approved', `TX ${t.id} finalized and approved by admin.`);
+                            triggerToast('Approved', `Submission finalized and approved.`);
                           }}
                           className="px-4 py-3 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-emerald-700 transition-colors"
                         >
@@ -3115,7 +3272,7 @@ const AdminDashboard: React.FC<Props> = ({
                           type="button"
                           onClick={() => {
                             onValidate(t.id, undefined, 'rejected');
-                            triggerToast('Changes Requested', `TX ${t.id} finalized — needs changes.`);
+                            triggerToast('Changes Requested', `Submission returned for revision.`);
                           }}
                           className="px-4 py-3 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-red-700 transition-colors"
                         >
@@ -3150,15 +3307,8 @@ const AdminDashboard: React.FC<Props> = ({
                 <h3 className="text-xl font-black text-[#1e293b] uppercase tracking-tight leading-none">
                   Grading systems
                 </h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-1">Department coefficients & incentive matrix</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-1">Set department score weights and bonus thresholds</p>
               </div>
-            </div>
-            <div className="w-full sm:w-[22rem] shrink-0 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">Access</p>
-              <p className="mt-1 text-sm font-black text-slate-900 uppercase tracking-tight">Maintenance mode removed</p>
-              <p className="mt-1 text-[10px] font-bold text-slate-500 uppercase tracking-wide leading-relaxed">
-                Employees and supervisors are always allowed to sign in.
-              </p>
             </div>
           </div>
         </div>
@@ -3167,7 +3317,7 @@ const AdminDashboard: React.FC<Props> = ({
         <div className="space-y-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1">
             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wide shrink-0">
-              Department grading breakdown
+              Score weights by department
             </h4>
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -3255,7 +3405,7 @@ const AdminDashboard: React.FC<Props> = ({
                 <TrendingUp className="w-5 h-5 text-blue-600" />
             </div>
                   <div>
-                <h4 className="text-sm font-black text-[#1e293b] uppercase tracking-wide">Incentive eligibility matrix</h4>
+                <h4 className="text-sm font-black text-[#1e293b] uppercase tracking-wide">Bonus eligibility thresholds</h4>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Applies to all departments & employees</p>
                   </div>
                 </div>
@@ -3264,7 +3414,7 @@ const AdminDashboard: React.FC<Props> = ({
               className="flex items-center gap-2 px-5 py-3 rounded-lg text-[10px] font-black uppercase tracking-wide bg-emerald-600 text-white hover:bg-emerald-500 shadow-md transition-all active:scale-[0.98]"
             >
               <Save className="w-4 h-4" />
-              Grading standards
+              Save Changes
             </button>
           </div>
           <div className="space-y-4">
@@ -3513,7 +3663,7 @@ const AdminDashboard: React.FC<Props> = ({
                   <ShieldCheck className="w-5 h-5" />
             </div>
               <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Enable End-of-Year Auto Purge</h3>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Enable Year-End Auto Clear</h3>
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mt-1">
                     Requires ZIP backup + admin password confirmation
                 </p>
@@ -3549,11 +3699,11 @@ const AdminDashboard: React.FC<Props> = ({
                   onClick={() => {
                     setDataAutoPurgeEnabled(true);
                     setDataAutoPurgeConfirmOpen(false);
-                    triggerToast('Auto purge enabled', 'End-of-year auto purge is now scheduled.');
+                    triggerToast('Auto clear enabled', 'Year-end automatic data clear is now scheduled.');
                   }}
                   className="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
                 >
-                  Enable auto purge
+                  Enable Auto Clear
                 </button>
               </div>
             </div>
@@ -3607,7 +3757,7 @@ const AdminDashboard: React.FC<Props> = ({
                         ? 'bg-slate-100 text-slate-400 border border-slate-200'
                         : dataBackupDone
                           ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                          : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20'
+                          : 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10'
                     }`}
                   >
                     <Download className="w-4 h-4" />
@@ -5210,24 +5360,27 @@ const AdminDashboard: React.FC<Props> = ({
                             />
                             <div className="flex items-center justify-end gap-2 min-h-[20px] min-w-0 px-2 py-1">
                               <span className="text-[10px] font-black text-slate-500 uppercase tracking-wide shrink-0">Weighted impact</span>
-                              <input type="range" min={0} max={100} value={cat.weightPct} onChange={(e) => handleUpdateDepartmentWeight(dept, idx, parseInt(e.target.value, 10))} style={{ ['--value']: `${cat.weightPct}%` } as React.CSSProperties} className="range-gradient w-48 max-w-[12rem] shrink-0" />
-                              <div className="relative shrink-0">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  min={0}
-                                  max={100}
-                                  value={gradingWeightRaw[idx] !== undefined ? gradingWeightRaw[idx] : String(cat.weightPct)}
-                                  onChange={(e) => {
-                                    const raw = e.target.value.replace(/[^0-9]/g, '');
-                                    setGradingWeightRaw(prev => ({ ...prev, [idx]: raw }));
-                                    handleUpdateDepartmentWeight(dept, idx, raw === '' ? 0 : Math.min(100, parseInt(raw, 10) || 0));
-                                  }}
-                                  onBlur={() => setGradingWeightRaw(prev => { const next = { ...prev }; delete next[idx]; return next; })}
-                                  className={`w-24 bg-white border border-slate-200 rounded-lg pl-2 pr-6 py-1.5 text-right text-sm font-black tabular-nums outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-sm ${weightClases}`}
-                                />
-                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 pointer-events-none">%</span>
-                              </div>
+                              <select
+                                value={cat.weightPct}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value, 10);
+                                  const otherTotal = totalWeight - cat.weightPct;
+                                  if (otherTotal + val <= 100) {
+                                    handleUpdateDepartmentWeight(dept, idx, val);
+                                  }
+                                }}
+                                className={`w-28 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-black tabular-nums outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-sm ${weightClases}`}
+                              >
+                                {[5,10,15,20,25,30,35,40,45,50].map(w => {
+                                  const otherTotal = totalWeight - cat.weightPct;
+                                  const wouldExceed = otherTotal + w > 100;
+                                  return (
+                                    <option key={w} value={w} disabled={wouldExceed && w !== cat.weightPct}>
+                                      {w}%{wouldExceed && w !== cat.weightPct ? ' (over 100%)' : ''}
+                                    </option>
+                                  );
+                                })}
+                              </select>
                             </div>
                             <div className="flex items-center justify-end gap-2 shrink-0">
                               <button
@@ -5436,11 +5589,12 @@ const AdminDashboard: React.FC<Props> = ({
                 className={`flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto pr-1 ${adminNavCollapsed ? 'items-center' : ''}`}
               >
                 {[
-                  { id: 'registry', label: 'Registry', icon: Users },
-                  { id: 'validation', label: 'Grade Validation', icon: ShieldCheck },
-                  { id: 'grading', label: 'Grading', icon: Scale },
+                  { id: 'registry', label: 'Users', icon: Users },
+                  { id: 'validation', label: 'Approve Grades', icon: ShieldCheck },
+                  { id: 'grading', label: 'Scoring Rules', icon: Scale },
                   { id: 'performance', label: 'Performance', icon: Trophy },
-                  { id: 'data', label: 'Admin Data Control', icon: Database },
+                  { id: 'data', label: 'Data & Backup', icon: Database },
+                  { id: 'summary', label: 'Year-End Summary', icon: CalendarCheck },
                 ].map((item) => {
                   const Icon = item.icon;
                   const active = activeTab === item.id;
@@ -5449,38 +5603,40 @@ const AdminDashboard: React.FC<Props> = ({
                       key={item.id}
                       type="button"
                       onClick={() => setActiveTab(item.id as AdminTab)}
-                      className={`group relative w-full flex items-center gap-3 rounded-lg px-3 py-3 text-left border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
+                      className={`group relative w-full flex items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
                         adminNavCollapsed ? 'justify-center' : ''
                       } ${
                         active
-                          ? 'bg-blue-50 border-blue-200 text-blue-800 shadow-sm'
-                          : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                          ? 'bg-blue-900 text-white shadow-lg'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                       }`}
                       title={adminNavCollapsed ? item.label : undefined}
                       aria-current={active ? 'page' : undefined}
                     >
                       <span
                         className={`flex h-10 w-10 items-center justify-center rounded-lg border shadow-sm transition-colors ${
-                          active ? 'border-blue-200 bg-white' : 'border-slate-200 bg-white group-hover:bg-slate-50'
+                          active ? 'border-white/15 bg-white/10' : 'border-slate-200 bg-white group-hover:bg-slate-50'
                         }`}
                       >
-                        <Icon className={`h-5 w-5 ${active ? 'text-blue-600' : 'text-slate-700'}`} aria-hidden />
+                        <Icon className={`h-5 w-5 ${active ? 'text-white' : 'text-slate-700'}`} aria-hidden />
                       </span>
                       {!adminNavCollapsed && (
                         <span className="min-w-0">
-                          <span className={`block text-[11px] font-black uppercase tracking-wide truncate ${active ? 'text-blue-800' : 'text-slate-800'}`}>
+                          <span className={`block text-[11px] font-black uppercase tracking-wide truncate ${active ? 'text-white' : 'text-slate-800'}`}>
                             {item.label}
                           </span>
-                          <span className={`block text-[9px] font-bold uppercase tracking-wide mt-0.5 ${active ? 'text-blue-600' : 'text-slate-400'}`}>
+                          <span className={`block text-[9px] font-bold uppercase tracking-wide mt-0.5 ${active ? 'text-white/70' : 'text-slate-400'}`}>
                             {item.id === 'registry'
-                              ? 'Nodes & routing'
+                              ? 'Manage users & departments'
                               : item.id === 'validation'
-                              ? 'Approve supervisor recommendations'
+                              ? 'Review & approve submitted grades'
                                 : item.id === 'grading'
-                                  ? 'Weights & criteria'
+                                  ? 'Set scoring weights & criteria'
                                   : item.id === 'performance'
-                                    ? 'Leaderboard & trends'
-                                    : 'Exports & purge'}
+                                    ? 'Employee scores & rankings'
+                                    : item.id === 'summary'
+                                      ? 'Annual scores by quarter'
+                                      : 'Export data & clear records'}
                           </span>
                         </span>
                       )}
@@ -5513,7 +5669,7 @@ const AdminDashboard: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={logout}
-                  className={`w-full flex items-center gap-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 group ${
+                  className={`w-full flex items-center gap-3 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 active:scale-95 group ${
                     adminNavCollapsed ? 'justify-center px-3 py-3' : 'justify-center px-5 py-2.5'
                   }`}
                   aria-label="Sign out"
@@ -5528,13 +5684,18 @@ const AdminDashboard: React.FC<Props> = ({
             </div>
           </aside>
 
-          <div className={`${adminNavCollapsed ? 'pl-[92px]' : 'pl-[272px]'} min-h-0`}>
+          <div className={`${adminNavCollapsed ? 'pl-[104px] pr-6' : 'pl-[288px] pr-6'} min-h-0`}>
             <section className="min-w-0 min-h-0">
               {activeTab === 'registry' && renderRegistry()}
               {activeTab === 'validation' && renderValidation()}
               {activeTab === 'grading' && renderGrading()}
               {activeTab === 'performance' && renderPerformance()}
               {activeTab === 'data' && renderData()}
+              {activeTab === 'summary' && (
+                <AnnualSummaryPanel
+                  transmissions={[...pendingTransmissions, ...transmissionHistory]}
+                />
+              )}
             </section>
           </div>
         </div>
@@ -5546,6 +5707,11 @@ const AdminDashboard: React.FC<Props> = ({
           {activeTab === 'grading' && renderGrading()}
           {activeTab === 'performance' && renderPerformance()}
           {activeTab === 'data' && renderData()}
+          {activeTab === 'summary' && (
+            <AnnualSummaryPanel
+              transmissions={[...pendingTransmissions, ...transmissionHistory]}
+            />
+          )}
         </div>
       </div>
     </div>

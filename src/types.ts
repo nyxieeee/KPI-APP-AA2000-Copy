@@ -112,6 +112,8 @@ export interface SystemNotification {
   message: string;
   timestamp: string;
   type: 'INFO' | 'SUCCESS' | 'ALERT';
+  linkedTransmissionId?: string;
+  linkedDepartment?: string;
 }
 
 export interface Announcement {

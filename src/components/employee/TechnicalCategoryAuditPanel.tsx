@@ -279,9 +279,9 @@ function YieldBlockAdminStyle({
         role="tooltip"
         onMouseDown={(e) => e.preventDefault()}
       >
-        <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-slate-400">{title}</p>
+        <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">{title}</p>
         {mode === 'checkboxCount' && checkboxN != null && checkboxN > 0 ? (
-          <p className="mb-2 text-[9px] font-semibold leading-snug text-slate-500">
+          <p className="mb-2 text-[10px] font-semibold leading-snug text-slate-500">
             Min / Max = number of checkboxes selected (this panel has {checkboxN}).
           </p>
         ) : null}
@@ -298,7 +298,7 @@ function YieldBlockAdminStyle({
           <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
             {basicCheckpointSections.map((sec, si) => (
               <div key={si}>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">{sec.label}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{sec.label}</p>
                 {sec.checkpoints.length > 0 ? (
                   <ul className="space-y-1">
                     {sec.checkpoints.map((c, i) => (
@@ -531,7 +531,7 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
                     <div className={AUDIT_PANEL_TEXTBOX_LABEL_CLASS}>{String(el?.title ?? 'Value')}</div>
                     {tbCheckpoints.length > 0 ? (
                       <div className="shrink-0 text-right">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Yield</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Yield</p>
                         <p className="text-[11px] font-black tabular-nums text-blue-600">
                           {formatYieldNumber(
                             Number.isFinite(n)
@@ -673,7 +673,7 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
         <div className="relative z-10">
           <h4 className="mb-1 text-base font-black uppercase tracking-widest text-slate-400">{category.label} — Aggregate</h4>
           <div className="flex items-baseline gap-2">
-            <p className="text-5xl font-black tabular-nums tracking-tighter text-blue-400">
+            <p className="text-2xl font-black tabular-nums tracking-tighter text-blue-400">
               {formatYieldNumber(aggregatePts)}
             </p>
             <p className="text-sm font-black text-slate-500">PTS</p>
