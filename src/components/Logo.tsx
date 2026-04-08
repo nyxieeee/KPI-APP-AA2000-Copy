@@ -29,7 +29,7 @@ const Logo: React.FC<LogoProps> = ({ className = "", size = "md", showText = tru
   }
 
   const textEl = (
-    <div className={`font-black tracking-tighter italic text-blue-900 ${sizes[size].text}`}>
+    <div className={`font-black tracking-tighter italic text-blue-900 dark:text-blue-300 ${sizes[size].text}`}>
       AA<span className="text-blue-600">2000</span>
     </div>
   );

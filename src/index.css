@@ -4,6 +4,27 @@ html, body, #root {
   min-height: 100vh;
   width: 100%;
 }
+
+/* Dark mode base — matches the screenshot's deep navy palette */
+html.dark body {
+  background: #0f172a !important;
+  color: #e2e8f0;
+}
+html.dark #root {
+  background: #0f172a;
+}
+
+/* Dark scrollbars */
+html.dark * {
+  scrollbar-color: #334155 transparent;
+}
+html.dark *::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+html.dark *::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
 #root {
   display: flex;
   flex-direction: column;
@@ -312,4 +333,47 @@ body.settings-open aside[aria-label="Admin sidenav"] {
 }
 .grading-slider:disabled::-webkit-slider-thumb {
   cursor: default;
+}
+
+/* Dark mode CSS variables for SVG rings and other non-Tailwind elements */
+:root {
+  --ring-track: rgb(226 232 240);       /* slate-200 */
+  --ring-track-inner: rgb(241 245 249); /* slate-100 */
+  --card-bg: rgb(255 255 255);
+  --score-text: #0f172a;
+  --shadow-glow: rgba(255,255,255,0.1);
+}
+html.dark {
+  --ring-track: rgb(51 65 85);          /* slate-700 */
+  --ring-track-inner: rgb(30 41 59);    /* slate-800 */
+  --card-bg: rgb(30 41 59);
+  --score-text: #f1f5f9;
+  --shadow-glow: rgba(0,0,0,0);
+}
+
+/* Kill white shadow glow in dark mode */
+html.dark .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4), 0 8px 10px -6px rgba(0,0,0,0.4); }
+html.dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.4); }
+html.dark .shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3); }
+html.dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.3); }
+html.dark .shadow-inner { box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.4); }
+
+/* Deeper dark palette for outer containers and section wrappers */
+html.dark .bg-slate-50 { background-color: #0f172a !important; }
+html.dark .bg-slate-100 { background-color: #0f172a !important; }
+
+/* Page-level scroll area */
+html.dark .overflow-y-auto.overscroll-contain { background-color: #0b1222; }
+
+/* Force numeric/text inputs to dark background in dark mode — CDN Tailwind arbitrary
+   dark: bg values don't always win over bg-white specificity */
+html.dark input[type="text"],
+html.dark input[type="number"],
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]) {
+  background-color: #0b1222 !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+html.dark input::placeholder {
+  color: #475569 !important;
 }

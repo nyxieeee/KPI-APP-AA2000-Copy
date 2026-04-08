@@ -53,8 +53,8 @@ function RegistryRecordList({
     <div
       className={
         d
-          ? 'w-full h-full min-h-0 rounded-[2rem] border border-white/10 bg-white/5 p-5 md:p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.03)] max-h-[calc(90vh-220px)] overflow-hidden flex flex-col'
-          : 'w-full flex-1 min-h-[420px] max-h-[min(70vh,720px)] rounded-[2rem] border border-slate-200 bg-slate-50/60 p-5 md:p-6 overflow-hidden flex flex-col'
+          ? 'w-full h-full min-h-0 rounded-[2rem] border border-white/10 bg-transparent p-5 md:p-6 max-h-[calc(90vh-220px)] overflow-hidden flex flex-col'
+          : 'w-full flex-1 min-h-[420px] max-h-[min(70vh,720px)] rounded-[2rem] border border-slate-200 dark:border-slate-700/50 bg-slate-50/60 dark:bg-transparent p-5 md:p-6 overflow-hidden flex flex-col'
       }
     >
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar pr-2">
@@ -63,11 +63,11 @@ function RegistryRecordList({
             className={
               d
                 ? 'text-center py-20 opacity-40 border-2 border-dashed border-white/10 rounded-3xl'
-                : 'text-center py-16 border-2 border-dashed border-slate-200 rounded-3xl bg-white/70'
+                : 'text-center py-16 border-2 border-dashed border-slate-200 dark:border-slate-700/60 rounded-3xl dark:bg-transparent'
             }
           >
             <p
-              className={`text-xs font-black uppercase tracking-widest ${d ? 'text-slate-300' : 'text-slate-500'}`}
+              className={`text-xs font-black uppercase tracking-widest ${d ? 'text-slate-300' : 'text-slate-500 dark:text-slate-400'}`}
             >
               {emptyText}
             </p>
@@ -80,8 +80,8 @@ function RegistryRecordList({
                 onClick={() => onSelect(t)}
                 className={
                   d
-                    ? 'bg-white/5 border border-white/10 rounded-[2rem] p-6 space-y-4 hover:bg-white/10 transition-all cursor-pointer group/item'
-                    : 'bg-white border border-slate-200 rounded-[2rem] p-6 space-y-4 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer group/item shadow-sm'
+                    ? 'bg-white dark:bg-slate-800/5 border border-white/10 rounded-[2rem] p-6 space-y-4 hover:bg-white dark:hover:bg-slate-800/10 transition-all cursor-pointer group/item'
+                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-[2rem] p-6 space-y-4 hover:border-blue-200 dark:hover:border-blue-700 hover:shadow-md transition-all cursor-pointer group/item shadow-sm'
                 }
                 role="button"
                 tabIndex={0}
@@ -101,7 +101,7 @@ function RegistryRecordList({
                     >
                       {t.id}
                     </p>
-                    <p className={`text-[10px] font-bold uppercase ${d ? 'text-slate-500' : 'text-slate-400'}`}>
+                    <p className={`text-[10px] font-bold uppercase ${d ? 'text-slate-400' : 'text-slate-400 dark:text-slate-300'}`}>
                       {new Date(t.timestamp).toLocaleString()}
                     </p>
                   </div>
@@ -114,15 +114,15 @@ function RegistryRecordList({
                             : 'bg-rose-50 text-rose-700 border border-rose-200'
                           : t.status === 'validated'
                             ? d
-                              ? 'bg-emerald-50/20 text-emerald-400 border border-emerald-500/20'
-                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-400 border border-emerald-500/20'
+                              : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 border border-emerald-200'
                             : t.supervisorRecommendation
                               ? d
                                 ? 'bg-orange-500/20 text-orange-400 border border-orange-500/20'
                                 : 'bg-orange-50 text-orange-700 border border-orange-200'
                               : d
                                 ? 'bg-blue-500/20 text-blue-400 border border-blue-500/20'
-                                : 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 border border-blue-200 dark:border-blue-700'
                       }`}
                     >
                       {getSubmissionStatusLabel(t)}
@@ -137,11 +137,11 @@ function RegistryRecordList({
                   {showScores ? (
                     <div className="flex flex-wrap items-baseline gap-x-8 gap-y-2 pt-1">
                       <div className="flex flex-col gap-0.5">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${d ? 'text-slate-500' : 'text-slate-500'}`}>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${d ? 'text-slate-400' : 'text-slate-500 dark:text-slate-300'}`}>
                           Initial score
                         </span>
                         <span
-                          className={`text-base font-black tabular-nums leading-none ${d ? 'text-slate-200' : 'text-slate-900'}`}
+                          className={`text-base font-black tabular-nums leading-none ${d ? 'text-slate-200' : 'text-slate-900 dark:text-slate-100'}`}
                         >
                           {getInitialScore != null
                             ? (() => {
@@ -152,7 +152,7 @@ function RegistryRecordList({
                         </span>
                       </div>
                       <div className="flex flex-col gap-0.5">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${d ? 'text-slate-500' : 'text-slate-500'}`}>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${d ? 'text-slate-400' : 'text-slate-500 dark:text-slate-300'}`}>
                           Validated score
                         </span>
                         <span className={`text-base font-black tabular-nums leading-none ${d ? 'text-blue-400' : 'text-blue-600'}`}>
@@ -167,10 +167,10 @@ function RegistryRecordList({
                     </div>
                   ) : (
                     <>
-                      <p className={`text-[11px] font-black uppercase truncate ${d ? 'text-slate-300' : 'text-slate-800'}`}>
+                      <p className={`text-[11px] font-black uppercase truncate ${d ? 'text-slate-300' : 'text-slate-800 dark:text-slate-200'}`}>
                         {(getPrimaryLine ? getPrimaryLine(t) : t.jobType) || '—'}
                       </p>
-                      <p className={`text-[10px] font-bold uppercase truncate italic ${d ? 'text-slate-500' : 'text-slate-500'}`}>
+                      <p className={`text-[10px] font-bold uppercase truncate italic ${d ? 'text-slate-500 dark:text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>
                         {(getSecondaryLine ? getSecondaryLine(t) : t.clientSite) || '—'}
                       </p>
                     </>
@@ -178,8 +178,8 @@ function RegistryRecordList({
                 </div>
 
                 {t.supervisorComment && (
-                  <div className={`pt-3 border-t ${d ? 'border-white/5' : 'border-slate-100'}`}>
-                    <p className={`text-[10px] italic leading-relaxed line-clamp-2 ${d ? 'text-slate-400' : 'text-slate-600'}`}>
+                  <div className={`pt-3 border-t ${d ? 'border-white/5' : 'border-slate-100 dark:border-slate-700'}`}>
+                    <p className={`text-[10px] italic leading-relaxed line-clamp-2 ${d ? 'text-slate-400' : 'text-slate-600 dark:text-slate-400'}`}>
                       &ldquo;{t.supervisorComment}&rdquo;
                     </p>
                   </div>
@@ -188,7 +188,7 @@ function RegistryRecordList({
                 {/* Edit / Delete — only for pending submissions (not yet validated or rejected) */}
                 {!t.status && (onEdit || onDelete) && (
                   <div
-                    className={`pt-3 border-t flex items-center gap-2 ${d ? 'border-white/5' : 'border-slate-100'}`}
+                    className={`pt-3 border-t flex items-center gap-2 ${d ? 'border-white/5' : 'border-slate-100 dark:border-slate-700'}`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     {onEdit && (
@@ -198,7 +198,7 @@ function RegistryRecordList({
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-colors ${
                           d
                             ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20'
-                            : 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'
+                            : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 border border-blue-200 dark:border-blue-700 hover:bg-blue-100'
                         }`}
                       >
                         <Pencil className="w-3 h-3" />
@@ -208,7 +208,7 @@ function RegistryRecordList({
                     {onDelete && (
                       confirmDeleteId === t.id ? (
                         <div className="flex items-center gap-2 ml-auto">
-                          <span className={`text-[10px] font-bold ${d ? 'text-slate-400' : 'text-slate-500'}`}>Delete?</span>
+                          <span className={`text-[10px] font-bold ${d ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>Delete?</span>
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); onDelete(t); setConfirmDeleteId(null); }}
@@ -220,7 +220,7 @@ function RegistryRecordList({
                             type="button"
                             onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
                             className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-colors ${
-                              d ? 'bg-white/10 text-slate-300 hover:bg-white/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              d ? 'bg-white dark:bg-slate-800/10 text-slate-300 hover:bg-white dark:hover:bg-slate-800/20' : 'bg-slate-100 dark:bg-[#0d1526] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                             }`}
                           >
                             Cancel
@@ -276,19 +276,19 @@ export const LedgerRegistryPanel: React.FC<LedgerRegistrySharedProps & { classNa
       className={`flex flex-col min-h-0 animate-in fade-in slide-in-from-bottom-2 duration-500 ${className}`}
       aria-label={title}
     >
-      <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-200 shrink-0">
+      <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-200 dark:border-slate-600 shrink-0">
         <div className="w-12 h-12 bg-blue-600/10 rounded-2xl flex items-center justify-center border border-blue-600/15">
           <Clock className="w-6 h-6 text-blue-600" aria-hidden />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight truncate">{title}</h3>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">{subtitle}</p>
+          <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight truncate">{title}</h3>
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">{subtitle}</p>
         </div>
         {onClearLogs && (
           <div className="shrink-0">
             {confirmClear ? (
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Clear all?</span>
+                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide">Clear all?</span>
                 <button
                   onClick={() => { onClearLogs(); setConfirmClear(false); }}
                   className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wide hover:bg-red-700 transition-colors"
@@ -297,7 +297,7 @@ export const LedgerRegistryPanel: React.FC<LedgerRegistrySharedProps & { classNa
                 </button>
                 <button
                   onClick={() => setConfirmClear(false)}
-                  className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-wide hover:bg-slate-200 transition-colors"
+                  className="px-3 py-1.5 bg-slate-100 dark:bg-[#0d1526] text-slate-600 dark:text-slate-400 rounded-lg text-[10px] font-black uppercase tracking-wide hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                 >
                   Cancel
                 </button>
@@ -306,7 +306,7 @@ export const LedgerRegistryPanel: React.FC<LedgerRegistrySharedProps & { classNa
               <button
                 onClick={() => setConfirmClear(true)}
                 disabled={records.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-black uppercase tracking-wide hover:bg-red-50 hover:text-red-600 transition-colors border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 disabled:hover:text-slate-500"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-[#0d1526] text-slate-500 dark:text-slate-400 rounded-lg text-[10px] font-black uppercase tracking-wide hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 transition-colors border border-slate-200 dark:border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-100 dark:hover:bg-slate-700 disabled:hover:text-slate-500 dark:hover:text-slate-400"
               >
                 <Trash2 className="w-3 h-3" />
                 Clear Logs
@@ -370,10 +370,10 @@ export const LedgerRegistryModal: React.FC<ModalProps> = ({
             </div>
             <div>
               <h3 className="text-2xl font-black text-white uppercase tracking-widest">{title}</h3>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">{subtitle}</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">{subtitle}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-500 hover:text-white transition-colors" type="button" aria-label="Close ledger registry">
+          <button onClick={onClose} className="p-2 text-slate-500 dark:text-slate-400 hover:text-white transition-colors" type="button" aria-label="Close ledger registry">
             <X className="w-6 h-6" />
           </button>
         </div>

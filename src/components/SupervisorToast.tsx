@@ -35,7 +35,7 @@ export const SupervisorToast: React.FC<SupervisorToastProps> = ({
       <button
         type="button"
         onClick={onDismiss}
-        className="ml-2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-[#0b1222] transition-colors"
+        className="ml-2 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white dark:hover:bg-slate-800/10 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-[#0b1222] transition-colors"
         aria-label="Dismiss notification"
       >
         <X className="w-4 h-4" aria-hidden />

@@ -23,21 +23,21 @@ export const PdfToast: React.FC<PdfToastProps> = ({ state, onDismiss, doneDurati
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[6000] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl border bg-white border-slate-200 animate-in fade-in slide-in-from-bottom-4 duration-300"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[6000] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 animate-in fade-in slide-in-from-bottom-4 duration-300"
     >
       {state === 'preparing' ? (
         <>
           <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
             <FileText className="w-4 h-4 text-blue-600 animate-pulse" />
           </div>
-          <span className="text-sm font-bold text-slate-700">Preparing PDF…</span>
+          <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Preparing PDF…</span>
         </>
       ) : (
         <>
           <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
-          <span className="text-sm font-bold text-slate-700">Download started</span>
+          <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Download started</span>
         </>
       )}
     </div>

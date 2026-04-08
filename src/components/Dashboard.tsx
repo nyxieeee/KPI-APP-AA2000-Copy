@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, UserRole, Transmission, SystemStats, AuditEntry, Announcement, DepartmentWeights } from '../types';
+import { User, UserRole, Transmission, SystemStats, AuditEntry, Announcement, DepartmentWeights, SystemNotification } from '../types';
 import EmployeeDashboard from '../dashboards/EmployeeDashboard.tsx';
 import SupervisorDashboard from '../dashboards/SupervisorDashboard.tsx';
 import AdminDashboard from '../dashboards/AdminDashboard.tsx';
@@ -34,6 +34,8 @@ interface DashboardProps {
   onUpdateDepartmentWeights: (weights: DepartmentWeights) => void;
   onUpdateRegistry: (newRegistry: any[]) => void;
   onUpdateAdminUsers: (newAdminUsers: Record<string, string[]>) => void;
+  notifications: SystemNotification[];
+  onDeleteNotification: (id: string) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = (props) => {
@@ -41,14 +43,23 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
   const wrapperClass = 'flex flex-col w-full min-w-0';
   const supervisorRest = props;
 
+  // Scope transmissions to the current employee's department so that
+  // the submission history only shows records from their own department.
+  const deptPending = props.pendingTransmissions.filter(
+    (t) => t.department === user.department
+  );
+  const deptHistory = props.transmissionHistory.filter(
+    (t) => t.department === user.department
+  );
+
   switch (user.role) {
     case UserRole.EMPLOYEE:
       return (
         <div className={wrapperClass}>
           <EmployeeDashboard
             user={props.user}
-            pendingTransmissions={props.pendingTransmissions}
-            transmissionHistory={props.transmissionHistory}
+            pendingTransmissions={deptPending}
+            transmissionHistory={deptHistory}
             announcements={props.announcements}
             onTransmit={props.onTransmit}
             onDeleteSubmission={props.onDeleteSubmission}
@@ -56,6 +67,8 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
             onClearMyLogs={props.onClearMyLogs}
             validatedStats={props.validatedStats[user.id]}
             departmentWeights={props.departmentWeights}
+            notifications={props.notifications}
+            onDeleteNotification={props.onDeleteNotification}
           />
         </div>
       );
@@ -90,8 +103,8 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
       return (
         <div className="flex flex-1 items-center justify-center min-h-[400px]">
           <div className="text-center space-y-4">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Something went wrong</h1>
-            <p className="text-slate-500 text-sm font-medium leading-relaxed">Your account role is not supported on this screen. Sign out and try another account, or contact your administrator.</p>
+            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Something went wrong</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-relaxed">Your account role is not supported on this screen. Sign out and try another account, or contact your administrator.</p>
           </div>
         </div>
       );

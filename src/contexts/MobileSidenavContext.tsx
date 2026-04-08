@@ -75,13 +75,13 @@ function MobileSidenavDrawer() {
         aria-label="Close navigation"
       />
 
-      <aside className="absolute left-0 top-0 h-full w-[290px] bg-white border-r border-slate-200 shadow-2xl flex flex-col pb-[env(safe-area-inset-bottom)]">
-        <div className="h-20 px-4 flex items-center justify-between border-b border-slate-100">
-          <p className="text-[12px] font-black tracking-tight text-slate-900">Menu</p>
+      <aside className="absolute left-0 top-0 h-full w-[290px] bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-600 shadow-2xl flex flex-col pb-[env(safe-area-inset-bottom)]">
+        <div className="h-20 px-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
+          <p className="text-[12px] font-black tracking-tight text-slate-900 dark:text-slate-100">Menu</p>
           <button
             type="button"
             onClick={close}
-            className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" aria-hidden />
@@ -103,24 +103,24 @@ function MobileSidenavDrawer() {
                     close();
                   }}
                   className={`w-full flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${
-                    active ? 'bg-blue-900 text-white shadow-lg' : 'text-slate-700 hover:bg-slate-50'
+                    active ? 'bg-blue-900 text-white shadow-lg' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900'
                   }`}
                   aria-current={active ? 'page' : undefined}
                 >
                   <span
                     className={`flex h-10 w-10 items-center justify-center rounded-2xl border shadow-sm ${
-                      active ? 'border-white/15 bg-white/10' : 'border-slate-200 bg-white'
+                      active ? 'border-white/15 bg-white dark:bg-slate-800/10' : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800'
                     }`}
                   >
-                    <Icon className={`h-5 w-5 ${active ? 'text-white' : 'text-slate-700'}`} aria-hidden />
+                    <Icon className={`h-5 w-5 ${active ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`} aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className={`block text-[11px] font-black uppercase tracking-widest truncate ${active ? 'text-white' : 'text-slate-900'}`}>
+                    <span className={`block text-[11px] font-black uppercase tracking-widest truncate ${active ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
                       {item.label}
                     </span>
                     {badge != null && badge > 0 ? (
                       <span className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${
-                        active ? 'bg-white/15 text-white' : 'bg-blue-50 text-blue-700 border border-blue-100'
+                        active ? 'bg-white dark:bg-slate-800/15 text-white' : 'bg-blue-50 text-blue-700 border border-blue-100 dark:border-blue-900/50'
                       }`}>
                         {badge} pending
                       </span>
@@ -133,7 +133,7 @@ function MobileSidenavDrawer() {
         </nav>
 
         {showSignOut && (
-          <div className="mt-auto p-3 border-t border-slate-100">
+          <div className="mt-auto p-3 border-t border-slate-100 dark:border-slate-700">
             <button
               type="button"
               onClick={() => {

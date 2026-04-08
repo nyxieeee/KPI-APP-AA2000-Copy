@@ -220,7 +220,7 @@ function CriterionLogoAndDefinition({ iconKey, definition }: { iconKey?: string;
   return (
     <div className="relative group/def shrink-0">
       <div
-        className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-blue-500/10 shadow-sm cursor-help"
+        className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 dark:border-slate-600 bg-blue-500/10 shadow-sm cursor-help"
         aria-label={definition ? 'Criterion definition' : 'Criterion icon'}
       >
         <Icon className="h-6 w-6 text-blue-600" />
@@ -268,28 +268,28 @@ function YieldBlockAdminStyle({
 
   return (
     <div className="group/yield relative shrink-0 text-right">
-      <div className="-my-1 -mr-1 cursor-help rounded-xl border border-transparent px-3 py-2 transition-colors group-hover/yield:border-blue-100 group-hover/yield:bg-blue-50/80">
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Yield</p>
+      <div className="-my-1 -mr-1 cursor-help rounded-xl border border-transparent px-3 py-2 transition-colors group-hover/yield:border-blue-100 dark:border-blue-900/50 group-hover/yield:bg-blue-50 dark:bg-blue-900/30">
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Yield</p>
         <p className="text-[11px] font-black tabular-nums text-blue-600">
           {formatYieldNumber(score)}/{cap}
         </p>
       </div>
       <div
-        className="pointer-events-none invisible absolute right-0 top-full z-[200] mt-1.5 w-64 max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-slate-200 bg-white p-3 text-left opacity-0 shadow-[0_12px_40px_rgba(15,23,42,0.12)] transition-opacity group-hover/yield:pointer-events-auto group-hover/yield:visible group-hover/yield:opacity-100"
+        className="pointer-events-none invisible absolute right-0 top-full z-[200] mt-1.5 w-64 max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-3 text-left opacity-0 shadow-[0_12px_40px_rgba(15,23,42,0.12)] transition-opacity group-hover/yield:pointer-events-auto group-hover/yield:visible group-hover/yield:opacity-100"
         role="tooltip"
         onMouseDown={(e) => e.preventDefault()}
       >
-        <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">{title}</p>
+        <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{title}</p>
         {mode === 'checkboxCount' && checkboxN != null && checkboxN > 0 ? (
-          <p className="mb-2 text-[10px] font-semibold leading-snug text-slate-500">
+          <p className="mb-2 text-[10px] font-semibold leading-snug text-slate-500 dark:text-slate-400">
             Min / Max = number of checkboxes selected (this panel has {checkboxN}).
           </p>
         ) : null}
         {mode === 'checkboxScores' && checkboxLabels?.length && checkboxScoreVals?.length ? (
           <ul className="space-y-1.5">
             {checkboxLabels.map((lbl, i) => (
-              <li key={i} className="flex items-start justify-between gap-2 text-[11px] text-slate-700">
-                <span className="min-w-0 shrink font-semibold text-slate-600">{lbl}</span>
+              <li key={i} className="flex items-start justify-between gap-2 text-[11px] text-slate-700 dark:text-slate-300">
+                <span className="min-w-0 shrink font-semibold text-slate-600 dark:text-slate-400">{lbl}</span>
                 <span className="shrink-0 font-black tabular-nums text-blue-600">+{checkboxScoreVals[i] ?? 0} pts</span>
               </li>
             ))}
@@ -298,18 +298,18 @@ function YieldBlockAdminStyle({
           <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
             {basicCheckpointSections.map((sec, si) => (
               <div key={si}>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{sec.label}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">{sec.label}</p>
                 {sec.checkpoints.length > 0 ? (
                   <ul className="space-y-1">
                     {sec.checkpoints.map((c, i) => (
-                      <li key={i} className="flex items-start justify-between gap-2 text-[11px] text-slate-700">
-                        <span className="min-w-0 shrink text-slate-500">{formatCheckpointRange(c)}</span>
+                      <li key={i} className="flex items-start justify-between gap-2 text-[11px] text-slate-700 dark:text-slate-300">
+                        <span className="min-w-0 shrink text-slate-500 dark:text-slate-400">{formatCheckpointRange(c)}</span>
                         <span className="shrink-0 font-black tabular-nums text-blue-600">{c.score} pts</span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-[10px] text-slate-400">No ranges</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">No ranges</p>
                 )}
               </div>
             ))}
@@ -317,8 +317,8 @@ function YieldBlockAdminStyle({
         ) : checkpoints.length > 0 ? (
           <ul className="space-y-1.5">
             {checkpoints.map((c, i) => (
-              <li key={i} className="flex items-start justify-between gap-2 text-[11px] text-slate-700">
-                <span className="min-w-0 shrink text-slate-500">
+              <li key={i} className="flex items-start justify-between gap-2 text-[11px] text-slate-700 dark:text-slate-300">
+                <span className="min-w-0 shrink text-slate-500 dark:text-slate-400">
                   {mode === 'checkboxCount'
                     ? c.max === null
                       ? `≥ ${c.min} checked`
@@ -330,7 +330,7 @@ function YieldBlockAdminStyle({
             ))}
           </ul>
         ) : (
-          <p className="text-[10px] leading-snug text-slate-500">
+          <p className="text-[10px] leading-snug text-slate-500 dark:text-slate-400">
             {mode === 'basic'
               ? 'No checkpoint ranges are configured for this criterion.'
               : 'No grading rules are configured for this criterion.'}
@@ -466,7 +466,7 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <CriterionLogoAndDefinition iconKey={logo?.iconKey} definition={def} />
           <div className="min-w-0 flex-1 text-left">
-            <p className="text-[13px] font-black leading-snug text-slate-900">{item.label}</p>
+            <p className="text-[13px] font-black leading-snug text-slate-900 dark:text-slate-100">{item.label}</p>
           </div>
         </div>
         <YieldBlockAdminStyle
@@ -491,7 +491,7 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
             return (
               <div
                 key={idx}
-                className={`space-y-3 rounded-[1.75rem] border border-slate-200/80 bg-white p-4 shadow-sm transition-shadow hover:shadow-md ${colSpan}`}
+                className={`space-y-3 rounded-[1.75rem] border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-[#0f1b2d] p-4 shadow-sm transition-shadow hover:shadow-md ${colSpan}`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <input
@@ -501,7 +501,7 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
                     className="h-5 w-5 shrink-0 accent-blue-600"
                     aria-label={String(el?.label ?? 'Checkbox')}
                   />
-                  <span className="min-w-0 flex-1 text-[12px] font-black text-slate-900">{String(el?.label ?? 'Item')}</span>
+                  <span className="min-w-0 flex-1 text-[12px] font-black text-slate-900 dark:text-slate-100">{String(el?.label ?? 'Item')}</span>
                 </div>
               </div>
             );
@@ -524,14 +524,14 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
             return (
               <div
                 key={idx}
-                className={`flex flex-col space-y-3 rounded-[1.75rem] border border-slate-200/80 bg-white p-4 shadow-sm transition-shadow hover:shadow-md ${colSpan}`}
+                className={`flex flex-col space-y-3 rounded-[1.75rem] border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-[#0f1b2d] p-4 shadow-sm transition-shadow hover:shadow-md ${colSpan}`}
               >
                 {showInnerTextboxHeader ? (
                   <div className="flex items-start justify-between gap-2">
                     <div className={AUDIT_PANEL_TEXTBOX_LABEL_CLASS}>{String(el?.title ?? 'Value')}</div>
                     {tbCheckpoints.length > 0 ? (
                       <div className="shrink-0 text-right">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Yield</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Yield</p>
                         <p className="text-[11px] font-black tabular-nums text-blue-600">
                           {formatYieldNumber(
                             Number.isFinite(n)
@@ -559,15 +559,15 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
                       setTextNum(idx, parseInt(digits, 10));
                     }}
                     placeholder="0"
-                    className={`min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-center text-[12px] font-black outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-400 ${
-                      numRaw === '' || numRaw === undefined ? 'text-slate-400' : 'text-slate-900'
+                    className={`min-w-0 flex-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-[#0b1222] px-3 py-3 text-center text-[12px] font-black outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-400 dark:placeholder:text-slate-600 ${
+                      numRaw === '' || numRaw === undefined ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'
                     }`}
                   />
                   <div className="flex shrink-0 items-center gap-1">
                     <button
                       type="button"
                       disabled={n <= 0 && numRaw === ''}
-                      className="flex h-10 w-10 select-none items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex h-10 w-10 select-none items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 disabled:cursor-not-allowed disabled:opacity-40"
                       onMouseDown={() => startHold(() => bumpTextNum(idx, -1))}
                       onMouseUp={stopHold}
                       onMouseLeave={stopHold}
@@ -581,7 +581,7 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
                     </button>
                     <button
                       type="button"
-                      className="flex h-10 w-10 select-none items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                      className="flex h-10 w-10 select-none items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700/60 text-slate-500 dark:text-slate-400 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400"
                       onMouseDown={() => startHold(() => bumpTextNum(idx, 1))}
                       onMouseUp={stopHold}
                       onMouseLeave={stopHold}
@@ -611,13 +611,13 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
       return (
         <div
           key={taskKey}
-          className={`space-y-4 rounded-[2rem] border border-slate-200/70 bg-white/90 p-4 shadow-sm backdrop-blur md:p-5 ${criteriaColSpan}`}
+          className={`space-y-4 rounded-[2rem] border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-[#0f1b2d] p-4 shadow-sm backdrop-blur md:p-5 ${criteriaColSpan}`}
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <CriterionLogoAndDefinition iconKey={logo?.iconKey} definition={def} />
               <div className="min-w-0">
-                <p className="text-[13px] font-black text-slate-900">{item.label}</p>
+                <p className="text-[13px] font-black text-slate-900 dark:text-slate-100">{item.label}</p>
               </div>
             </div>
             <YieldBlockAdminStyle cap={cap} score={manualScore} mode="basic" checkpoints={[]} />
@@ -633,7 +633,7 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
               mergeTask(taskKey, { score: v });
             }}
             onFocus={(e) => e.target.select()}
-            className="max-w-xs rounded-xl border border-slate-200 px-4 py-2 font-black"
+            className="max-w-xs rounded-xl border border-slate-200 dark:border-slate-600 px-4 py-2 font-black"
           />
         </div>
       );
@@ -642,7 +642,7 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
     return (
       <div
         key={taskKey}
-        className={`space-y-4 rounded-[2rem] border border-slate-200/70 bg-white/90 p-4 shadow-sm backdrop-blur md:p-5 ${criteriaColSpan}`}
+        className={`space-y-4 rounded-[2rem] border border-slate-200 dark:border-slate-700/60 bg-white dark:bg-[#0f1b2d] p-4 shadow-sm backdrop-blur md:p-5 ${criteriaColSpan}`}
       >
         {renderHeader()}
         <div className={AUDIT_PANEL_CRITERION_BODY_CLASS}>
@@ -655,13 +655,13 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
 
   return (
     <div className="w-full space-y-8">
-      <div className="flex min-w-0 items-center gap-4 border-b border-slate-100 pb-6">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 shadow-sm">
+      <div className="flex min-w-0 items-center gap-4 border-b border-slate-100 dark:border-slate-700 pb-6">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-900/30 shadow-sm">
           <PanelIcon className="h-6 w-6 text-blue-600" />
         </div>
         <div className="min-w-0">
-          <h3 className="text-lg font-black uppercase tracking-tight text-slate-900">Audit: {category.label}</h3>
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Department grading breakdown</p>
+          <h3 className="text-lg font-black uppercase tracking-tight text-slate-900 dark:text-slate-100">Audit: {category.label}</h3>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Department grading breakdown</p>
         </div>
       </div>
 
@@ -672,16 +672,16 @@ const TechnicalCategoryAuditPanel: React.FC<TechnicalCategoryAuditPanelProps> = 
       <div className="relative z-0 flex flex-col gap-6 overflow-hidden rounded-[2.5rem] bg-slate-900 p-8 text-white shadow-2xl sm:flex-row sm:items-center sm:justify-between">
         <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-blue-500/10 blur-[60px]" />
         <div className="relative z-10">
-          <h4 className="mb-1 text-base font-black uppercase tracking-widest text-slate-400">{category.label} — Aggregate</h4>
+          <h4 className="mb-1 text-base font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{category.label} — Aggregate</h4>
           <div className="flex items-baseline gap-2">
             <p className="text-2xl font-black tabular-nums tracking-tighter text-blue-400">
               {formatYieldNumber(aggregatePts)}
             </p>
-            <p className="text-sm font-black text-slate-500">Yield</p>
+            <p className="text-sm font-black text-slate-500 dark:text-slate-400">Yield</p>
           </div>
         </div>
         <div className="relative z-10 text-left sm:text-right">
-          <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Weighted impact (category)</p>
+          <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Weighted impact (category)</p>
           <p className="text-2xl font-black tabular-nums text-blue-400">+{weightedImpactPct.toFixed(2)}%</p>
         </div>
       </div>

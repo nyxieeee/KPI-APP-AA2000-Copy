@@ -199,15 +199,21 @@ export function buildLogDetailCategoryScores(
 
     if (department === 'Sales') {
       const scoreRounded = Math.round(Number(score) * 10) / 10;
-      return { name, score: scoreRounded, weightPct, maxScore: 100, panelNames: SALES_PANEL_NAMES[name] || [] };
+      const catCfg = departmentWeights?.['Sales']?.find((w) => w.label === name);
+      const maxScore = catCfg?.content?.reduce((s, item) => s + (Number(item.maxpoints) || 0), 0) || undefined;
+      return { name, score: scoreRounded, weightPct, maxScore, panelNames: SALES_PANEL_NAMES[name] || [] };
     }
 
     if (department === 'Marketing') {
-      return { name, score, weightPct, maxScore: 100, panelNames: MARKETING_PANEL_NAMES[name] || [] };
+      const catCfg = departmentWeights?.['Marketing']?.find((w) => w.label === name);
+      const maxScore = catCfg?.content?.reduce((s, item) => s + (Number(item.maxpoints) || 0), 0) || undefined;
+      return { name, score, weightPct, maxScore, panelNames: MARKETING_PANEL_NAMES[name] || [] };
     }
 
     if (department === 'Accounting') {
-      return { name, score, weightPct, maxScore: 100, panelNames: ACCOUNTING_PANEL_NAMES[name] || [] };
+      const catCfg = departmentWeights?.['Accounting']?.find((w) => w.label === name);
+      const maxScore = catCfg?.content?.reduce((s, item) => s + (Number(item.maxpoints) || 0), 0) || undefined;
+      return { name, score, weightPct, maxScore, panelNames: ACCOUNTING_PANEL_NAMES[name] || [] };
     }
 
     return { name, score, weightPct };

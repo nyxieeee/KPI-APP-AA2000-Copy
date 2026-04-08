@@ -7,12 +7,13 @@ import Navbar from './components/Navbar';
 import NotFound from './components/NotFound';
 import { AuthActionsProvider } from './contexts/AuthActionsContext';
 import { MobileSidenavProvider } from './contexts/MobileSidenavContext';
-import { RoleSidenavRailProvider } from './contexts/RoleSidenavRailContext';
+import { RoleSidenavRailProvider, useRoleSidenavRail } from './contexts/RoleSidenavRailContext';
 import {
   DEPARTMENT_WEIGHTS_STORAGE_KEY,
   loadDepartmentWeightsFromStorage,
   saveDepartmentWeightsToStorage,
 } from './utils/departmentWeightsStorage';
+import { DarkModeProvider, useDarkMode } from './contexts/DarkModeContext';
 import { GRADING_EDIT_SESSION_KEY } from './utils/gradingEditSession';
 import {
   AUDIT_BUCKETS_STORAGE_KEY,
@@ -84,6 +85,26 @@ const initialPending: Transmission[] = [];
 const initialHistory: Transmission[] = [];
 
 const TRANSMISSIONS_STORAGE_KEY = 'aa2000_kpi_transmissions';
+const NOTIFICATIONS_STORAGE_KEY = 'aa2000_kpi_notifications';
+
+function loadStoredNotifications(): SystemNotification[] {
+  try {
+    const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredNotifications(notifications: SystemNotification[]) {
+  try {
+    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications));
+  } catch {
+    // ignore quota / private mode
+  }
+}
 
 function saveStoredTransmissions(pending: Transmission[], history: Transmission[]) {
   try {
@@ -93,7 +114,26 @@ function saveStoredTransmissions(pending: Transmission[], history: Transmission[
   }
 }
 
-const App: React.FC = () => {
+/** Reads rail state from context and applies dynamic left-padding to <main> on desktop. */
+function RailAwareMain({ children }: { children: React.ReactNode }) {
+  const { railOpen } = useRoleSidenavRail();
+  return (
+    <main
+      className={`flex-1 flex flex-col min-h-0 w-full max-w-[1800px] mx-auto transition-[padding] duration-200 ease-out ${
+        railOpen ? 'lg:pl-[272px]' : 'lg:pl-[76px]'
+      }`}
+    >
+      {children}
+    </main>
+  );
+}
+
+interface AppInnerProps {
+  onUserChange: (userId: string | null) => void;
+}
+
+const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
+  const { isDark } = useDarkMode();
   const [user, setUser] = useState<User | null>(null);
   const [auditBuckets, setAuditBuckets] = useState<AuditBuckets>(() => {
     // One-time clear: wipe all pre-seeded/stored submission history on first boot after this version
@@ -129,7 +169,7 @@ const App: React.FC = () => {
   const { pending: pendingTransmissions, history: transmissionHistory } = useMemo(() => flattenBuckets(auditBuckets), [auditBuckets]);
   const [validatedStats, setValidatedStats] = useState<Record<string, SystemStats>>({});
   const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);
-  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
+  const [notifications, setNotifications] = useState<SystemNotification[]>(loadStoredNotifications);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [registry, setRegistry] = useState<typeof INITIAL_REGISTRY>(INITIAL_REGISTRY);
   const [adminUsers, setAdminUsers] = useState<Record<string, string[]>>(INITIAL_ADMIN_USERS);
@@ -253,11 +293,12 @@ const App: React.FC = () => {
         typeof parsed.role === 'string'
       ) {
         setUser(parsed as User);
+        onUserChange(parsed.id);
       }
     } catch {
       // ignore
     }
-  }, []);
+  }, [onUserChange]);
 
   // Demo audits removed — submission history starts clean for all employees.
 
@@ -272,6 +313,11 @@ const App: React.FC = () => {
   useEffect(() => {
     saveDepartmentWeightsToStorage(departmentWeights);
   }, [departmentWeights]);
+
+  // Persist notifications so they survive page refresh and cross tabs/sessions
+  useEffect(() => {
+    saveStoredNotifications(notifications);
+  }, [notifications]);
 
   // Listen for updates from other tabs (employee submit / supervisor validate in another tab)
   useEffect(() => {
@@ -302,6 +348,14 @@ const App: React.FC = () => {
           // ignore
         }
       }
+      if (e.key === NOTIFICATIONS_STORAGE_KEY && e.newValue != null) {
+        try {
+          const parsed = JSON.parse(e.newValue) as SystemNotification[];
+          if (Array.isArray(parsed)) setNotifications(parsed);
+        } catch {
+          // ignore
+        }
+      }
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -327,6 +381,7 @@ const App: React.FC = () => {
 
   const handleLogin = useCallback((loggedInUser: User) => {
     setUser(loggedInUser);
+    onUserChange(loggedInUser.id);
     try {
       localStorage.setItem(SESSION_USER_STORAGE_KEY, JSON.stringify(loggedInUser));
     } catch {
@@ -336,19 +391,19 @@ const App: React.FC = () => {
     addAuditEntry('SESSION_INIT', `Role: ${loggedInUser.role}`, 'OK', loggedInUser.name);
     const returnPath = (location.state as { from?: string } | null)?.from || '/dashboard';
     navigate(returnPath, { replace: true });
-  }, [addNotification, addAuditEntry, navigate, location.state]);
+  }, [onUserChange, addNotification, addAuditEntry, navigate, location.state]);
 
   const handleLogout = useCallback(() => {
     addAuditEntry('SESSION_TERM', 'Disconnected', 'INFO');
     setUser(null);
-    setNotifications([]);
+    onUserChange(null);
     try {
       localStorage.removeItem(SESSION_USER_STORAGE_KEY);
     } catch {
       // ignore
     }
     navigate('/login');
-  }, [addAuditEntry, navigate]);
+  }, [onUserChange, addAuditEntry, navigate]);
 
   const handleTransmit = useCallback((transmission: Transmission) => {
     if (!user) return;
@@ -371,8 +426,15 @@ const App: React.FC = () => {
     );
     setNotifications(prev => [...deptNotifications, ...prev].slice(0, 100));
 
+    // Notify the submitting employee that their submission was received
+    addNotification(
+      `Your submission ${withDept.id} has been received and is pending supervisor review.`,
+      user.id,
+      'INFO'
+    );
+
     addAuditEntry('DATA_TRANSMIT', `${transmission.id} queued`, 'INFO', transmission.userName);
-  }, [user, registry, addAuditEntry, setNotifications]);
+  }, [user, registry, addAuditEntry, addNotification, setNotifications]);
 
   /**
    * Two-step grading flow:
@@ -411,11 +473,22 @@ const App: React.FC = () => {
       });
 
       // Notify the employee their submission has been reviewed
-      const employeeId = btoa(transmission.userName).substring(0, 12);
+      const employeeId = btoa(transmission.userName);
       const recLabel = supervisorRecommendation === 'approved' ? 'Approved' : 'Changes Requested';
       addNotification(`Your submission ${transmissionId} has been reviewed by your supervisor (${recLabel}). Awaiting admin finalization.`, employeeId, 'INFO');
+
+      // Notify admin that there is a pending report ready for their approval
+      const admins = adminUsers['Admin'] || [];
+      admins.forEach((adminName: string) => {
+        const adminId = btoa(adminName);
+        addNotification(
+          `You have a pending report to approve. ${transmission.userName} (${dept}) — submission ${transmissionId} has been graded by supervisor (${recLabel}) and is awaiting your final approval.`,
+          adminId,
+          'ALERT'
+        );
+      });
     },
-    [pendingTransmissions, user, addNotification]
+    [pendingTransmissions, user, adminUsers, addNotification]
   );
 
   const handleValidate = useCallback((transmissionId: string, overrides?: SystemStats, status: 'validated' | 'rejected' = 'validated') => {
@@ -437,7 +510,7 @@ const App: React.FC = () => {
         next[dept].history = next[dept].history.slice(0, 500);
         return next;
       });
-      const employeeId = btoa(transmission.userName).substring(0, 12);
+      const employeeId = btoa(transmission.userName);
       if (status === 'validated') {
         setValidatedStats((prev) => ({ ...prev, [transmission.userId]: finalTransmission }));
         addAuditEntry('VERIFY_SUCCESS', `Validated ${transmissionId}`, 'OK');
@@ -466,13 +539,13 @@ const App: React.FC = () => {
     // Notify supervisor(s) of this department
     const deptSupervisors = registry.filter((u: any) => u.department === dept && u.role === UserRole.SUPERVISOR && u.isActive);
     deptSupervisors.forEach((sup: any) => {
-      const supId = btoa(sup.name).substring(0, 12);
+      const supId = btoa(sup.name);
       addNotification(`${user.name} deleted submission ${transmission.id}.`, supId, 'ALERT');
     });
     // Notify admin
     const admins = adminUsers['Admin'] || [];
     admins.forEach((adminName: string) => {
-      const adminId = btoa(adminName).substring(0, 12);
+      const adminId = btoa(adminName);
       addNotification(`${user.name} (${dept}) deleted submission ${transmission.id}.`, adminId, 'ALERT');
     });
   }, [user, registry, adminUsers, addAuditEntry, addNotification]);
@@ -500,13 +573,13 @@ const App: React.FC = () => {
     // Notify supervisor(s)
     const deptSupervisors = registry.filter((u: any) => u.department === dept && u.role === UserRole.SUPERVISOR && u.isActive);
     deptSupervisors.forEach((sup: any) => {
-      const supId = btoa(sup.name).substring(0, 12);
+      const supId = btoa(sup.name);
       addNotification(`${user.name} edited submission ${transmission.id}.`, supId, 'INFO');
     });
     // Notify admin
     const admins = adminUsers['Admin'] || [];
     admins.forEach((adminName: string) => {
-      const adminId = btoa(adminName).substring(0, 12);
+      const adminId = btoa(adminName);
       addNotification(`${user.name} (${dept}) edited submission ${transmission.id}.`, adminId, 'INFO');
     });
   }, [user, registry, adminUsers, addAuditEntry, addNotification]);
@@ -554,6 +627,7 @@ const App: React.FC = () => {
       localStorage.removeItem(TRANSMISSIONS_STORAGE_KEY);
       localStorage.removeItem(DEPARTMENT_WEIGHTS_STORAGE_KEY);
       localStorage.removeItem(GRADING_EDIT_SESSION_KEY);
+      localStorage.removeItem(NOTIFICATIONS_STORAGE_KEY);
       // Per-user UI prefs
       Object.keys(localStorage).forEach((k) => {
         if (k.startsWith('aa2000-kpi-ack-')) localStorage.removeItem(k);
@@ -617,8 +691,8 @@ const App: React.FC = () => {
           <div
             className={
               user.role === UserRole.ADMIN
-                ? 'h-screen w-full relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex flex-col'
-                : 'h-screen w-full bg-slate-50 flex flex-col'
+                ? 'h-screen w-full relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 flex flex-col'
+                : 'h-screen w-full bg-slate-50 dark:bg-slate-900 flex flex-col'
             }
           >
             {user.role === UserRole.ADMIN && (
@@ -638,11 +712,11 @@ const App: React.FC = () => {
                     validatedStats={validatedStats[user.id]}
                     registry={registry}
                     onUpdateRegistry={handleUpdateRegistry}
-                    notifications={notifications.filter(n => n.targetUserId === user.id || (user.role === UserRole.ADMIN))}
+                    notifications={notifications.filter(n => n.targetUserId === user.id)}
                     onDeleteNotification={deleteNotification}
                   />
-                  <main className="flex-1 flex flex-col min-h-0 w-full max-w-[1800px] mx-auto overflow-hidden lg:pl-[76px]">
-                    <div className="px-4 sm:px-6 md:px-8 lg:px-8 py-4 sm:py-4 md:py-6 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+                  <RailAwareMain>
+                    <div className="px-4 sm:px-5 md:px-6 py-4 md:py-6 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
                       <Dashboard
                         user={user}
                         pendingTransmissions={pendingTransmissions}
@@ -668,9 +742,11 @@ const App: React.FC = () => {
                         onUpdateRegistry={handleUpdateRegistry}
                         onUpdateAdminUsers={handleUpdateAdminUsers}
                         onClearEmployeeAudits={handleClearEmployeeAudits}
+                        notifications={notifications.filter(n => n.targetUserId === user.id)}
+                        onDeleteNotification={deleteNotification}
                       />
                     </div>
-                  </main>
+                  </RailAwareMain>
                 </MobileSidenavProvider>
                 </RoleSidenavRailProvider>
               </AuthActionsProvider>
@@ -686,7 +762,7 @@ const App: React.FC = () => {
           user ? (
             <Navigate to={loggedInHomePath} replace />
           ) : (
-            <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-4">
+            <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 flex items-center justify-center p-4">
               <div className="pointer-events-none absolute -top-24 -right-24 h-[28rem] w-[28rem] rounded-full bg-blue-500/10 blur-3xl" aria-hidden />
               <div className="pointer-events-none absolute -bottom-28 -left-28 h-[34rem] w-[34rem] rounded-full bg-cyan-400/10 blur-3xl" aria-hidden />
               <div className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 h-40 w-[32rem] rounded-full bg-indigo-500/5 blur-3xl" aria-hidden />
@@ -721,6 +797,27 @@ const App: React.FC = () => {
       />
       <Route path="*" element={<NotFound />} />
     </Routes>
+  );
+};
+
+const App: React.FC = () => {
+  // Read userId from session storage so DarkModeProvider can scope the key per user,
+  // even before AppInner mounts and sets up the user state.
+  const [userId, setUserId] = React.useState<string | null>(() => {
+    try {
+      const raw = localStorage.getItem('aa2000-session-user');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return parsed?.id ?? null;
+      }
+    } catch {}
+    return null;
+  });
+
+  return (
+    <DarkModeProvider userId={userId}>
+      <AppInner onUserChange={setUserId} />
+    </DarkModeProvider>
   );
 };
 

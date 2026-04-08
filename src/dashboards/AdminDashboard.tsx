@@ -309,6 +309,7 @@ const AdminDashboard: React.FC<Props> = ({
   const [registrySearch, setRegistrySearch] = useState('');
   const [registryStatusFilter, setRegistryStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [validationSearch, setValidationSearch] = useState('');
+  const [validationStatusTab, setValidationStatusTab] = useState<'pending' | 'validated' | 'rejected'>('pending');
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [provisionRoleOpen, setProvisionRoleOpen] = useState(false);
   const [provisionDeptOpen, setProvisionDeptOpen] = useState(false);
@@ -2073,8 +2074,8 @@ const AdminDashboard: React.FC<Props> = ({
       .sort((a, b) => b.score - a.score)
       .slice(0, 10);
 
-    const medalColors = ['text-yellow-500', 'text-slate-400', 'text-amber-600'];
-    const medalBg = ['bg-yellow-50 border-yellow-200', 'bg-slate-50 border-slate-200', 'bg-amber-50 border-amber-200'];
+    const medalColors = ['text-yellow-500', 'text-slate-400 dark:text-slate-500 dark:text-slate-500', 'text-amber-600'];
+    const medalBg = ['bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200', 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600', 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-700'];
 
     return (
       <div className="p-6 md:p-5 space-y-10">
@@ -2085,17 +2086,17 @@ const AdminDashboard: React.FC<Props> = ({
               <Trophy className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">Top Performers Board</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+              <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Top Performers Board</h2>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                 {thisMonthValidated.length > 0 ? 'Current month • Highest finalized score' : 'All-time • Highest finalized score'}
               </p>
             </div>
           </div>
 
           {topPerformers.length === 0 ? (
-            <div className="bg-white border border-slate-100 rounded-3xl p-5 text-center shadow-sm">
+            <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-5 text-center shadow-sm">
               <Trophy className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-              <p className="text-sm font-bold text-slate-400">No validated submissions yet</p>
+              <p className="text-sm font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500">No validated submissions yet</p>
               <p className="text-xs text-slate-300 mt-1">Leaderboard will appear once admin finalizes submissions</p>
             </div>
           ) : (
@@ -2110,28 +2111,28 @@ const AdminDashboard: React.FC<Props> = ({
                     className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
                       isTop3
                         ? `${medalBg[i]} shadow-sm`
-                        : 'bg-white border-slate-100 hover:bg-slate-50'
+                        : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900'
                     }`}
                   >
                     {/* Rank */}
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-lg ${
                       isTop3 ? medalColors[i] : 'text-slate-300'
                     }`}>
-                      {i < 3 ? <Medal className="w-6 h-6" /> : <span className="text-sm font-black text-slate-400">#{i + 1}</span>}
+                      {i < 3 ? <Medal className="w-6 h-6" /> : <span className="text-sm font-black text-slate-400 dark:text-slate-500 dark:text-slate-500">#{i + 1}</span>}
                     </div>
 
                     {/* Name + dept */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black text-slate-900 truncate">{emp.name}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{emp.dept} • {emp.count} submission{emp.count !== 1 ? 's' : ''}</p>
+                      <p className="text-sm font-black text-slate-900 dark:text-slate-100 truncate">{emp.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">{emp.dept} • {emp.count} submission{emp.count !== 1 ? 's' : ''}</p>
                     </div>
 
                     {/* Compare with last month */}
                     {diff != null && (
                       <div className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wide shrink-0 ${
-                        diff > 0 ? 'bg-emerald-50 text-emerald-600' :
-                        diff < 0 ? 'bg-red-50 text-red-600' :
-                        'bg-slate-50 text-slate-400'
+                        diff > 0 ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600' :
+                        diff < 0 ? 'bg-red-50 dark:bg-red-900/30 text-red-600' :
+                        'bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 dark:text-slate-500'
                       }`}>
                         {diff > 0 ? <TrendingUp className="w-3 h-3" /> : diff < 0 ? <TrendingDown className="w-3 h-3" /> : null}
                         {diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : '='} vs last mo.
@@ -2151,7 +2152,7 @@ const AdminDashboard: React.FC<Props> = ({
                         );
                       })()}
                       <div className={`text-2xl font-black tabular-nums ${
-                        emp.score >= 90 ? 'text-emerald-600' : emp.score >= 75 ? 'text-blue-600' : 'text-slate-700'
+                        emp.score >= 90 ? 'text-emerald-600' : emp.score >= 75 ? 'text-blue-600' : 'text-slate-700 dark:text-slate-300'
                       }`}>
                         {emp.score}%
                       </div>
@@ -2170,8 +2171,8 @@ const AdminDashboard: React.FC<Props> = ({
               <TrendingUp className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">Compare with Last Month</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Score movement per employee</p>
+              <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Compare with Last Month</h2>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Score movement per employee</p>
             </div>
           </div>
 
@@ -2192,16 +2193,16 @@ const AdminDashboard: React.FC<Props> = ({
             });
 
             if (rows.length === 0) return (
-              <div className="bg-white border border-slate-100 rounded-3xl p-5 text-center shadow-sm">
+              <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-5 text-center shadow-sm">
                 <TrendingUp className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-                <p className="text-sm font-bold text-slate-400">Not enough data yet</p>
+                <p className="text-sm font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500">Not enough data yet</p>
                 <p className="text-xs text-slate-300 mt-1">Need validated submissions from at least two months to compare</p>
               </div>
             );
 
             return (
-              <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-0 text-[10px] font-black uppercase tracking-wide text-slate-400 px-5 py-3 border-b border-slate-100">
+              <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-sm overflow-hidden">
+                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-0 text-[10px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500 px-5 py-3 border-b border-slate-100 dark:border-slate-700">
                   <span>Employee</span>
                   <span className="text-center px-4">Last Month</span>
                   <span className="text-center px-4">This Month</span>
@@ -2210,12 +2211,12 @@ const AdminDashboard: React.FC<Props> = ({
                 {rows.map(row => {
                   const diff = row.current != null && row.last != null ? row.current - row.last : null;
                   return (
-                    <div key={row.name} className="grid grid-cols-[1fr_auto_auto_auto] gap-0 items-center px-5 py-2 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
+                    <div key={row.name} className="grid grid-cols-[1fr_auto_auto_auto] gap-0 items-center px-5 py-2 border-b border-slate-50 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                       <div>
-                        <p className="text-sm font-bold text-slate-800">{row.name}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{row.dept}</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{row.name}</p>
+                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">{row.dept}</p>
                       </div>
-                      <div className="text-center px-4 text-sm font-black text-slate-400 tabular-nums flex flex-col items-center gap-0.5">
+                      <div className="text-center px-4 text-sm font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 tabular-nums flex flex-col items-center gap-0.5">
                         {row.last != null ? (
                           <>
                             <span>{row.last}%</span>
@@ -2224,7 +2225,7 @@ const AdminDashboard: React.FC<Props> = ({
                         ) : '—'}
                       </div>
                       <div className={`text-center px-4 text-sm font-black tabular-nums flex flex-col items-center gap-0.5 ${
-                        row.current != null ? 'text-slate-900' : 'text-slate-300'
+                        row.current != null ? 'text-slate-900 dark:text-slate-100' : 'text-slate-300'
                       }`}>
                         {row.current != null ? (
                           <>
@@ -2237,9 +2238,9 @@ const AdminDashboard: React.FC<Props> = ({
                       </div>
                       <div className={`flex items-center justify-center gap-1 px-3 py-1 mx-2 rounded-xl text-[10px] font-black uppercase tracking-wide ${
                         diff == null ? 'text-slate-300' :
-                        diff > 0 ? 'bg-emerald-50 text-emerald-600' :
-                        diff < 0 ? 'bg-red-50 text-red-600' :
-                        'bg-slate-50 text-slate-400'
+                        diff > 0 ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600' :
+                        diff < 0 ? 'bg-red-50 dark:bg-red-900/30 text-red-600' :
+                        'bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 dark:text-slate-500'
                       }`}>
                         {diff != null && diff !== 0 && (diff > 0
                           ? <TrendingUp className="w-3 h-3" />
@@ -2262,8 +2263,8 @@ const AdminDashboard: React.FC<Props> = ({
               <Activity className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">Individual Performance</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Score breakdown per employee — all time</p>
+              <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Individual Performance</h2>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Score breakdown per employee — all time</p>
             </div>
           </div>
 
@@ -2290,9 +2291,9 @@ const AdminDashboard: React.FC<Props> = ({
             const employees = Object.values(byEmployee).sort((a, b) => b.latestScore - a.latestScore);
 
             if (employees.length === 0) return (
-              <div className="bg-white border border-slate-100 rounded-3xl p-8 text-center shadow-sm">
+              <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl p-8 text-center shadow-sm">
                 <Activity className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-                <p className="text-sm font-bold text-slate-400">No employee scores yet</p>
+                <p className="text-sm font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500">No employee scores yet</p>
                 <p className="text-xs text-slate-300 mt-1">Charts will appear once submissions are validated</p>
               </div>
             );
@@ -2309,12 +2310,12 @@ const AdminDashboard: React.FC<Props> = ({
                   const textColor = emp.latestScore >= 90 ? 'text-emerald-600' : emp.latestScore >= 75 ? 'text-blue-600' : emp.latestScore >= 60 ? 'text-amber-600' : 'text-red-500';
 
                   return (
-                    <div key={emp.name} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                    <div key={emp.name} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
                       {/* Header */}
                       <div className="flex items-start justify-between mb-4">
                         <div>
-                          <p className="text-sm font-black text-slate-900">{emp.name}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">{emp.dept} · {emp.scores.length} submission{emp.scores.length !== 1 ? 's' : ''}</p>
+                          <p className="text-sm font-black text-slate-900 dark:text-slate-100">{emp.name}</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mt-0.5">{emp.dept} · {emp.scores.length} submission{emp.scores.length !== 1 ? 's' : ''}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           {(() => {
@@ -2333,9 +2334,9 @@ const AdminDashboard: React.FC<Props> = ({
                       {/* Progress bar for latest score */}
                       <div className="mb-3">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Latest score</span>
+                          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Latest score</span>
                         </div>
-                        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="w-full h-3 bg-slate-100 dark:bg-[#0d1526] rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-700 ${barColor}`}
                             style={{ width: `${Math.min(emp.latestScore, 100)}%` }}
@@ -2346,7 +2347,7 @@ const AdminDashboard: React.FC<Props> = ({
                       {/* Mini score history bars */}
                       {emp.scores.length > 1 && (
                         <div className="mb-3">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Submission history</span>
+                          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Submission history</span>
                           <div className="flex items-end gap-1 mt-1.5 h-10">
                             {emp.scores.slice(-10).map((s, i) => (
                               <div
@@ -2361,18 +2362,18 @@ const AdminDashboard: React.FC<Props> = ({
                       )}
 
                       {/* Stats row */}
-                      <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-50">
+                      <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-50 dark:border-slate-700">
                         <div className="text-center">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Average</p>
-                          <p className="text-sm font-black text-slate-700 tabular-nums">{avg}%</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Average</p>
+                          <p className="text-sm font-black text-slate-700 dark:text-slate-300 tabular-nums">{avg}%</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Best</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Best</p>
                           <p className="text-sm font-black text-emerald-600 tabular-nums">{best}%</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Lowest</p>
-                          <p className="text-sm font-black text-slate-400 tabular-nums">{worst}%</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Lowest</p>
+                          <p className="text-sm font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 tabular-nums">{worst}%</p>
                         </div>
                       </div>
                     </div>
@@ -2412,16 +2413,16 @@ const AdminDashboard: React.FC<Props> = ({
 
     return (
       <div className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-6">
           <div className="flex items-start justify-between gap-6 flex-wrap">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                 <Database className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">Submission Records</p>
-                <h2 className="text-xl font-black text-[#1e293b] uppercase tracking-tight leading-none">ADMIN DATA CONTROL</h2>
-                <p className="mt-1 text-[10px] font-bold text-slate-400 uppercase tracking-wide">Exports and data distribution controls.</p>
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Submission Records</p>
+                <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-none">ADMIN DATA CONTROL</h2>
+                <p className="mt-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Exports and data distribution controls.</p>
               </div>
             </div>
           </div>
@@ -2435,13 +2436,13 @@ const AdminDashboard: React.FC<Props> = ({
           </div>
 
             <div className="flex flex-col gap-6 h-[75vh] max-h-[75vh]">
-              <div className="relative bg-white rounded-xl border border-slate-100 shadow-sm p-7 flex flex-col flex-[1.4] min-h-0 overflow-hidden">
-              <div className="absolute top-6 right-6 w-10 h-10 rounded-lg bg-slate-50 text-slate-700 flex items-center justify-center border border-slate-100 shadow-sm">
+              <div className="relative bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm p-7 flex flex-col flex-[1.4] min-h-0 overflow-hidden">
+              <div className="absolute top-6 right-6 w-10 h-10 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm">
                 <Users className="w-5 h-5" />
               </div>
               <div className="pr-14">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">Distribution</p>
-                <h3 className="mt-2 text-lg font-black text-slate-900 uppercase tracking-tight">Department counts</h3>
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Distribution</p>
+                <h3 className="mt-2 text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Department counts</h3>
               </div>
 
               <div className="mt-4 flex items-center justify-end">
@@ -2463,15 +2464,15 @@ const AdminDashboard: React.FC<Props> = ({
                 {deptsToShow.map((dept) => {
                   const count = deptCounts[dept] ?? 0;
                   return (
-                    <div key={dept} className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5">
-                      <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide truncate">{dept}</span>
+                    <div key={dept} className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-lg px-3 py-1.5">
+                      <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide truncate">{dept}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-black text-slate-900 tabular-nums">{count}</span>
+                        <span className="text-[13px] font-black text-slate-900 dark:text-slate-100 tabular-nums">{count}</span>
                         <button
                           type="button"
                           onClick={() => buildDepartmentAuditsZip(dept)}
                           disabled={dataZipBusy || count === 0}
-                          className={`px-2.5 py-1 rounded-xl bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 transition-all shadow-sm text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-1.5 ${
+                          className={`px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shadow-sm text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-1.5 ${
                             dataZipBusy || count === 0 ? 'opacity-70 cursor-not-allowed' : ''
                           }`}
                           title={`Download ${dept} validated + rejected audits as ZIP`}
@@ -2547,8 +2548,8 @@ const AdminDashboard: React.FC<Props> = ({
       const isLastActiveAdmin = isAdmin && isActive && activeAdminCount <= 1;
 
       const baseBg = isActive
-        ? 'bg-blue-50/80 border-blue-200 shadow-md'
-        : 'bg-red-50/80 border-red-200';
+        ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700 shadow-md'
+        : 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700';
 
       return (
         <div
@@ -2557,26 +2558,26 @@ const AdminDashboard: React.FC<Props> = ({
         >
           <div className="flex items-center gap-4">
             <div
-              className={`w-12 h-12 rounded-lg bg-white flex items-center justify-center text-xs font-black shadow-sm border-2 ${
+              className={`w-12 h-12 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-xs font-black shadow-sm border-2 ${
                 isActive
-                  ? 'border-blue-700 text-blue-700'
+                  ? 'border-blue-700 text-blue-700 dark:text-blue-400'
                   : 'border-red-400 text-red-500'
               }`}
             >
               {userName.charAt(0)}
             </div>
             <div>
-              <p className="text-sm font-black text-[#1e293b]">
+              <p className="text-sm font-black text-slate-900 dark:text-slate-100">
                 {userName} - {roleMap[userName]?.role || 'Employee'}
               </p>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide">
+              <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                 USER_ID: {btoa(userName).substring(0, 8).toUpperCase()}
               </p>
             </div>
           </div>
 
           <div className="flex flex-col items-end gap-3">
-            <span className="text-[9px] font-black uppercase tracking-wide text-slate-400">
+            <span className="text-[9px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500">
               {isActive ? 'Active' : 'Inactive'}
             </span>
             <div className="flex items-center gap-2">
@@ -2586,10 +2587,10 @@ const AdminDashboard: React.FC<Props> = ({
                 title={isLastActiveAdmin ? 'At least one admin must remain active' : undefined}
                 className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-[0.18em] transition-all min-w-[96px] justify-center ${
                   isLastActiveAdmin
-                    ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-70'
+                    ? 'border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-[#0d1526] text-slate-400 dark:text-slate-500 dark:text-slate-500 cursor-not-allowed opacity-70'
                     : isActive
-                    ? 'border-emerald-300 bg-emerald-50/70 text-emerald-700'
-                    : 'border-red-300 bg-red-50/70 text-red-700'
+                    ? 'border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700'
+                    : 'border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/30 text-red-700'
                 }`}
               >
                 <span
@@ -2598,7 +2599,7 @@ const AdminDashboard: React.FC<Props> = ({
                   }`}
                 >
                   <span
-                    className={`absolute w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
+                    className={`absolute w-4 h-4 rounded-full bg-white dark:bg-slate-800 shadow-sm transition-transform ${
                       isActive ? 'translate-x-5' : 'translate-x-1'
                     }`}
                   />
@@ -2607,7 +2608,7 @@ const AdminDashboard: React.FC<Props> = ({
               </button>
               <button
                 onClick={() => handleOpenEdit(userName)}
-                className="p-2.5 rounded-xl text-slate-300 hover:text-blue-600 hover:bg-slate-50 transition-all"
+                className="p-2.5 rounded-xl text-slate-300 hover:text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all"
                 title="Edit user"
               >
                 <Settings className="w-4 h-4" />
@@ -2619,15 +2620,15 @@ const AdminDashboard: React.FC<Props> = ({
                     className={`p-2.5 rounded-xl transition-all ${
                       transferringNode === userName
                         ? 'text-blue-600'
-                        : 'text-slate-300 hover:text-blue-500 hover:bg-slate-50'
+                        : 'text-slate-300 hover:text-blue-500 hover:bg-slate-50 dark:hover:bg-slate-900'
                     }`}
                     title="Move user"
                   >
                     <Share2 className="w-4 h-4" />
                   </button>
                   {transferringNode === userName && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-sm border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
-                      <p className="px-4 py-2 text-[8px] font-black text-slate-300 uppercase tracking-wide border-b border-slate-50 mb-1">
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                      <p className="px-4 py-2 text-[8px] font-black text-slate-300 uppercase tracking-wide border-b border-slate-50 dark:border-slate-700 mb-1">
                         Transfer to Dept
                       </p>
                       {availableDepts
@@ -2636,7 +2637,7 @@ const AdminDashboard: React.FC<Props> = ({
                           <button
                             key={dept}
                             onClick={() => handleExecuteTransfer(userName, dept)}
-                            className="w-full text-left px-4 py-2 text-[10px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors uppercase tracking-wide"
+                            className="w-full text-left px-4 py-2 text-[10px] font-bold text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-blue-600 transition-colors uppercase tracking-wide"
                           >
                             {dept}
                           </button>
@@ -2657,17 +2658,17 @@ const AdminDashboard: React.FC<Props> = ({
     return (
       <div className="bg-transparent rounded-none p-0 shadow-none border-0 animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col space-y-6">
         {/* Administrative roster */}
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                 <Users className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">
+              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                   User directory
                 </p>
-                <h3 className="text-xl font-black text-[#1e293b] uppercase tracking-tight leading-none">
+                <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-none">
                   Administrative roster
                 </h3>
               </div>
@@ -2685,7 +2686,7 @@ const AdminDashboard: React.FC<Props> = ({
                 className={`px-6 py-3 rounded-lg text-[10px] font-black uppercase tracking-wide whitespace-nowrap transition-all duration-300 ease-out transform-gpu ${
                   activeDept === dept
                     ? 'bg-[#0F2F6F] text-white shadow-lg shadow-[#0F2F6F]/20 ring-1 ring-[#0F2F6F]/40 -translate-y-0.5'
-                    : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:-translate-y-0.5 hover:shadow-md'
+                    : 'bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:-translate-y-0.5 hover:shadow-md'
                 }`}
               >
                 {dept} <span className="ml-2 opacity-50">{(adminUsers[dept] || []).length}</span>
@@ -2695,22 +2696,22 @@ const AdminDashboard: React.FC<Props> = ({
         </div>
 
         {/* Department status overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(180px,1fr)_minmax(0,2.8fr)] gap-6 items-stretch bg-slate-50 rounded-lg pt-7 pb-3 px-6 lg:pt-9 lg:pb-4 lg:px-10 shadow-lg border border-slate-200/70 text-slate-900 relative overflow-hidden mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(180px,1fr)_minmax(0,2.8fr)] gap-6 items-stretch bg-slate-50 dark:bg-slate-900 rounded-lg pt-7 pb-3 px-6 lg:pt-9 lg:pb-4 lg:px-10 shadow-lg border border-slate-200 dark:border-slate-600/70 text-slate-900 dark:text-slate-100 relative overflow-hidden mb-6">
           {/* Decorative background blobs removed for pure light background */}
           {/* Panel 1/3: Team status */}
-          <div className="flex flex-col gap-3 min-w-0 justify-start pb-4 border-b border-slate-200/70 lg:pb-0 lg:border-b-0">
+          <div className="flex flex-col gap-3 min-w-0 justify-start pb-4 border-b border-slate-200 dark:border-slate-600/70 lg:pb-0 lg:border-b-0">
             <div className="flex items-center gap-4 w-full min-h-[40px]">
-              <div className="w-10 h-10 bg-white/70 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/10 border border-slate-200">
+              <div className="w-10 h-10 bg-white dark:bg-slate-800/70 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/10 border border-slate-200 dark:border-slate-600">
                 <Users className="w-5 h-5 text-emerald-500" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">
+                <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">
                   Team status
                 </p>
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px] lg:max-w-[280px]">
+                <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[240px] lg:max-w-[280px]">
                   {activeDept} department
                 </h3>
-                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wide mt-1">
+                <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-1">
                   {activeNodes} active · {inactiveNodes} inactive
                 </p>
               </div>
@@ -2724,7 +2725,7 @@ const AdminDashboard: React.FC<Props> = ({
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[9px] font-black uppercase tracking-wide text-slate-500">Active users</span>
+                <span className="text-[9px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-400">Active users</span>
                 <span className="text-2xl font-black text-emerald-600">
                   {totalNodes ? Math.round(activeRatio * 100) : 0}%
                 </span>
@@ -2732,19 +2733,19 @@ const AdminDashboard: React.FC<Props> = ({
             </div>
           </div>
 
-          <div className="rounded-[1.75rem] bg-white/40 border border-slate-200/70 p-5 lg:p-6 w-full min-w-0 overflow-x-auto">
+          <div className="rounded-[1.75rem] bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-600/70 p-5 lg:p-6 w-full min-w-0 overflow-x-auto">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start" style={{ minWidth: '360px' }}>
               {/* Panel 2/3: Department average — donut LEFT, Q1-Q4 bars RIGHT */}
-              <div className="flex flex-col justify-start pb-4 xl:pb-0 border-b xl:border-b-0 border-slate-200/60 min-w-0">
+              <div className="flex flex-col justify-start pb-4 xl:pb-0 border-b xl:border-b-0 border-slate-200 dark:border-slate-600/60 min-w-0">
                 <div className="flex items-center gap-3 mb-3 min-h-[36px]">
-                  <div className="w-8 h-8 bg-white/70 rounded-lg flex items-center justify-center shadow shadow-sky-500/10 border border-slate-200 flex-shrink-0">
+                  <div className="w-8 h-8 bg-white dark:bg-slate-800/70 rounded-lg flex items-center justify-center shadow shadow-sky-500/10 border border-slate-200 dark:border-slate-600 flex-shrink-0">
                     <Scale className="w-4 h-4 text-sky-500" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight leading-none">
+                    <p className="text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-none">
                       Department average
                     </p>
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-wide mt-0.5">
+                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-0.5">
                       Full-year overview
                     </p>
                   </div>
@@ -2760,7 +2761,7 @@ const AdminDashboard: React.FC<Props> = ({
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-[9px] font-black uppercase tracking-wide text-slate-400">Dept avg</span>
+                      <span className="text-[9px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500">Dept avg</span>
                       <span className="text-2xl font-black text-blue-500">
                         {Math.round(animatedDeptPerfRatio * 100)}%
                       </span>
@@ -2778,16 +2779,16 @@ const AdminDashboard: React.FC<Props> = ({
                       const barWidth = railOpen ? '14px' : '22px';
                       return (
                         <div key={label} className="flex flex-col items-center justify-end gap-0.5 flex-shrink-0 h-full" style={{ width: barWidth }}>
-                          <span className={`font-black text-slate-600 tabular-nums text-center leading-none ${railOpen ? 'text-[7px]' : 'text-[8px]'}`}>
+                          <span className={`font-black text-slate-600 dark:text-slate-400 dark:text-slate-400 tabular-nums text-center leading-none ${railOpen ? 'text-[7px]' : 'text-[8px]'}`}>
                             {Math.round(value)}%
                           </span>
-                          <div className="relative flex-1 w-full rounded-sm bg-slate-200 overflow-hidden flex items-end">
+                          <div className="relative flex-1 w-full rounded-sm bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-end">
                             <div
                               className="w-full bg-[#3880F0] transition-none"
                               style={{ height: `${heightPct}%` }}
                             />
                           </div>
-                          <span className={`font-black uppercase tracking-wide text-slate-500 leading-none ${railOpen ? 'text-[7px]' : 'text-[8px]'}`}>
+                          <span className={`font-black uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-400 leading-none ${railOpen ? 'text-[7px]' : 'text-[8px]'}`}>
                             {label}
                           </span>
                         </div>
@@ -2800,14 +2801,14 @@ const AdminDashboard: React.FC<Props> = ({
               {/* Panel 3/3: Department performance — compact */}
               <div className="flex flex-col justify-start overflow-hidden py-2 lg:py-0">
                 <div className="flex items-center gap-3 mb-2 min-h-[36px]">
-                  <div className="w-8 h-8 bg-white/70 rounded-lg flex items-center justify-center shadow shadow-sky-500/10 border border-slate-200 flex-shrink-0">
+                  <div className="w-8 h-8 bg-white dark:bg-slate-800/70 rounded-lg flex items-center justify-center shadow shadow-sky-500/10 border border-slate-200 dark:border-slate-600 flex-shrink-0">
                     <Cpu className="w-4 h-4 text-sky-500" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight leading-none">
+                    <p className="text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-none">
                       Department performance
                     </p>
-                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-wide mt-0.5">
+                    <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-0.5">
                       Avg scores overview
                     </p>
                   </div>
@@ -2815,16 +2816,16 @@ const AdminDashboard: React.FC<Props> = ({
                 <div className="mt-1 overflow-y-auto pr-1 space-y-1 custom-scrollbar-thin">
                   {departmentSummaries.map(summary => (
                     <div key={summary.dept} className="flex items-center gap-2 py-0.5">
-                      <span className="w-[4.5rem] text-[9px] font-black uppercase tracking-wide text-slate-500 truncate flex-shrink-0">
+                      <span className="w-[4.5rem] text-[9px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-400 truncate flex-shrink-0">
                         {summary.dept}
                       </span>
-                      <div className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden">
+                      <div className="flex-1 h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-blue-500 transition-none"
                           style={{ width: `${Math.max(0, Math.min(100, animatedDeptScores[summary.dept] ?? 0))}%` }}
                         />
                       </div>
-                      <span className="w-9 text-right text-[9px] font-black text-slate-600 tabular-nums flex-shrink-0">
+                      <span className="w-9 text-right text-[9px] font-black text-slate-600 dark:text-slate-400 dark:text-slate-400 tabular-nums flex-shrink-0">
                         {Math.round(Math.max(0, Math.min(100, summary.avgScore || 0)))}%
                       </span>
                     </div>
@@ -2835,11 +2836,11 @@ const AdminDashboard: React.FC<Props> = ({
           </div>
       </div>
 
-        <div className="space-y-4 rounded-lg border border-slate-200 bg-white/70 shadow-sm p-6">
+        <div className="space-y-4 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800/70 shadow-sm p-6">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex flex-col gap-2 flex-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                   Authorized personnel
                 </p>
                 <div className="relative group w-full max-w-md">
@@ -2847,14 +2848,14 @@ const AdminDashboard: React.FC<Props> = ({
                   <input
                     type="text"
                     placeholder="Find user by name..."
-                    className="pl-9 pr-5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-black tracking-[0.05em] focus:outline-none focus:ring-4 focus:ring-blue-500/15 w-full transition-all focus:bg-white focus:border-blue-200"
+                    className="pl-9 pr-5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg text-[11px] font-black text-black dark:text-white tracking-[0.05em] focus:outline-none focus:ring-4 focus:ring-blue-500/15 w-full transition-all focus:bg-white dark:bg-slate-800 focus:border-blue-200 dark:border-blue-700"
                     value={registrySearch}
                     onChange={(e) => setRegistrySearch(e.target.value)}
                   />
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-wrap justify-between md:justify-end">
-                <div className="flex bg-slate-100/90 p-1.5 rounded-lg border border-slate-200/60 shadow-inner gap-1">
+                <div className="flex bg-slate-100 dark:bg-[#0d1526]/90 p-1.5 rounded-lg border border-slate-200 dark:border-slate-600/60 shadow-inner gap-1">
                   {(['all', 'active', 'inactive'] as const).map(filter => (
                     <button
                       key={filter}
@@ -2863,7 +2864,7 @@ const AdminDashboard: React.FC<Props> = ({
                       className={`min-w-[3.5rem] px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.18em] transition-all ${
                         (registryStatusFilter ?? 'all') === filter
                           ? 'bg-blue-600 text-white shadow-md'
-                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                          : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-500'
                       }`}
                     >
                       {filter === 'all' ? 'All' : filter === 'active' ? 'Active' : 'Inactive'}
@@ -2883,20 +2884,20 @@ const AdminDashboard: React.FC<Props> = ({
 
           {isProvisioning && (
             <div className="fixed inset-0 z-[5100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-              <div className="w-full max-w-lg bg-white rounded-lg shadow-sm border border-slate-100 p-5 space-y-6 animate-in slide-in-from-bottom-4 duration-300">
+              <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 p-5 space-y-6 animate-in slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-md">
                       <UserPlus className="w-5 h-5 text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Add user</p>
-                      <p className="text-sm font-black text-slate-900 uppercase tracking-wide">Add new personnel</p>
+                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-[0.25em]">Add user</p>
+                      <p className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Add new personnel</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setIsProvisioning(false)}
-                    className="p-2 text-slate-300 hover:text-slate-600 transition-colors"
+                    className="p-2 text-slate-300 hover:text-slate-600 dark:hover:text-slate-400 dark:hover:text-slate-500 dark:hover:text-slate-400 transition-colors"
                     aria-label="Close add user dialog"
                   >
                     <X className="w-5 h-5" />
@@ -2909,7 +2910,7 @@ const AdminDashboard: React.FC<Props> = ({
                 <input 
                   type="text"
                   placeholder="Enter Name"
-                  className="w-full bg-white border border-blue-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
+                  className="w-full bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
                   value={newEmployeeName}
                   onChange={(e) => setNewEmployeeName(e.target.value)}
                 />
@@ -2919,7 +2920,7 @@ const AdminDashboard: React.FC<Props> = ({
                 <div className="relative">
                   <button
                     type="button"
-                    className="w-full pl-4 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg font-bold text-sm text-slate-900 cursor-pointer text-left outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 transition-all hover:bg-slate-100 hover:border-slate-300 flex items-center disabled:opacity-60"
+                    className="w-full pl-4 pr-10 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg font-bold text-sm text-slate-900 dark:text-slate-100 cursor-pointer text-left outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 flex items-center disabled:opacity-60"
                     aria-haspopup="listbox"
                     aria-expanded={provisionRoleOpen}
                     onClick={() => setProvisionRoleOpen(v => !v)}
@@ -2928,11 +2929,11 @@ const AdminDashboard: React.FC<Props> = ({
                     <span className="flex-1">
                       {newEmployeeRole}
                     </span>
-                    <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none transition-transform ${provisionRoleOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-500 pointer-events-none transition-transform ${provisionRoleOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {provisionRoleOpen && (
                     <div
-                      className="absolute left-0 right-0 top-full mt-1.5 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm shadow-slate-200/50 z-50 overflow-hidden"
+                      className="absolute left-0 right-0 top-full mt-1.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm shadow-slate-200/50 z-50 overflow-hidden"
                       role="listbox"
                     >
                       {(activeDept === 'Admin'
@@ -2948,7 +2949,7 @@ const AdminDashboard: React.FC<Props> = ({
                           className={`w-full px-4 py-2.5 text-left text-sm font-bold transition-colors first:pt-3 last:pb-3 ${
                             newEmployeeRole === role
                               ? 'bg-blue-600 text-white'
-                              : 'text-slate-700 hover:bg-slate-100'
+                              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
                           }`}
                         >
                           {role}
@@ -2964,7 +2965,7 @@ const AdminDashboard: React.FC<Props> = ({
                 <div className="relative">
                   <button
                     type="button"
-                    className="w-full pl-4 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg font-bold text-sm text-slate-900 cursor-pointer text-left outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 transition-all hover:bg-slate-100 hover:border-slate-300 flex items-center"
+                    className="w-full pl-4 pr-10 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg font-bold text-sm text-slate-900 dark:text-slate-100 cursor-pointer text-left outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 flex items-center"
                     aria-haspopup="listbox"
                     aria-expanded={provisionDeptOpen}
                     onClick={() => setProvisionDeptOpen(v => !v)}
@@ -2972,11 +2973,11 @@ const AdminDashboard: React.FC<Props> = ({
                     <span className="flex-1">
                       {activeDept}
                     </span>
-                    <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none transition-transform ${provisionDeptOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-500 pointer-events-none transition-transform ${provisionDeptOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {provisionDeptOpen && (
                     <div
-                      className="absolute left-0 right-0 top-full mt-1.5 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm shadow-slate-200/50 z-50 overflow-hidden"
+                      className="absolute left-0 right-0 top-full mt-1.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm shadow-slate-200/50 z-50 overflow-hidden"
                       role="listbox"
                     >
                       {availableDepts.map(dept => (
@@ -2989,7 +2990,7 @@ const AdminDashboard: React.FC<Props> = ({
                           className={`w-full px-4 py-2.5 text-left text-sm font-bold transition-colors first:pt-3 last:pb-3 ${
                             activeDept === dept
                               ? 'bg-blue-600 text-white'
-                              : 'text-slate-700 hover:bg-slate-100'
+                              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
                           }`}
                         >
                           {dept}
@@ -3008,7 +3009,7 @@ const AdminDashboard: React.FC<Props> = ({
                   <input 
                     type="password"
                     placeholder="Enter Master Auth Key"
-                    className="w-full bg-white border border-red-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-red-500/5 transition-all"
+                    className="w-full bg-white dark:bg-slate-800 border border-red-200 dark:border-red-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-red-500/5 transition-all"
                     value={adminAuthKey}
                     onChange={(e) => setAdminAuthKey(e.target.value)}
                   />
@@ -3016,7 +3017,7 @@ const AdminDashboard: React.FC<Props> = ({
               )}
             </div>
                 <div className="flex justify-end gap-3 pt-2">
-                  <button onClick={() => setIsProvisioning(false)} className="px-4 py-2 text-slate-400 text-[10px] font-black uppercase tracking-wide">Cancel</button>
+                  <button onClick={() => setIsProvisioning(false)} className="px-4 py-2 text-slate-400 dark:text-slate-500 dark:text-slate-500 text-[10px] font-black uppercase tracking-wide">Cancel</button>
                   <button onClick={handleCommitProvision} className="px-8 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-wide rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Save user changes</button>
                 </div>
               </div>
@@ -3025,12 +3026,12 @@ const AdminDashboard: React.FC<Props> = ({
 
           <div className="mt-4 flex-1 min-h-0">
             {filteredUsers.length === 0 ? (
-              <div className="h-[22rem] min-h-[22rem] flex flex-col items-center justify-center text-center text-slate-400 space-y-2 border border-dashed border-slate-200 rounded-lg">
+              <div className="h-[22rem] min-h-[22rem] flex flex-col items-center justify-center text-center text-slate-400 dark:text-slate-500 dark:text-slate-500 space-y-2 border border-dashed border-slate-200 dark:border-slate-600 rounded-lg">
                 <ShieldAlert className="w-8 h-8 text-slate-300 mb-1" />
                 <p className="text-[11px] font-black uppercase tracking-[0.18em]">
                   No users match the current filters
                 </p>
-                <p className="text-[10px] font-medium text-slate-400">
+                <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 dark:text-slate-500">
                   Adjust your search text or status filter to see results.
                 </p>
               </div>
@@ -3040,7 +3041,7 @@ const AdminDashboard: React.FC<Props> = ({
                   .filter(group => groupedByRole[group]?.length)
                   .map(group => (
                     <div key={group} className="space-y-2">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide px-1">
+                      <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide px-1">
                         {group}
                       </p>
                       <div className="space-y-3">
@@ -3057,7 +3058,7 @@ const AdminDashboard: React.FC<Props> = ({
   };
 
   const renderLogs = (heightClass: string = 'min-h-[750px]') => (
-    <div className={`flex flex-col ${heightClass} rounded-lg border border-slate-200 bg-slate-50 p-6 md:p-5 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500`}>
+    <div className={`flex flex-col ${heightClass} rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 p-6 md:p-5 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500`}>
       <div className="flex flex-col gap-6 mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -3065,8 +3066,8 @@ const AdminDashboard: React.FC<Props> = ({
               <Terminal className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-[#1e293b] uppercase tracking-wide leading-none mb-1">GLOBAL SYSTEM LOGS</h3>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">REAL-TIME AUDITS</p>
+              <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide leading-none mb-1">GLOBAL SYSTEM LOGS</h3>
+              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">REAL-TIME AUDITS</p>
             </div>
           </div>
           
@@ -3079,12 +3080,12 @@ const AdminDashboard: React.FC<Props> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-5 bg-white/80 rounded-3xl border border-slate-200 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-5 bg-white dark:bg-slate-800/80 rounded-3xl border border-slate-200 dark:border-slate-600 shadow-sm">
           <div className="space-y-1.5">
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-wide ml-1">Department</label>
+            <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Department</label>
             <div className="relative">
               <select 
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-[10px] font-bold text-slate-700 outline-none appearance-none cursor-pointer focus:border-blue-600"
+                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-[10px] font-bold text-slate-700 dark:text-slate-300 outline-none appearance-none cursor-pointer focus:border-blue-600"
                 value={logFilterDept}
                 onChange={(e) => setLogFilterDept(e.target.value)}
               >
@@ -3095,10 +3096,10 @@ const AdminDashboard: React.FC<Props> = ({
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-wide ml-1">Employee</label>
+            <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Employee</label>
             <div className="relative">
               <select 
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-[10px] font-bold text-slate-700 outline-none appearance-none cursor-pointer focus:border-blue-600"
+                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-[10px] font-bold text-slate-700 dark:text-slate-300 outline-none appearance-none cursor-pointer focus:border-blue-600"
                 value={logFilterUser}
                 onChange={(e) => setLogFilterUser(e.target.value)}
               >
@@ -3109,10 +3110,10 @@ const AdminDashboard: React.FC<Props> = ({
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-[9px] font-black text-slate-400 uppercase tracking-wide ml-1">Severity Tier</label>
+            <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Severity Tier</label>
             <div className="relative">
               <select 
-                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-[10px] font-bold text-slate-700 outline-none appearance-none cursor-pointer focus:border-blue-600"
+                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-[10px] font-bold text-slate-700 dark:text-slate-300 outline-none appearance-none cursor-pointer focus:border-blue-600"
                 value={logFilterSeverity}
                 onChange={(e) => setLogFilterSeverity(e.target.value)}
               >
@@ -3138,25 +3139,25 @@ const AdminDashboard: React.FC<Props> = ({
       
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
         {filteredLogs.length === 0 ? (
-          <div className="min-h-[360px] flex flex-col items-center justify-center space-y-4 rounded-lg border border-slate-200 bg-slate-50/70">
-            <Filter className="w-16 h-16 text-slate-400" />
-            <p className="text-sm font-black uppercase tracking-wide text-slate-600">No logs match filter criteria</p>
+          <div className="min-h-[360px] flex flex-col items-center justify-center space-y-4 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/70">
+            <Filter className="w-16 h-16 text-slate-400 dark:text-slate-500 dark:text-slate-500" />
+            <p className="text-sm font-black uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-400">No logs match filter criteria</p>
           </div>
         ) : (
           filteredLogs.map((log) => (
-            <div key={log.id} className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm flex gap-4 font-mono text-sm group hover:border-slate-300 hover:shadow transition-all">
-              <span className="text-slate-400 shrink-0 text-sm">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+            <div key={log.id} className="p-4 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm flex gap-4 font-mono text-sm group hover:border-slate-300 dark:hover:border-slate-500 hover:shadow transition-all">
+              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-500 shrink-0 text-sm">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
               <div className="space-y-1.5 flex-grow">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${log.type === 'OK' ? 'bg-emerald-100 text-emerald-700' : log.type === 'WARN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{log.action}</span>
-                    <span className="text-slate-900 font-bold text-sm">{log.user}</span>
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${log.type === 'OK' ? 'bg-emerald-100 text-emerald-700' : log.type === 'WARN' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700 dark:text-blue-400'}`}>{log.action}</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-bold text-sm">{log.user}</span>
                   </div>
                   <span className="text-xs font-black text-slate-300 uppercase tracking-wide opacity-0 group-hover:opacity-100 transition-opacity">
                     DEPT: {roleMap[log.user]?.department || 'SYS'}
                   </span>
                 </div>
-                <p className="text-slate-500 leading-relaxed text-sm">{log.details}</p>
+                <p className="text-slate-500 dark:text-slate-400 dark:text-slate-400 leading-relaxed text-sm">{log.details}</p>
               </div>
             </div>
           ))
@@ -3166,117 +3167,178 @@ const AdminDashboard: React.FC<Props> = ({
   );
 
   const renderValidation = () => {
-    const deptCandidates = pendingTransmissions.filter((t) => {
-      const u = roleMap[t.userName];
-      const dept = u?.department || 'Unknown';
-      if (dept !== activeDept) return false;
-      // Pending until admin finalizes, but supervisor already produced a recommendation.
-      return t.status !== 'validated' && t.status !== 'rejected' && !!t.supervisorRecommendation;
-    });
-
-    const term = validationSearch.trim().toLowerCase();
-    const filtered = !term
-      ? deptCandidates
-      : deptCandidates.filter((t) => {
-          return (
-            t.userName.toLowerCase().includes(term) ||
-            t.id.toLowerCase().includes(term) ||
-            (t.jobId || '').toLowerCase().includes(term) ||
-            (t.jobType || '').toLowerCase().includes(term)
-          );
-        });
-
     const recommendedLabel = (s: Transmission['supervisorRecommendation']) =>
       s === 'rejected' ? 'Changes Requested' : 'Supervisor Approved';
 
+    // Pending: in pendingTransmissions, supervisor already graded, not yet finalized
+    const pendingCandidates = pendingTransmissions.filter((t) => {
+      const u = roleMap[t.userName];
+      const dept = u?.department || 'Unknown';
+      if (dept !== activeDept) return false;
+      return t.status !== 'validated' && t.status !== 'rejected' && !!t.supervisorRecommendation;
+    });
+
+    // Validated: moved to history with status 'validated'
+    const validatedCandidates = transmissionHistory.filter((t) => {
+      const u = roleMap[t.userName];
+      const dept = u?.department || t.department || 'Unknown';
+      return dept === activeDept && t.status === 'validated';
+    });
+
+    // Rejected: moved to history with status 'rejected'
+    const rejectedCandidates = transmissionHistory.filter((t) => {
+      const u = roleMap[t.userName];
+      const dept = u?.department || t.department || 'Unknown';
+      return dept === activeDept && t.status === 'rejected';
+    });
+
+    const activeCandidates =
+      validationStatusTab === 'pending'
+        ? pendingCandidates
+        : validationStatusTab === 'validated'
+        ? validatedCandidates
+        : rejectedCandidates;
+
+    const term = validationSearch.trim().toLowerCase();
+    const filtered = !term
+      ? activeCandidates
+      : activeCandidates.filter((t) =>
+          t.userName.toLowerCase().includes(term) ||
+          t.id.toLowerCase().includes(term) ||
+          (t.jobId || '').toLowerCase().includes(term) ||
+          (t.jobType || '').toLowerCase().includes(term)
+        );
+
+    const statusTabConfig = [
+      { key: 'pending' as const,   label: 'Pending',   count: pendingCandidates.length,   color: 'amber'   },
+      { key: 'validated' as const, label: 'Validated', count: validatedCandidates.length, color: 'emerald' },
+      { key: 'rejected' as const,  label: 'Rejected',  count: rejectedCandidates.length,  color: 'red'     },
+    ] as const;
+
+    const emptyMessages = {
+      pending:   { icon: <ClipboardCheck className="w-12 h-12 text-slate-300" />, title: 'No pending submissions', desc: 'Once supervisors finish grading, their submissions will show up here for approval or rejection.' },
+      validated: { icon: <ClipboardCheck className="w-12 h-12 text-slate-300" />, title: 'No validated submissions yet', desc: 'Approved submissions will appear here.' },
+      rejected:  { icon: <ClipboardCheck className="w-12 h-12 text-slate-300" />, title: 'No rejected submissions', desc: 'Submissions returned for revision will appear here.' },
+    };
+
     return (
       <div className="bg-transparent rounded-none p-0 shadow-none border-0 animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col space-y-6">
-        {/* Validation Tabs Summary */}
+        {/* Department Tabs Summary */}
         <ValidationTabs
           pendingTransmissions={pendingTransmissions}
           validatedTransmissions={transmissionHistory.filter(tx => tx.status === 'validated')}
           rejectedTransmissions={transmissionHistory.filter(tx => tx.status === 'rejected')}
           registry={registry}
           activeTab={activeDept}
-          onTabChange={setActiveDept}
+          onTabChange={(dept) => { setActiveDept(dept); setValidationStatusTab('pending'); }}
         />
 
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
+        {/* Header + Search */}
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-4 min-w-0">
               <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
                 <ShieldCheck className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">Admin grade control</p>
-                <h3 className="text-xl font-black text-[#1e293b] uppercase tracking-tight leading-none">Grade Validation</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-1">
-                  Pending supervisor recommendations for {activeDept}
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide">Admin grade control</p>
+                <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-none">Grade Validation</h3>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mt-1">
+                  {activeDept} submissions
                 </p>
               </div>
             </div>
-
             <div className="flex flex-wrap items-center gap-2">
               <input
                 type="text"
                 value={validationSearch}
                 onChange={(e) => setValidationSearch(e.target.value)}
                 placeholder="Search by name or submission ID..."
-                className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-[10px] font-black text-slate-800 outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-300"
+                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-[10px] font-black text-slate-800 dark:text-slate-200 outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-300 dark:border-blue-600"
               />
             </div>
           </div>
+
+          {/* Status Sub-tabs: Pending / Validated / Rejected */}
+          <div className="mt-4 flex gap-2 flex-wrap">
+            {statusTabConfig.map(({ key, label, count, color }) => {
+              const isActive = validationStatusTab === key;
+              const colorMap = {
+                amber:   { active: 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-600 text-amber-800 dark:text-amber-300', badge: 'bg-amber-200 text-amber-800', inactive: 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900' },
+                emerald: { active: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-600 text-emerald-800 dark:text-emerald-300', badge: 'bg-emerald-200 text-emerald-800', inactive: 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900' },
+                red:     { active: 'bg-red-50 dark:bg-red-900/30 border-red-300 dark:border-red-600 text-red-800 dark:text-red-300', badge: 'bg-red-200 text-red-800', inactive: 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900' },
+              } as const;
+              const c = colorMap[color];
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => { setValidationStatusTab(key); setValidationSearch(''); }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-[10px] font-black uppercase tracking-wide transition-all ${isActive ? c.active : `bg-white dark:bg-slate-800 ${c.inactive}`}`}
+                >
+                  {label}
+                  <span className={`inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-md text-[9px] font-black ${isActive ? c.badge : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
+        {/* List */}
         {filtered.length === 0 ? (
-          <div className="min-h-[220px] flex flex-col items-center justify-center space-y-3 rounded-lg border border-slate-200 bg-slate-50/60 p-5 text-center">
-            <ClipboardCheck className="w-12 h-12 text-slate-300" />
-            <p className="text-sm font-black uppercase tracking-wide text-slate-600">No grades awaiting Admin Validation</p>
-            <p className="text-[10px] font-medium text-slate-400 max-w-[360px] leading-relaxed">
-              Once supervisors finish grading, their submissions will show up here for approval or rejection.
-            </p>
+          <div className="min-h-[220px] flex flex-col items-center justify-center space-y-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/60 p-5 text-center">
+            {emptyMessages[validationStatusTab].icon}
+            <p className="text-sm font-black uppercase tracking-wide text-slate-600 dark:text-slate-400">{emptyMessages[validationStatusTab].title}</p>
+            <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 max-w-[360px] leading-relaxed">{emptyMessages[validationStatusTab].desc}</p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-6">
             <div className="flex flex-col gap-3">
               {filtered
                 .slice()
                 .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                 .map((t) => {
                   const finalScore = t.ratings?.finalScore != null ? Number(t.ratings.finalScore) : null;
-                  const scoreBg =
-                    finalScore == null
-                      ? 'bg-slate-50 border-slate-200 text-slate-600'
-                      : finalScore >= 90
-                        ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                        : finalScore >= 70
-                          ? 'bg-blue-50 border-blue-100 text-blue-700'
-                          : finalScore >= 50
-                            ? 'bg-amber-50 border-amber-100 text-amber-700'
-                            : 'bg-red-50 border-red-100 text-red-700';
 
                   return (
                     <div
                       key={t.id}
-                      className="group flex items-center justify-between gap-4 p-5 rounded-lg border border-slate-100 hover:border-blue-200 hover:shadow-sm transition-all"
+                      className="group flex items-center justify-between gap-4 p-5 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-700 hover:shadow-sm transition-all"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-3 flex-wrap">
-                          <div className="w-12 h-12 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-xs font-black shadow-sm">
+                          <div className="w-12 h-12 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-xs font-black shadow-sm">
                             {t.userName.charAt(0)}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-black text-[#1e293b] truncate">{t.userName}</p>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide">
+                            <p className="text-sm font-black text-slate-900 dark:text-slate-100 truncate">{t.userName}</p>
+                            <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide">
                               Submission ID: {t.id} • {t.jobType || '—'}
                             </p>
                           </div>
                         </div>
 
                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                           <span className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black rounded-full uppercase tracking-wide">
-                            {recommendedLabel(t.supervisorRecommendation)}
-                          </span>
+                          {/* Status badge */}
+                          {validationStatusTab === 'pending' && t.supervisorRecommendation && (
+                            <span className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black rounded-full uppercase tracking-wide">
+                              {recommendedLabel(t.supervisorRecommendation)}
+                            </span>
+                          )}
+                          {validationStatusTab === 'validated' && (
+                            <span className="px-3 py-1 bg-emerald-600 text-white text-[9px] font-black rounded-full uppercase tracking-wide">
+                              Approved
+                            </span>
+                          )}
+                          {validationStatusTab === 'rejected' && (
+                            <span className="px-3 py-1 bg-red-600 text-white text-[9px] font-black rounded-full uppercase tracking-wide">
+                              Changes Requested
+                            </span>
+                          )}
+
+                          {/* Score badge */}
                           {finalScore != null && (() => {
                             const gradeInfo = getGradeForScore(finalScore);
                             const cls = getGradeColorClasses(gradeInfo.color);
@@ -3288,35 +3350,38 @@ const AdminDashboard: React.FC<Props> = ({
                             );
                           })()}
                           {finalScore == null && (
-                            <span className="px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-wide bg-slate-50 border-slate-200 text-slate-600">
+                            <span className="px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-wide bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400">
                               Score: —
                             </span>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onValidate(t.id, undefined, 'validated');
-                            triggerToast('Approved', `Submission finalized and approved.`);
-                          }}
-                          className="px-4 py-3 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-emerald-700 transition-colors"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onValidate(t.id, undefined, 'rejected');
-                            triggerToast('Changes Requested', `Submission returned for revision.`);
-                          }}
-                          className="px-4 py-3 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-red-700 transition-colors"
-                        >
-                          Request Changes
-                        </button>
-                      </div>
+                      {/* Action buttons — only for pending */}
+                      {validationStatusTab === 'pending' && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onValidate(t.id, undefined, 'validated');
+                              triggerToast('Approved', `Submission finalized and approved.`);
+                            }}
+                            className="px-4 py-3 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-emerald-700 transition-colors"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onValidate(t.id, undefined, 'rejected');
+                              triggerToast('Changes Requested', `Submission returned for revision.`);
+                            }}
+                            className="px-4 py-3 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-red-700 transition-colors"
+                          >
+                            Request Changes
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -3334,18 +3399,18 @@ const AdminDashboard: React.FC<Props> = ({
       <>
       <div className="bg-transparent rounded-none p-0 shadow-none border-0 animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4 min-w-0">
               <div className="w-10 h-10 shrink-0 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                 <Scale className="w-5 h-5 text-white" />
         </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">Configuration</p>
-                <h3 className="text-xl font-black text-[#1e293b] uppercase tracking-tight leading-none">
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Configuration</p>
+                <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-none">
                   Grading systems
                 </h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-1">Set department score weights and bonus thresholds</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mt-1">Set department score weights and bonus thresholds</p>
               </div>
             </div>
           </div>
@@ -3354,14 +3419,14 @@ const AdminDashboard: React.FC<Props> = ({
         {/* Department grading in depth */}
         <div className="space-y-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wide shrink-0">
+            <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide shrink-0">
               Score weights by department
             </h4>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={handleOpenSetStandardConfirm}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-[10px] font-black uppercase tracking-wide text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-slate-200"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-[10px] font-black uppercase tracking-wide text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-500 transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:hover:bg-slate-800 disabled:hover:border-slate-200 dark:hover:border-slate-600"
               >
                 <Save className="w-4 h-4 text-blue-600" />
                 Set as standard
@@ -3376,8 +3441,8 @@ const AdminDashboard: React.FC<Props> = ({
                 }
                 className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[9px] font-black uppercase tracking-wide shadow-sm transition-colors ${
                   standardSnapshotExists
-                    ? 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 hover:border-blue-300'
-                    : 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+                    ? 'border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-800 hover:bg-blue-100 hover:border-blue-300 dark:hover:border-blue-600'
+                    : 'cursor-not-allowed border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 dark:text-slate-500'
                 }`}
               >
                 <Download className="w-4 h-4" />
@@ -3387,17 +3452,17 @@ const AdminDashboard: React.FC<Props> = ({
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {gradingDepts.map((dept) => {
-              const accentClases = 'from-blue-500/10 to-transparent border-blue-200/60 text-blue-700';
+              const accentClases = 'from-blue-500/10 to-transparent border-blue-200 dark:border-blue-700/60 text-blue-700 dark:text-blue-400';
               const weightClases = 'text-blue-600';
               const categories = departmentWeights[dept] || [];
               const deptSum = categories.reduce((s, c) => s + c.weightPct, 0);
               const sumValid = deptSum === 100;
               return (
-              <div key={dept} className="group bg-white rounded-[1.75rem] border border-slate-200/90 shadow-lg shadow-slate-200/50 overflow-hidden transition-all duration-300 hover:shadow-sm hover:shadow-slate-200/60 hover:border-slate-300/80">
-                <div className={`px-6 py-2 bg-gradient-to-br ${accentClases} border-b border-slate-100 flex flex-wrap items-center justify-between gap-3`}>
+              <div key={dept} className="group bg-white dark:bg-slate-800 rounded-[1.75rem] border border-slate-200 dark:border-slate-600/90 shadow-lg shadow-slate-200/50 overflow-hidden transition-all duration-300 hover:shadow-sm hover:shadow-slate-200/60 hover:border-slate-300 dark:hover:border-slate-500/80">
+                <div className={`px-6 py-2 bg-gradient-to-br ${accentClases} border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3`}>
         <div>
-                    <h5 className="text-sm font-black text-slate-900 uppercase tracking-wide">{dept}</h5>
-                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.25em] mt-1">Category weights</p>
+                    <h5 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">{dept}</h5>
+                    <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-[0.25em] mt-1">Category weights</p>
             </div>
                   <div className="flex items-center gap-2 flex-wrap justify-end">
                     <span className={`text-[10px] font-black uppercase tracking-wide ${sumValid ? 'text-emerald-600' : 'text-amber-600'}`}>
@@ -3407,7 +3472,7 @@ const AdminDashboard: React.FC<Props> = ({
                       type="button"
                       onClick={() => handleResetDepartmentWeights(dept)}
                       title="Replace this department with its copy from the saved standard (Set as standard), or built-in defaults if none."
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white/80 text-slate-600 text-[9px] font-black uppercase tracking-wide hover:bg-slate-50 transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white/80"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 dark:text-slate-400 text-[9px] font-black uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:hover:bg-slate-800/80"
                     >
                       <RotateCcw className="w-3 h-3" />
                       Reset
@@ -3415,7 +3480,7 @@ const AdminDashboard: React.FC<Props> = ({
                     <button
                       type="button"
                       onClick={() => setGradingEditDept(dept)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-[10px] font-black uppercase tracking-wide hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-slate-200"
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-500 transition-all shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:hover:bg-slate-800 disabled:hover:border-slate-200 dark:hover:border-slate-600"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                       Edit weighted scores
@@ -3424,8 +3489,8 @@ const AdminDashboard: React.FC<Props> = ({
                 </div>
                 <div className="p-5">
                   {categories.map((cat, idx) => (
-                    <div key={idx} className="flex items-center justify-between gap-3 py-2.5 px-1 border-b border-slate-100/80 last:border-0">
-                      <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide leading-snug min-w-0 flex-1">{cat.label}</span>
+                    <div key={idx} className="flex items-center justify-between gap-3 py-2.5 px-1 border-b border-slate-100 dark:border-slate-700/80 last:border-0">
+                      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide leading-snug min-w-0 flex-1">{cat.label}</span>
                       <span className={`text-xs font-black tabular-nums shrink-0 ${weightClases}`}>{cat.weightPct}%</span>
                     </div>
                   ))}
@@ -3436,15 +3501,15 @@ const AdminDashboard: React.FC<Props> = ({
       </div>
 
         {/* Incentive matrix */}
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6 md:p-5">
-          <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-200 pb-6 mb-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-6 md:p-5">
+          <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-200 dark:border-slate-600 pb-6 mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600/10 border border-blue-200 rounded-xl flex items-center justify-center shadow-sm">
+              <div className="w-10 h-10 bg-blue-600/10 border border-blue-200 dark:border-blue-700 rounded-xl flex items-center justify-center shadow-sm">
                 <TrendingUp className="w-5 h-5 text-blue-600" />
             </div>
                   <div>
-                <h4 className="text-sm font-black text-[#1e293b] uppercase tracking-wide">Bonus eligibility thresholds</h4>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Applies to all departments & employees</p>
+                <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Bonus eligibility thresholds</h4>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Applies to all departments & employees</p>
                   </div>
                 </div>
             <button
@@ -3459,15 +3524,15 @@ const AdminDashboard: React.FC<Props> = ({
             {incentiveTiers.map((tier, i) => (
               <div
                 key={i}
-                className="group bg-white rounded-[1.75rem] border border-slate-200/90 shadow-lg shadow-slate-200/50 overflow-hidden transition-all duration-300 hover:shadow-sm hover:shadow-slate-200/60 hover:border-slate-300/80"
+                className="group bg-white dark:bg-slate-800 rounded-[1.75rem] border border-slate-200 dark:border-slate-600/90 shadow-lg shadow-slate-200/50 overflow-hidden transition-all duration-300 hover:shadow-sm hover:shadow-slate-200/60 hover:border-slate-300 dark:hover:border-slate-500/80"
               >
-                <div className="px-6 py-2 bg-gradient-to-br from-blue-500/10 to-transparent border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                <div className="px-6 py-2 bg-gradient-to-br from-blue-500/10 to-transparent border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-[200px]">
-                    <h5 className="text-sm font-black text-slate-900 uppercase tracking-wide">{tier.status || 'Tier'}</h5>
-                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.25em] mt-1">{tier.outcome || 'Outcome'}</p>
+                    <h5 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">{tier.status || 'Tier'}</h5>
+                    <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-[0.25em] mt-1">{tier.outcome || 'Outcome'}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap justify-end">
-                    <span className="text-[10px] font-black uppercase tracking-wide text-blue-700 bg-white/80 border border-blue-200/80 px-3 py-1.5 rounded-xl">
+                    <span className="text-[10px] font-black uppercase tracking-wide text-blue-700 dark:text-blue-400 bg-white dark:bg-slate-800/80 border border-blue-200 dark:border-blue-700/80 px-3 py-1.5 rounded-xl">
                       Min {tier.minScore}% · Yield {tier.yield}%
                     </span>
                   </div>
@@ -3475,54 +3540,54 @@ const AdminDashboard: React.FC<Props> = ({
                 <div className="p-5 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-wide block mb-1">Tier designation</label>
+                      <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">Tier designation</label>
                 <input 
                         type="text"
                         value={tier.status}
                         onChange={(e) => handleUpdateMatrix(i, 'status', e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 transition-all"
+                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
                       />
                     </div>
                     <div>
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-wide block mb-1">Yield outcome</label>
+                      <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">Yield outcome</label>
                       <input
                         type="text"
                         value={tier.outcome}
                         onChange={(e) => handleUpdateMatrix(i, 'outcome', e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 transition-all"
+                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-wide block mb-1">Min score requirement</label>
+                      <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">Min score requirement</label>
                       <div className="relative">
                         <input
                           type="number"
                           value={tier.minScore}
                           onChange={(e) => handleUpdateMatrix(i, 'minScore', e.target.value)}
-                          className="w-full bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 transition-all"
+                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl pl-4 pr-10 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">%</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500">%</span>
                       </div>
                     </div>
                     <div>
-                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-wide block mb-1">Payout Yield</label>
+                      <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">Payout Yield</label>
                       <div className="relative">
                         <input
                           type="number"
                           value={tier.points}
                           onChange={(e) => handleUpdateMatrix(i, 'yield', e.target.value)}
-                          className="w-full bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 transition-all"
+                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl pl-4 pr-10 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">%</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500">%</span>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-wide block mb-1">
+                    <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">
                       Payout range (supervisor Yield cards)
                     </label>
                     <input
@@ -3530,9 +3595,9 @@ const AdminDashboard: React.FC<Props> = ({
                       value={tier.payoutRange ?? ''}
                       onChange={(e) => handleUpdateMatrix(i, 'payoutRange', e.target.value)}
                       placeholder="e.g. ₱9k - ₱12k"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 transition-all"
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
                     />
-                    <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wide">
+                    <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 mt-1 uppercase tracking-wide">
                       Shown on department supervisor dashboards; leave blank to show Yield % instead.
                     </p>
                   </div>
@@ -3552,20 +3617,20 @@ const AdminDashboard: React.FC<Props> = ({
             onClick={() => setLoadStandardConfirmOpen(false)}
           >
             <div
-              className="w-full max-w-md rounded-lg border border-slate-200/90 bg-white p-6 shadow-[0_25px_80px_rgba(15,23,42,0.18)]"
+              className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-600/90 bg-white dark:bg-slate-800 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.18)]"
               onClick={(e) => e.stopPropagation()}
             >
-              <h4 id="load-standard-title" className="text-sm font-black text-slate-900 uppercase tracking-wide">
+              <h4 id="load-standard-title" className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">
                 Load saved standard?
               </h4>
-              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+              <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 dark:text-slate-400 leading-relaxed">
                 This replaces the current department grading weights and criteria with your saved standard for all departments.
               </p>
               <div className="mt-6 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setLoadStandardConfirmOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-wide text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-[10px] font-black uppercase tracking-wide text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm transition-colors"
                 >
                   Cancel
                 </button>
@@ -3591,20 +3656,20 @@ const AdminDashboard: React.FC<Props> = ({
             onClick={() => setSetStandardConfirmOpen(false)}
           >
             <div
-              className="w-full max-w-md rounded-lg border border-slate-200/90 bg-white p-6 shadow-[0_25px_80px_rgba(15,23,42,0.18)]"
+              className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-600/90 bg-white dark:bg-slate-800 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.18)]"
               onClick={(e) => e.stopPropagation()}
             >
-              <h4 id="set-standard-title" className="text-sm font-black text-slate-900 uppercase tracking-wide">
+              <h4 id="set-standard-title" className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">
                 Save current grading as standard?
               </h4>
-              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+              <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 dark:text-slate-400 leading-relaxed">
                 This will overwrite the saved grading standard with the current department grading breakdown (weights + criteria).
               </p>
               <div className="mt-6 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setSetStandardConfirmOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[10px] font-black uppercase tracking-wide text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-[10px] font-black uppercase tracking-wide text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm transition-colors"
                 >
                   Cancel
                 </button>
@@ -3628,21 +3693,21 @@ const AdminDashboard: React.FC<Props> = ({
     <div className="w-full max-w-full xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 flex flex-col pb-6 md:pb-12 min-h-0 flex-1 overflow-auto">
       {dataDeleteCountdownOpen && (
         <div className="fixed inset-0 z-[9500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-8 py-7 border-b border-slate-100 bg-slate-50/60 flex items-start justify-between gap-4">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm overflow-hidden">
+            <div className="px-8 py-7 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-600/20">
                   <Trash2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Deletion scheduled</h3>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mt-1">Final confirmation window</p>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Deletion scheduled</h3>
+                  <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-1">Final confirmation window</p>
                 </div>
               </div>
           <button 
                 type="button"
                 onClick={() => setDataDeleteCountdownOpen(false)}
-                className="p-2.5 rounded-xl text-slate-300 hover:text-slate-900 hover:bg-white transition-all"
+                className="p-2.5 rounded-xl text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-800 transition-all"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
@@ -3651,13 +3716,13 @@ const AdminDashboard: React.FC<Props> = ({
 
             <div className="px-8 py-7 space-y-5">
               <div className="text-center">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">Countdown</p>
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Countdown</p>
                 <div className="mt-3 flex items-center justify-center">
-                  <div className="w-28 h-28 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center shadow-sm">
+                  <div className="w-28 h-28 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-100 flex items-center justify-center shadow-sm">
                     <span className="text-6xl font-black text-red-700 tabular-nums tracking-tight">{dataDeleteSecondsLeft}</span>
               </div>
             </div>
-                <p className="mt-4 text-sm font-bold text-slate-700 leading-relaxed">
+                <p className="mt-4 text-sm font-bold text-slate-700 dark:text-slate-300 leading-relaxed">
                   Employee audits will be deleted when the timer reaches <span className="font-black">0</span>.
                 </p>
               </div>
@@ -3670,11 +3735,11 @@ const AdminDashboard: React.FC<Props> = ({
                     setDataPurgeErr(null);
                     triggerToast('Deletion cancelled', 'No data was removed.');
                   }}
-                  className="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all"
+                  className="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all"
                 >
                   Cancel deletion
           </button>
-                <div className="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide bg-red-50 text-red-700 border border-red-100 text-center tabular-nums">
+                <div className="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide bg-red-50 dark:bg-red-900/30 text-red-700 border border-red-100 text-center tabular-nums">
                   Deleting in {dataDeleteSecondsLeft}s
         </div>
               </div>
@@ -3689,20 +3754,20 @@ const AdminDashboard: React.FC<Props> = ({
           onClick={() => setDataAutoPurgeConfirmOpen(false)}
         >
           <div
-            className="relative bg-white w-full max-w-2xl rounded-xl border border-slate-200 shadow-sm overflow-hidden"
+            className="relative bg-white dark:bg-slate-800 w-full max-w-2xl rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="absolute -top-24 -right-24 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" aria-hidden />
             <div className="absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl pointer-events-none" aria-hidden />
 
-            <div className="relative px-10 py-8 border-b border-slate-100 bg-slate-50/50 flex items-start justify-between gap-4">
+            <div className="relative px-10 py-8 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-[#0b1222]/50 flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20">
                   <ShieldCheck className="w-5 h-5" />
             </div>
               <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Enable Year-End Auto Clear</h3>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mt-1">
+                  <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Enable Year-End Auto Clear</h3>
+                  <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-1">
                     Requires ZIP backup + admin password confirmation
                 </p>
               </div>
@@ -3710,7 +3775,7 @@ const AdminDashboard: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => setDataAutoPurgeConfirmOpen(false)}
-                className="relative p-2.5 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all"
+                className="relative p-2.5 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
@@ -3718,7 +3783,7 @@ const AdminDashboard: React.FC<Props> = ({
           </div>
 
             <div className="relative px-10 py-8 space-y-6">
-              <p className="text-[13px] font-bold text-slate-700 leading-7">
+              <p className="text-[13px] font-bold text-slate-700 dark:text-slate-300 leading-7">
                 When the year ends, the system will automatically delete all employee audits from memory (pending + history,
                 including validated/rejected). Before deletion, it will require downloading a ZIP backup and then prompting you
                 to enter the admin password. This action can’t be undone.
@@ -3728,7 +3793,7 @@ const AdminDashboard: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setDataAutoPurgeConfirmOpen(false)}
-                  className="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
+                  className="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shadow-sm"
                 >
                   Cancel
                 </button>
@@ -3751,24 +3816,24 @@ const AdminDashboard: React.FC<Props> = ({
 
       {dataPurgeOpen && (
         <div className="fixed inset-0 z-[9000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="relative bg-white w-full max-w-2xl rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="relative bg-white dark:bg-slate-800 w-full max-w-2xl rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm overflow-hidden">
             <div className="absolute -top-24 -right-24 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" aria-hidden />
             <div className="absolute -bottom-24 -left-24 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl pointer-events-none" aria-hidden />
 
-            <div className="relative px-10 py-8 border-b border-slate-100 bg-slate-50/50 flex items-start justify-between gap-4">
+            <div className="relative px-10 py-8 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-[#0b1222]/50 flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-600/20">
                   <Trash2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Delete employee audits</h3>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mt-1">Admin confirmation required</p>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Delete employee audits</h3>
+                  <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-1">Admin confirmation required</p>
                 </div>
                </div>
                <button 
                 type="button"
                 onClick={() => { setDataPurgeOpen(false); setDataPurgePwd(''); setDataPurgeErr(null); }}
-                className="relative p-2.5 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all"
+                className="relative p-2.5 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
@@ -3776,14 +3841,14 @@ const AdminDashboard: React.FC<Props> = ({
             </div>
 
             <div className="relative px-10 py-8 space-y-6">
-              <p className="text-[13px] font-bold text-slate-700 leading-7">
+              <p className="text-[13px] font-bold text-slate-700 dark:text-slate-300 leading-7">
                 This will remove <span className="font-black">all employee audits</span> (pending + history, including validated/rejected). This can’t be undone.
               </p>
 
               {dataBackupRequired && (
-                <div className="p-4 rounded-lg bg-slate-50 border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Backup required</p>
-                  <p className="mt-1 text-xs font-bold text-slate-600 leading-relaxed">
+                <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700">
+                  <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">Backup required</p>
+                  <p className="mt-1 text-xs font-bold text-slate-600 dark:text-slate-400 dark:text-slate-400 leading-relaxed">
                     Download a ZIP backup before confirming deletion.
                   </p>
                   <button
@@ -3792,7 +3857,7 @@ const AdminDashboard: React.FC<Props> = ({
                     onClick={buildEmployeeAuditsZip}
                     className={`mt-3 w-full px-5 py-3 rounded-lg text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${
                       dataZipBusy
-                        ? 'bg-slate-100 text-slate-400 border border-slate-200'
+                        ? 'bg-slate-100 dark:bg-[#0d1526] text-slate-400 dark:text-slate-500 dark:text-slate-500 border border-slate-200 dark:border-slate-600'
                         : dataBackupDone
                           ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
                           : 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10'
@@ -3801,23 +3866,23 @@ const AdminDashboard: React.FC<Props> = ({
                     <Download className="w-4 h-4" />
                     {dataZipBusy ? 'Preparing ZIP…' : dataBackupDone ? 'Backup downloaded' : 'Download ZIP backup'}
                   </button>
-                  <p className="mt-2 text-[10px] font-bold text-slate-500">
+                  <p className="mt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400">
                     ZIP structure: <span className="font-black">Department / (validated|pending|rejected)</span>
                   </p>
                     </div>
               )}
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wide ml-1">Admin password</label>
+                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Admin password</label>
                 <input
                   type="password"
                   value={dataPurgePwd}
                   onChange={(e) => { setDataPurgePwd(e.target.value); setDataPurgeErr(null); }}
-                  className="w-full px-4 py-2 bg-slate-100 text-slate-900 border border-slate-200 rounded-lg focus:ring-4 focus:ring-red-500/10 outline-none font-bold text-sm transition-all"
+                  className="w-full px-4 py-2 bg-slate-100 dark:bg-[#0d1526] text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-lg focus:ring-4 focus:ring-red-500/10 outline-none font-bold text-sm transition-all"
                   placeholder="••••••••"
                 />
                 {dataPurgeErr && (
-                  <div className="p-3 rounded-lg bg-red-50 text-red-700 border border-red-100 text-[10px] font-black uppercase tracking-wide">
+                  <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-700 border border-red-100 text-[10px] font-black uppercase tracking-wide">
                     {dataPurgeErr}
                     </div>
                 )}
@@ -3827,7 +3892,7 @@ const AdminDashboard: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => { setDataPurgeOpen(false); setDataPurgePwd(''); setDataPurgeErr(null); }}
-                  className="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
+                  className="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shadow-sm"
                 >
                   Cancel
                 </button>
@@ -3877,20 +3942,20 @@ const AdminDashboard: React.FC<Props> = ({
           <>
             <div className="fixed inset-0 z-[5000] bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" aria-hidden="true" role="presentation" />
             <div className="fixed inset-0 z-[5001] flex items-center justify-center p-4 pointer-events-none" aria-hidden="true">
-              <div className="bg-white rounded-[1.75rem] w-full max-w-5xl max-h-[90vh] flex flex-col shadow-sm shadow-slate-900/10 border border-slate-200/90 overflow-hidden animate-in zoom-in-95 duration-200 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="px-6 py-2 border-b border-slate-100/80 flex items-center justify-between gap-4 flex-wrap bg-slate-50/60 shrink-0 overflow-visible">
+              <div className="bg-white dark:bg-slate-800 rounded-[1.75rem] w-full max-w-5xl max-h-[90vh] flex flex-col shadow-sm shadow-slate-900/10 border border-slate-200 dark:border-slate-600/90 overflow-hidden animate-in zoom-in-95 duration-200 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="px-6 py-2 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between gap-4 flex-wrap bg-slate-50 dark:bg-slate-900/60 shrink-0 overflow-visible">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-600/25">
                     <Scale className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Edit weighted scores</h3>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">{dept} · Name, icon, weight & grading content</p>
+                    <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Edit weighted scores</h3>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-0.5">{dept} · Name, icon, weight & grading content</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border font-semibold text-sm tabular-nums tracking-tight ${isTotalWeightValid ? 'bg-emerald-500/10 border-emerald-200/80 text-emerald-700' : 'bg-amber-500/10 border-amber-200/80 text-amber-700'}`}>
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Total weight</span>
+                  <span className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border font-semibold text-sm tabular-nums tracking-tight ${isTotalWeightValid ? 'bg-emerald-500/10 border-emerald-200/80 text-emerald-700' : 'bg-amber-500/10 border-amber-200 dark:border-amber-700/80 text-amber-700'}`}>
+                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">Total weight</span>
                     <span className="font-black">{totalWeight}%</span>
                   </span>
                   <button
@@ -3947,20 +4012,20 @@ const AdminDashboard: React.FC<Props> = ({
                         setGradingExitConfirmOpen(false);
                       }
                     }}
-                    className="p-2.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 bg-white/80 border border-slate-200/80 shadow-sm hover:shadow transition-all duration-200"
+                    className="p-2.5 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-200 dark:hover:border-red-700 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600/80 shadow-sm hover:shadow transition-all duration-200"
                     aria-label="Close"
                   >
                     <X className="w-5 h-5" />
                   </button>
                   {gradingExitConfirmOpen && createPortal(
                     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/20" onClick={() => setGradingExitConfirmOpen(false)}>
-                      <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/10" onClick={(e) => e.stopPropagation()}>
-                        <p className="text-sm font-semibold text-slate-700 mb-4">Exit without saving? Your changes will not be saved.</p>
+                      <div className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-5 shadow-sm shadow-slate-900/10" onClick={(e) => e.stopPropagation()}>
+                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Exit without saving? Your changes will not be saved.</p>
                         <div className="flex gap-2 justify-end">
                           <button
                             type="button"
                             onClick={() => setGradingExitConfirmOpen(false)}
-                            className="px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 text-[11px] font-bold uppercase tracking-wide hover:bg-slate-100 transition-colors"
+                            className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wide hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                           >
                             Cancel
                           </button>
@@ -3991,13 +4056,13 @@ const AdminDashboard: React.FC<Props> = ({
                   <div className="fixed inset-0 z-[5200] bg-slate-900/30 backdrop-blur-sm" aria-hidden="true" />
                   <div className="fixed inset-0 z-[5201] flex items-center justify-center p-4">
                     <div
-                      className="bg-gradient-to-b from-white to-slate-50/70 rounded-lg w-full max-w-5xl border border-slate-200/70 shadow-[0_30px_120px_rgba(2,6,23,0.22)] p-6 relative overflow-hidden flex flex-col h-[600px] max-h-[85vh]"
+                      className="bg-gradient-to-b from-white to-slate-50/70 rounded-lg w-full max-w-5xl border border-slate-200 dark:border-slate-600/70 shadow-[0_30px_120px_rgba(2,6,23,0.22)] p-6 relative overflow-hidden flex flex-col h-[600px] max-h-[85vh]"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="flex items-center justify-between gap-3 mb-4 p-3 rounded-lg bg-slate-50/70 border border-slate-200/60">
+                      <div className="flex items-center justify-between gap-3 mb-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-600/60">
                         <div className="flex items-center gap-2">
                           <Edit2 className="w-5 h-5 text-blue-600" />
-                          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Edit grading criterion</h3>
+                          <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Edit grading criterion</h3>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -4043,7 +4108,7 @@ const AdminDashboard: React.FC<Props> = ({
                                 closeCriterionEditor();
                               }
                             }}
-                            className="p-2.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 bg-white/80 border border-slate-200/80 shadow-sm hover:shadow transition-all duration-200"
+                            className="p-2.5 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-200 dark:hover:border-red-700 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600/80 shadow-sm hover:shadow transition-all duration-200"
                             aria-label="Close"
                           >
                             <X className="w-5 h-5" />
@@ -4053,19 +4118,19 @@ const AdminDashboard: React.FC<Props> = ({
 
                       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-5 flex-1 min-h-0 overflow-y-auto pb-4">
                         <div className="flex flex-col space-y-3 min-h-0">
-                          <div className="p-4 rounded-lg border border-slate-200/60 bg-white/80 shadow-sm">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide mb-3">Criterion definition</p>
+                          <div className="p-4 rounded-lg border border-slate-200 dark:border-slate-600/60 bg-white dark:bg-slate-800/80 shadow-sm">
+                            <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-3">Criterion definition</p>
                             <div className="space-y-3">
                               <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wide ml-1">Definition</label>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide ml-1 leading-snug">
+                                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Definition</label>
+                                <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1 leading-snug">
                                   Shown when employees hover the panel criterion icon.
                                 </p>
                                 <div className="w-full max-w-full">
                                   <textarea
                                     value={gradingCriterionDefinitionDraft}
                                     onChange={(e) => setGradingCriterionDefinitionDraft(e.target.value)}
-                                    className="box-border w-full h-40 max-h-40 min-h-40 resize-none overflow-y-auto bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-[13px] font-black text-slate-900 leading-snug outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all"
+                                    className="box-border w-full h-40 max-h-40 min-h-40 resize-none overflow-y-auto bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 text-[13px] font-black text-slate-900 dark:text-slate-100 leading-snug outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all"
                                     placeholder="Describe what this criterion measures…"
                                     aria-label="Criterion definition for employee hover"
                                   />
@@ -4074,8 +4139,8 @@ const AdminDashboard: React.FC<Props> = ({
                             </div>
                           </div>
 
-                          <div className="p-4 rounded-lg bg-white/80 border border-slate-200/60 shadow-sm">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide mb-2">Element palette</p>
+                          <div className="p-4 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600/60 shadow-sm">
+                            <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-2">Element palette</p>
                             <div className="space-y-2">
                               {(() => {
                                 const hasPanelCheckbox = gradingCriterionElementsDraft.some((x: any) => x?.type === 'checkbox');
@@ -4120,13 +4185,13 @@ const AdminDashboard: React.FC<Props> = ({
                         <div className="space-y-3">
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">Panel rule canvas</p>
-                              <p className="text-[9px] text-slate-500 mt-0.5">
+                              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Panel rule canvas</p>
+                              <p className="text-[9px] text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-0.5">
                                 Same layout as employee dashboards (<code className="text-[9px]">auditPanelRule.ts</code>): max 2 inputs
                                 per row; odd counts → first full width. Preview-only (not saved).
                               </p>
                             </div>
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wide shrink-0">
+                            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide shrink-0">
                               {gradingCriterionElementsDraft.length} element(s)
                             </span>
                           </div>
@@ -4200,10 +4265,10 @@ const AdminDashboard: React.FC<Props> = ({
                                     : 0;
 
                             return (
-                              <div className="bg-white/70 rounded-lg border border-slate-200/70 p-4 md:p-5 space-y-4 shadow-sm backdrop-blur">
+                              <div className="bg-white dark:bg-slate-800/70 rounded-lg border border-slate-200 dark:border-slate-600/70 p-4 md:p-5 space-y-4 shadow-sm backdrop-blur">
                                 <div className="flex items-start justify-between gap-4">
                                   <div className="flex min-w-0 flex-1 items-center gap-3">
-                                    <div className="w-12 h-12 rounded-lg bg-white border border-slate-100 flex items-center justify-center shrink-0 relative">
+                                    <div className="w-12 h-12 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0 relative">
                                       {logoEntry ? (
                       <div className="relative">
                                           <button
@@ -4213,7 +4278,7 @@ const AdminDashboard: React.FC<Props> = ({
                                                 gradingCriterionLogoPickerOpenIdx === logoEntry.idx ? null : logoEntry.idx
                                               )
                                             }
-                                            className="w-12 h-12 rounded-lg bg-blue-500/10 border border-slate-200 flex items-center justify-center shadow-sm hover:bg-blue-500/20 hover:border-blue-300 transition-colors"
+                                            className="w-12 h-12 rounded-lg bg-blue-500/10 border border-slate-200 dark:border-slate-600 flex items-center justify-center shadow-sm hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
                                             title="Choose logo icon"
                                           >
                                             {(() => {
@@ -4223,7 +4288,7 @@ const AdminDashboard: React.FC<Props> = ({
                                           </button>
 
                                           {gradingCriterionLogoPickerOpenIdx === logoEntry.idx && (
-                                            <div className="absolute top-full left-0 mt-1 rounded-xl border border-slate-200 bg-white p-2 z-[5200] box-border shadow-[0_0_12px_rgba(15,23,42,0.08)] w-fit">
+                                            <div className="absolute top-full left-0 mt-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-2 z-[5200] box-border shadow-[0_0_12px_rgba(15,23,42,0.08)] w-fit">
                                               <div
                                                 className="grid gap-1.5 w-max"
                                                 style={{
@@ -4247,7 +4312,7 @@ const AdminDashboard: React.FC<Props> = ({
                                                       className={`w-9 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                                                         selected
                                                           ? 'bg-blue-500/20 border-2 border-blue-500 text-blue-600'
-                                                          : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'
+                                                          : 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500'
                                                       }`}
                                                       title={key}
                                                     >
@@ -4267,7 +4332,7 @@ const AdminDashboard: React.FC<Props> = ({
                                             addCriterionElement('logo');
                                             setGradingCriterionLogoPickerOpenIdx(newIdx);
                                           }}
-                                          className="w-12 h-12 rounded-lg bg-blue-500/10 border border-slate-200 flex items-center justify-center shadow-sm hover:bg-blue-500/20 hover:border-blue-300 transition-colors"
+                                          className="w-12 h-12 rounded-lg bg-blue-500/10 border border-slate-200 dark:border-slate-600 flex items-center justify-center shadow-sm hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
                                           title="Choose logo icon"
                                         >
                                           <FileText className="w-6 h-6 text-blue-600" />
@@ -4279,7 +4344,7 @@ const AdminDashboard: React.FC<Props> = ({
                                         type="text"
                                         value={gradingCriterionLabelDraft}
                                         onChange={(e) => setGradingCriterionLabelDraft(e.target.value)}
-                                        className="w-full min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] font-black text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all"
+                                        className="w-full min-w-0 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2.5 text-[13px] font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all"
                                         placeholder="Criterion"
                                         aria-label="Criterion name"
                                       />
@@ -4311,18 +4376,18 @@ const AdminDashboard: React.FC<Props> = ({
                                           });
                                           setGradingCriterionGradingSystemPopupOpen(true);
                                         }}
-                                        className="text-right rounded-xl px-3 py-2 -mr-1 -my-1 border border-transparent hover:border-blue-100 hover:bg-blue-50/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                                        className="text-right rounded-xl px-3 py-2 -mr-1 -my-1 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-blue-900/30/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
                                         title="Click to edit checkpoints for the textbox value. Hover to view rules. Yield uses local tester input (not saved)."
                                         aria-label="Open grading system for Yield score"
                                       >
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">Yield</p>
+                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Yield</p>
                                         <p className="text-[11px] font-black text-blue-600 tabular-nums">
                                           {scoreGot}/{YieldCap}
                                         </p>
                                       </button>
                                       {criterionYieldGradingHover && (
                                         <div
-                                          className="absolute right-0 top-full z-[5260] mt-1.5 w-64 max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-slate-200 bg-white p-3 text-left shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
+                                          className="absolute right-0 top-full z-[5260] mt-1.5 w-64 max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-3 text-left shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
                                           onMouseEnter={() => {
                                             cancelCriterionYieldHoverClose();
                                             setCriterionYieldGradingHover(true);
@@ -4330,7 +4395,7 @@ const AdminDashboard: React.FC<Props> = ({
                                           onMouseLeave={scheduleCriterionYieldHoverClose}
                                           role="tooltip"
                                         >
-                                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide mb-2">
+                                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mb-2">
                                             Grading checkpoints
                                           </p>
                                           {n > 1 && YieldGradingEl ? (
@@ -4339,16 +4404,16 @@ const AdminDashboard: React.FC<Props> = ({
                                                 const cps = checkpointsForTextboxOrdinal(YieldGradingEl, ord);
                                                 return (
                                                   <div key={tbIdx}>
-                                                    <p className="text-[10px] font-bold text-slate-600 mb-1 truncate">
+                                                    <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 dark:text-slate-400 mb-1 truncate">
                                                       {String(tbEl.title ?? 'Textbox')}
                                                     </p>
                                                     <ul className="space-y-1.5">
                                                       {cps.map((c, i) => (
                                                         <li
                                                           key={i}
-                                                          className="flex items-start justify-between gap-2 text-[11px] text-slate-700"
+                                                          className="flex items-start justify-between gap-2 text-[11px] text-slate-700 dark:text-slate-300"
                                                         >
-                                                          <span className="text-slate-500 shrink min-w-0">
+                                                          <span className="text-slate-500 dark:text-slate-400 dark:text-slate-400 shrink min-w-0">
                                                             {c.max === null ? `≥ ${c.min}` : `${c.min} – ${c.max}`}
                                                           </span>
                                                           <span className="font-black text-blue-600 tabular-nums shrink-0">
@@ -4366,9 +4431,9 @@ const AdminDashboard: React.FC<Props> = ({
                                               {YieldCheckpoints.map((c, i) => (
                                                 <li
                                                   key={i}
-                                                  className="flex items-start justify-between gap-2 text-[11px] text-slate-700"
+                                                  className="flex items-start justify-between gap-2 text-[11px] text-slate-700 dark:text-slate-300"
                                                 >
-                                                  <span className="text-slate-500 shrink min-w-0">
+                                                  <span className="text-slate-500 dark:text-slate-400 dark:text-slate-400 shrink min-w-0">
                                                     {c.max === null ? `≥ ${c.min}` : `${c.min} – ${c.max}`}
                                                   </span>
                                                   <span className="font-black text-blue-600 tabular-nums shrink-0">{c.score} pts</span>
@@ -4404,18 +4469,18 @@ const AdminDashboard: React.FC<Props> = ({
                                           });
                                           setGradingCriterionGradingSystemPopupOpen(true);
                                         }}
-                                        className="text-right rounded-xl px-3 py-2 -mr-1 -my-1 border border-transparent hover:border-blue-100 hover:bg-blue-50/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                                        className="text-right rounded-xl px-3 py-2 -mr-1 -my-1 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-blue-900/30/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
                                         title="Click to edit checkpoints by how many boxes are checked (0–N). Hover to view rules. Yield uses local tester state (not saved)."
                                         aria-label="Open checklist count grading for Yield score"
                                       >
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">Yield</p>
+                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Yield</p>
                                         <p className="text-[11px] font-black text-blue-600 tabular-nums">
                                           {scoreGot}/{YieldCap}
                                         </p>
                                       </button>
                                       {criterionYieldGradingHover && (
                                         <div
-                                          className="absolute right-0 top-full z-[5260] mt-1.5 w-64 max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-slate-200 bg-white p-3 text-left shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
+                                          className="absolute right-0 top-full z-[5260] mt-1.5 w-64 max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-3 text-left shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
                                           onMouseEnter={() => {
                                             cancelCriterionYieldHoverClose();
                                             setCriterionYieldGradingHover(true);
@@ -4423,19 +4488,19 @@ const AdminDashboard: React.FC<Props> = ({
                                           onMouseLeave={scheduleCriterionYieldHoverClose}
                                           role="tooltip"
                                         >
-                                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide mb-2">
+                                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mb-2">
                                             Checklist count → points
                                           </p>
-                                          <p className="text-[9px] font-semibold text-slate-500 mb-2 leading-snug">
+                                          <p className="text-[9px] font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-2 leading-snug">
                                             Min / Max = number of checkboxes selected (this panel has {checkboxN}).
                                           </p>
                                           <ul className="space-y-1.5">
                                             {YieldCheckboxCheckpoints.map((c, i) => (
                                               <li
                                                 key={i}
-                                                className="flex items-start justify-between gap-2 text-[11px] text-slate-700"
+                                                className="flex items-start justify-between gap-2 text-[11px] text-slate-700 dark:text-slate-300"
                                               >
-                                                <span className="text-slate-500 shrink min-w-0">
+                                                <span className="text-slate-500 dark:text-slate-400 dark:text-slate-400 shrink min-w-0">
                                                   {c.max === null ? `≥ ${c.min} checked` : `${c.min} – ${c.max} checked`}
                                                 </span>
                                                 <span className="font-black text-blue-600 tabular-nums shrink-0">{c.score} pts</span>
@@ -4456,7 +4521,7 @@ const AdminDashboard: React.FC<Props> = ({
                                     return (
                                       <div
                                         key={idx}
-                                        className={`bg-white rounded-[1.75rem] border border-slate-200/80 p-4 space-y-3 ${colSpan} shadow-sm hover:shadow-md transition-shadow`}
+                                        className={`bg-white dark:bg-slate-800 rounded-[1.75rem] border border-slate-200 dark:border-slate-600/80 p-4 space-y-3 ${colSpan} shadow-sm hover:shadow-md transition-shadow`}
                                       >
                                         <div className="flex items-center justify-between gap-3">
                                           <div className="flex items-center gap-3 min-w-0">
@@ -4482,14 +4547,14 @@ const AdminDashboard: React.FC<Props> = ({
                                                   prev.map((x, j) => (j === idx ? { ...(x as any), type: 'checkbox', label } : x))
                                                 );
                                               }}
-                                              className="min-w-0 flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[12px] font-black text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                                              className="min-w-0 flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-[12px] font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                                             />
                                           </div>
 
                                           <button
                                             type="button"
                                             onClick={() => removeCriterionElementAt(idx)}
-                                            className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                            className="p-2 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                                             aria-label="Remove checkbox element"
                                           >
                                             <Trash2 className="w-4 h-4" />
@@ -4506,7 +4571,7 @@ const AdminDashboard: React.FC<Props> = ({
                                     textboxEntries.map(({ el, idx }, pos) => {
                                       const colSpan = auditPanelInputColSpan(pos, n);
   return (
-                                        <div key={idx} className={`bg-white rounded-[1.75rem] border border-slate-200/80 p-4 space-y-3 ${colSpan} shadow-sm hover:shadow-md transition-shadow`}>
+                                        <div key={idx} className={`bg-white dark:bg-slate-800 rounded-[1.75rem] border border-slate-200 dark:border-slate-600/80 p-4 space-y-3 ${colSpan} shadow-sm hover:shadow-md transition-shadow`}>
                                           <div className="flex items-center justify-between gap-3">
                                             <input
                                               type="text"
@@ -4517,13 +4582,13 @@ const AdminDashboard: React.FC<Props> = ({
                                                   prev.map((x, j) => (j === idx ? { ...(x as any), type: 'textboxButton', title } : x))
                                                 );
                                               }}
-                                              className="min-w-0 flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-left text-[12px] font-black text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                                              className="min-w-0 flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-left text-[12px] font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                                             />
 
                                             <button
                                               type="button"
                                               onClick={() => removeCriterionElementAt(idx)}
-                                              className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                              className="p-2 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                                               aria-label="Remove textbox element"
                                             >
                                               <Trash2 className="w-4 h-4" />
@@ -4544,10 +4609,10 @@ const AdminDashboard: React.FC<Props> = ({
                                                   text: { ...prev.text, [idx]: digits },
                                                 }));
                                               }}
-                                              className={`min-w-0 flex-1 bg-white border border-slate-200 rounded-xl px-3 py-3 text-center text-[12px] font-black outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 ${
+                                              className={`min-w-0 flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-3 text-center text-[12px] font-black outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 dark:text-slate-500 dark:text-slate-500 ${
                                                 (criterionCanvasTest.text[idx] ?? '').trim() === ''
-                                                  ? 'text-slate-400'
-                                                  : 'text-slate-900'
+                                                  ? 'text-slate-400 dark:text-slate-500 dark:text-slate-500'
+                                                  : 'text-slate-900 dark:text-slate-100'
                                               }`}
                                               title="Local tester value — not saved with the criterion"
                                             />
@@ -4555,7 +4620,7 @@ const AdminDashboard: React.FC<Props> = ({
                                             <div className="flex items-center gap-1 shrink-0">
                                               <button
                                                 type="button"
-                                                className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors select-none"
+                                                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-[#0d1526] flex items-center justify-center text-slate-500 dark:text-slate-400 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 transition-colors select-none"
                                                 onMouseDown={() => startHold(() => bumpCriterionCanvasTestTextbox(idx, -1))}
                                                 onMouseUp={stopHold}
                                                 onMouseLeave={stopHold}
@@ -4571,7 +4636,7 @@ const AdminDashboard: React.FC<Props> = ({
 
                                               <button
                                                 type="button"
-                                                className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors select-none"
+                                                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-[#0d1526] flex items-center justify-center text-slate-500 dark:text-slate-400 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 transition-colors select-none"
                                                 onMouseDown={() => startHold(() => bumpCriterionCanvasTestTextbox(idx, +1))}
                                                 onMouseUp={stopHold}
                                                 onMouseLeave={stopHold}
@@ -4611,17 +4676,17 @@ const AdminDashboard: React.FC<Props> = ({
                         onClick={() => setGradingCriterionExitConfirmOpen(false)}
                       >
                         <div
-                          className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/10"
+                          className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-5 shadow-sm shadow-slate-900/10"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <p className="text-sm font-semibold text-slate-700 mb-4">
+                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
                             Exit without saving? Your changes will not be saved.
                           </p>
                           <div className="flex gap-2 justify-end">
                             <button
                               type="button"
                               onClick={() => setGradingCriterionExitConfirmOpen(false)}
-                              className="px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 text-[11px] font-bold uppercase tracking-wide hover:bg-slate-100 transition-colors"
+                              className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wide hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                             >
                               Cancel
                             </button>
@@ -4651,7 +4716,7 @@ const AdminDashboard: React.FC<Props> = ({
                         aria-modal="true"
                       >
                         <div
-                          className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[1.75rem] border border-slate-200/80 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.18)]"
+                          className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[1.75rem] border border-slate-200 dark:border-slate-600/80 bg-white dark:bg-slate-800 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.18)]"
                           onClick={(e) => e.stopPropagation()}
                           role="dialog"
                           aria-labelledby="grading-system-popup-title"
@@ -4661,7 +4726,7 @@ const AdminDashboard: React.FC<Props> = ({
                             const gradingIdx = getCriterionGradingSystemIdx(gradingCriterionElementsDraft, mode);
                             if (gradingIdx < 0) {
                               return (
-                                <p className="text-sm text-slate-600">
+                                <p className="text-sm text-slate-600 dark:text-slate-400 dark:text-slate-400">
                                   {mode === 'checkbox'
                                     ? 'Add checklist rows to this panel to configure count-based checkpoints, or close and try again.'
                                     : 'Add a textbox + button to this panel to configure range checkpoints, or close and try again.'}
@@ -4768,19 +4833,19 @@ const AdminDashboard: React.FC<Props> = ({
                                   <div>
                                     <p
                                       id="grading-system-popup-title"
-                                      className="text-[10px] font-black text-slate-400 uppercase tracking-wide"
+                                      className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide"
                                     >
                                       Basic grading system
                                     </p>
-                                    <p className="text-[11px] font-black text-slate-900 uppercase tracking-wide">Scoring checkpoints</p>
+                                    <p className="text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Scoring checkpoints</p>
                                     {mode === 'checkbox' && (
-                                      <p className="text-[9px] font-bold text-slate-500 mt-1 max-w-md leading-relaxed">
+                                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1 max-w-md leading-relaxed">
                                         Min / Max = inclusive count of checkboxes selected (this criterion has {checkboxCountForPreview}{' '}
                                         checklist row{checkboxCountForPreview === 1 ? '' : 's'}).
                                       </p>
                                     )}
                                     {mode === 'textbox' && multiTextboxGrading && (
-                                      <p className="text-[9px] font-bold text-slate-500 mt-1 max-w-md leading-relaxed">
+                                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1 max-w-md leading-relaxed">
                                         Each section matches one textbox (canvas order). Points per section add together, capped at the criterion total (
                                         {capForNormalize} pts).
                                       </p>
@@ -4789,7 +4854,7 @@ const AdminDashboard: React.FC<Props> = ({
                                   <button
                                     type="button"
                                     onClick={() => requestCloseGradingSystemPopup()}
-                                    className="p-2.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 bg-white/80 border border-slate-200/80 shadow-sm hover:shadow transition-all duration-200 shrink-0"
+                                    className="p-2.5 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-200 dark:hover:border-red-700 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600/80 shadow-sm hover:shadow transition-all duration-200 shrink-0"
                                     aria-label="Close"
                                   >
                                     <X className="w-5 h-5" />
@@ -4812,11 +4877,11 @@ const AdminDashboard: React.FC<Props> = ({
                                         patchOrdinalCheckpoints(ord, enforceGradingCheckpointNoMaxRule(fixed));
                                       };
                                       return (
-                                        <div key={ord} className="rounded-lg border border-slate-100 bg-slate-50/40 p-4 space-y-3">
-                                          <p className="text-[10px] font-black text-slate-700 uppercase tracking-wide">
+                                        <div key={ord} className="rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4 space-y-3">
+                                          <p className="text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide">
                                             {textboxSectionTitles[ord] ?? `Textbox ${ord + 1}`}
                                           </p>
-                                          <div className="hidden sm:grid gap-2 text-[9px] font-black text-slate-400 uppercase tracking-wide px-1 mb-1 sm:grid-cols-12">
+                                          <div className="hidden sm:grid gap-2 text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide px-1 mb-1 sm:grid-cols-12">
                                             <span className="sm:col-span-2">Min</span>
                                             <span className="sm:col-span-3">Max</span>
                                             <span className="sm:col-span-2">Score (Yield)</span>
@@ -4827,10 +4892,10 @@ const AdminDashboard: React.FC<Props> = ({
                                             {cps.map((cp, rowIdx) => (
                                               <div
                                                 key={rowIdx}
-                                                className="grid grid-cols-1 gap-2 items-end rounded-xl border border-slate-100 bg-slate-50/50 p-3 sm:grid-cols-12"
+                                                className="grid grid-cols-1 gap-2 items-end rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-[#0b1222]/50 p-3 sm:grid-cols-12"
                                               >
                                                 <div className="space-y-1 sm:col-span-2">
-                                                  <label className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-wide">
+                                                  <label className="sm:hidden text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                                                     Min value
                                                   </label>
                                                   <input
@@ -4846,11 +4911,11 @@ const AdminDashboard: React.FC<Props> = ({
                                                         return next;
                                                       });
                                                     }}
-                                                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                                                   />
                                                 </div>
                                                 <div className="sm:col-span-3 space-y-1">
-                                                  <label className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-wide">
+                                                  <label className="sm:hidden text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                                                     Max value
                                                   </label>
                                                   <input
@@ -4892,15 +4957,15 @@ const AdminDashboard: React.FC<Props> = ({
                                                       });
                                                     }}
                                                     placeholder={cp.max === null ? '∞' : '0'}
-                                                    className={`w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 disabled:opacity-50 disabled:bg-slate-100 ${
+                                                    className={`w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-black outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 disabled:opacity-50 disabled:bg-slate-100 dark:bg-[#0d1526] ${
                                                       cp.max === null
-                                                        ? 'text-slate-900'
-                                                        : 'text-slate-900 placeholder:text-slate-400'
+                                                        ? 'text-slate-900 dark:text-slate-100'
+                                                        : 'text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:text-slate-500 dark:text-slate-500'
                                                     }`}
                                                   />
                                                 </div>
                                                 <div className="sm:col-span-2 space-y-1">
-                                                  <label className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-wide">
+                                                  <label className="sm:hidden text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                                                     Score
                                                   </label>
                                                   <input
@@ -4915,7 +4980,7 @@ const AdminDashboard: React.FC<Props> = ({
                                                       updateRowOrd(rowIdx, { score: clamped });
                                                     }}
                                                     title="Max points from this textbox’s tiers (sums with other textboxes, capped at criterion total)."
-                                                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                                                   />
                                                 </div>
                                                 <div className="sm:col-span-3 flex items-center justify-center sm:justify-start gap-2 pb-1 sm:pb-2">
@@ -4942,7 +5007,7 @@ const AdminDashboard: React.FC<Props> = ({
                                                     htmlFor={`grading-no-max-${ord}-${rowIdx}`}
                                                     className={`text-[10px] font-black uppercase tracking-wide ${
                                                       allowedOrd === rowIdx
-                                                        ? 'text-slate-500 cursor-pointer'
+                                                        ? 'text-slate-500 dark:text-slate-400 dark:text-slate-400 cursor-pointer'
                                                         : 'text-slate-300 cursor-not-allowed'
                                                     }`}
                                                     title={
@@ -4967,7 +5032,7 @@ const AdminDashboard: React.FC<Props> = ({
                                                         cps.filter((_, i) => i !== rowIdx)
                                                       );
                                                     }}
-                                                    className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                                                    className="p-2 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                                                     aria-label="Remove checkpoint"
                                                   >
                                                     <Trash2 className="w-4 h-4" />
@@ -4996,7 +5061,7 @@ const AdminDashboard: React.FC<Props> = ({
                                                 },
                                               ]);
                                             }}
-                                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl border-2 border-dashed border-blue-200 text-blue-700 text-[10px] font-black uppercase tracking-wide hover:bg-blue-50 transition-colors"
+                                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl border-2 border-dashed border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400 text-[10px] font-black uppercase tracking-wide hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
                                           >
                                             <Plus className="w-4 h-4" />
                                             Add checkpoint
@@ -5008,7 +5073,7 @@ const AdminDashboard: React.FC<Props> = ({
                                 ) : (
                                   <>
                                     <div
-                                      className={`hidden sm:grid gap-2 text-[9px] font-black text-slate-400 uppercase tracking-wide px-1 mb-1 ${
+                                      className={`hidden sm:grid gap-2 text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide px-1 mb-1 ${
                                         mode === 'checkbox' ? 'sm:grid-cols-10' : 'sm:grid-cols-12'
                                       }`}
                                     >
@@ -5029,12 +5094,12 @@ const AdminDashboard: React.FC<Props> = ({
                                         return (
                                           <div
                                             key={rowIdx}
-                                            className={`grid grid-cols-1 gap-2 items-end rounded-xl border border-slate-100 bg-slate-50/50 p-3 ${
+                                            className={`grid grid-cols-1 gap-2 items-end rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-[#0b1222]/50 p-3 ${
                                               mode === 'checkbox' ? 'sm:grid-cols-10' : 'sm:grid-cols-12'
                                             }`}
                                           >
                                             <div className={`space-y-1 ${mode === 'checkbox' ? 'sm:col-span-3' : 'sm:col-span-2'}`}>
-                                              <label className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-wide">
+                                              <label className="sm:hidden text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                                                 {mode === 'checkbox' ? 'Min checked' : 'Min value'}
                                               </label>
                                               <input
@@ -5050,11 +5115,11 @@ const AdminDashboard: React.FC<Props> = ({
                                                     return next;
                                                   });
                                                 }}
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                                               />
                                             </div>
                                             <div className="sm:col-span-3 space-y-1">
-                                              <label className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-wide">
+                                              <label className="sm:hidden text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                                                 {mode === 'checkbox' ? 'Max checked' : 'Max value'}
                                               </label>
                                               <input
@@ -5096,15 +5161,15 @@ const AdminDashboard: React.FC<Props> = ({
                                                   });
                                                 }}
                                                 placeholder={mode !== 'checkbox' && cp.max === null ? '∞' : '0'}
-                                                className={`w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 disabled:opacity-50 disabled:bg-slate-100 ${
+                                                className={`w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-black outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 disabled:opacity-50 disabled:bg-slate-100 dark:bg-[#0d1526] ${
                                                   mode !== 'checkbox' && cp.max === null
-                                                    ? 'text-slate-900'
-                                                    : 'text-slate-900 placeholder:text-slate-400'
+                                                    ? 'text-slate-900 dark:text-slate-100'
+                                                    : 'text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:text-slate-500 dark:text-slate-500'
                                                 }`}
                                               />
                                             </div>
                                             <div className="sm:col-span-2 space-y-1">
-                                              <label className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-wide">
+                                              <label className="sm:hidden text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                                                 Score
                                               </label>
                                               <input
@@ -5119,7 +5184,7 @@ const AdminDashboard: React.FC<Props> = ({
                                                   updateRow(rowIdx, { score: clamped });
                                                 }}
                                                 title="Highest score among all rows becomes the criterion max yield (Yield)."
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-black text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                                               />
                                             </div>
                                             {mode !== 'checkbox' && (
@@ -5147,7 +5212,7 @@ const AdminDashboard: React.FC<Props> = ({
                                                   htmlFor={`grading-no-max-${rowIdx}`}
                                                   className={`text-[10px] font-black uppercase tracking-wide ${
                                                     allowedNoMaxRowIdx === rowIdx
-                                                      ? 'text-slate-500 cursor-pointer'
+                                                      ? 'text-slate-500 dark:text-slate-400 dark:text-slate-400 cursor-pointer'
                                                       : 'text-slate-300 cursor-not-allowed'
                                                   }`}
                                                   title={
@@ -5170,7 +5235,7 @@ const AdminDashboard: React.FC<Props> = ({
                                                   setGradingCheckpointMaxDraft({});
                                                   patchCheckpoints(checkpoints.filter((_, i) => i !== rowIdx));
                                                 }}
-                                                className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                                                className="p-2 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                                                 aria-label="Remove checkpoint"
                                               >
                                                 <Trash2 className="w-4 h-4" />
@@ -5201,7 +5266,7 @@ const AdminDashboard: React.FC<Props> = ({
                                           },
                                         ]);
                                       }}
-                                      className="mb-4 w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl border-2 border-dashed border-blue-200 text-blue-700 text-[10px] font-black uppercase tracking-wide hover:bg-blue-50 transition-colors"
+                                      className="mb-4 w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl border-2 border-dashed border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400 text-[10px] font-black uppercase tracking-wide hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
                                     >
                                       <Plus className="w-4 h-4" />
                                       Add checkpoint
@@ -5232,17 +5297,17 @@ const AdminDashboard: React.FC<Props> = ({
                         onClick={() => setGradingSystemPopupExitConfirmOpen(false)}
                       >
                         <div
-                          className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/10"
+                          className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-5 shadow-sm shadow-slate-900/10"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <p className="text-sm font-semibold text-slate-700 mb-4">
+                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
                             Close without saving? Your checkpoint changes will be discarded.
                           </p>
                           <div className="flex gap-2 justify-end">
                             <button
                               type="button"
                               onClick={() => setGradingSystemPopupExitConfirmOpen(false)}
-                              className="px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 text-[11px] font-bold uppercase tracking-wide hover:bg-slate-100 transition-colors"
+                              className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wide hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                             >
                               Cancel
                             </button>
@@ -5333,10 +5398,10 @@ const AdminDashboard: React.FC<Props> = ({
               )}
 
               <div className="p-6 overflow-y-auto flex-1 min-h-0">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-4">Edit category name, icon, weight (%), and grading content criteria.</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mb-4">Edit category name, icon, weight (%), and grading content criteria.</p>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">KPI categories</p>
+                    <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">KPI categories</p>
                     <button
                       type="button"
                       onClick={() => handleAddCategory(dept)}
@@ -5357,7 +5422,7 @@ const AdminDashboard: React.FC<Props> = ({
                     return (
                       <div
                         key={idx}
-                        className={`rounded-xl border overflow-visible shadow-sm ${isContentPointSumValid ? 'border-slate-200/90 bg-slate-50/40' : 'border-amber-200 bg-amber-50/70'}`}
+                        className={`rounded-xl border overflow-visible shadow-sm ${isContentPointSumValid ? 'border-slate-200 dark:border-slate-600/90 bg-slate-50 dark:bg-slate-900/40' : 'border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30'}`}
                       >
                         <div className="p-4 space-y-3">
                             <div className="grid grid-cols-[auto_minmax(0,240px)_1fr_auto] gap-3 items-center min-w-0">
@@ -5365,13 +5430,13 @@ const AdminDashboard: React.FC<Props> = ({
                               <button
                                 type="button"
                                 onClick={() => { setGradingIconPickerOpen(gradingIconPickerOpen === idx ? null : idx); }}
-                                className="w-10 h-10 rounded-xl bg-blue-500/10 border border-slate-200 flex items-center justify-center shadow-sm hover:bg-blue-500/20 hover:border-blue-300 transition-colors"
+                                className="w-10 h-10 rounded-xl bg-blue-500/10 border border-slate-200 dark:border-slate-600 flex items-center justify-center shadow-sm hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
                                 title="Choose icon"
                               >
                                 <IconComponent className="w-5 h-5 text-blue-600" />
                               </button>
                               {gradingIconPickerOpen === idx && (
-                                <div className="absolute top-full left-0 mt-1 rounded-xl border border-slate-200 bg-white p-2 z-[5100] box-border shadow-[0_0_12px_rgba(15,23,42,0.08)] w-fit">
+                                <div className="absolute top-full left-0 mt-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-2 z-[5100] box-border shadow-[0_0_12px_rgba(15,23,42,0.08)] w-fit">
                                   <div className="grid gap-1.5 w-max" style={{ gridTemplateRows: 'repeat(4, 28px)', gridTemplateColumns: `repeat(${Math.ceil(CATEGORY_ICON_KEYS.length / 4)}, 52px)` }}>
                                     {CATEGORY_ICON_KEYS.map((key) => {
                                       const Icon = CATEGORY_ICON_MAP[key];
@@ -5381,7 +5446,7 @@ const AdminDashboard: React.FC<Props> = ({
                                           key={key}
                                           type="button"
                                           onClick={() => { handleUpdateCategoryIcon(dept, idx, key); setGradingIconPickerOpen(null); }}
-                                          className={`w-9 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${selected ? 'bg-blue-500/20 border-2 border-blue-500 text-blue-600' : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'}`}
+                                          className={`w-9 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${selected ? 'bg-blue-500/20 border-2 border-blue-500 text-blue-600' : 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500'}`}
                                           title={key}
                                         >
                                           {Icon && <Icon className="w-5 h-5" />}
@@ -5396,11 +5461,11 @@ const AdminDashboard: React.FC<Props> = ({
                               type="text"
                               value={cat.label}
                               onChange={(e) => handleUpdateCategoryLabel(dept, idx, e.target.value)}
-                              className="w-full min-w-0 bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-[11px] font-bold text-slate-800 uppercase tracking-wide outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-sm truncate"
+                              className="w-full min-w-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-sm truncate"
                               placeholder="Category name"
                             />
                             <div className="flex items-center justify-end gap-2 min-h-[20px] min-w-0 px-2 py-1">
-                              <span className="text-[10px] font-black text-slate-500 uppercase tracking-wide shrink-0">Weighted impact</span>
+                              <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide shrink-0">Weighted impact</span>
                               <select
                                 value={cat.weightPct}
                                 onChange={(e) => {
@@ -5410,7 +5475,7 @@ const AdminDashboard: React.FC<Props> = ({
                                     handleUpdateDepartmentWeight(dept, idx, val);
                                   }
                                 }}
-                                className={`w-28 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-black tabular-nums outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-sm ${weightClases}`}
+                                className={`w-28 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-sm font-black tabular-nums outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-sm ${weightClases}`}
                               >
                                 {[5,10,15,20,25,30,35,40,45,50].map(w => {
                                   const otherTotal = totalWeight - cat.weightPct;
@@ -5427,7 +5492,7 @@ const AdminDashboard: React.FC<Props> = ({
                               <button
                                 type="button"
                                 onClick={() => handleResetCategory(dept, idx)}
-                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 text-[9px] font-black uppercase tracking-wide hover:bg-slate-50 shadow-sm transition-colors shrink-0"
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 dark:text-slate-400 text-[9px] font-black uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm transition-colors shrink-0"
                                 title="Reset this category to default"
                               >
                                 <RotateCcw className="w-3.5 h-3.5" />
@@ -5439,8 +5504,8 @@ const AdminDashboard: React.FC<Props> = ({
                                 onClick={() => handleRemoveCategory(dept, idx)}
                                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-[9px] font-black uppercase tracking-wide shadow-sm transition-colors shrink-0 ${
                                   categories.length <= 1
-                                    ? 'border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed opacity-70'
-                                    : 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300'
+                                    ? 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-300 cursor-not-allowed opacity-70'
+                                    : 'border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 text-red-600 hover:bg-red-100 hover:border-red-300 dark:hover:border-red-600'
                                 }`}
                                 title={categories.length <= 1 ? 'At least one category is required' : 'Remove this category'}
                               >
@@ -5450,30 +5515,30 @@ const AdminDashboard: React.FC<Props> = ({
                             </div>
                           </div>
                           <div>
-                            <button type="button" onClick={() => setGradingContentExpanded(isContentExpanded ? null : idx)} className="flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase tracking-wide hover:text-blue-600 transition-colors">
+                            <button type="button" onClick={() => setGradingContentExpanded(isContentExpanded ? null : idx)} className="flex items-center gap-2 text-[10px] font-black text-slate-600 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide hover:text-blue-600 transition-colors">
                               <ChevronDown className={`w-4 h-4 transition-transform ${isContentExpanded ? 'rotate-180' : ''}`} />
                               <span>Grading content (audit criteria) — {content.length} item(s)</span>
-                              <span className={`ml-2 px-2 py-1 rounded-lg border text-[10px] font-black tabular-nums ${isContentPointSumValid ? 'border-emerald-200 bg-emerald-500/10 text-emerald-700' : 'border-amber-200 bg-amber-500/10 text-amber-700'}`}>
+                              <span className={`ml-2 px-2 py-1 rounded-lg border text-[10px] font-black tabular-nums ${isContentPointSumValid ? 'border-emerald-200 bg-emerald-500/10 text-emerald-700' : 'border-amber-200 dark:border-amber-700 bg-amber-500/10 text-amber-700'}`}>
                                 {contentPointSum}/{cat.weightPct} Yield
                               </span>
                             </button>
                             {isContentExpanded && (
-                              <div className="mt-3 pl-4 border-l-2 border-slate-200 space-y-2">
+                              <div className="mt-3 pl-4 border-l-2 border-slate-200 dark:border-slate-600 space-y-2">
                                 {content.map((item, itemIdx) => (
                                   <div
                                     key={itemIdx}
-                                    className="w-full flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-2 py-1.5 shadow-sm hover:bg-slate-50/80 transition-colors"
+                                    className="w-full flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-900/80 transition-colors"
                                   >
                                     <button
                                       type="button"
                                       onClick={() => openCriterionEditor(dept, idx, itemIdx)}
-                                      className="flex-1 min-w-0 flex items-center justify-between gap-3 px-1 py-0.5 text-left rounded-md hover:bg-slate-50 transition-colors"
+                                      className="flex-1 min-w-0 flex items-center justify-between gap-3 px-1 py-0.5 text-left rounded-md hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                                       title="Edit grading criterion"
                                     >
-                                      <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide truncate">
+                                      <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide truncate">
                                         {String(item.label || 'New criterion')}
                                       </span>
-                                      <span className="text-[10px] font-black text-slate-400 tabular-nums shrink-0">
+                                      <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 tabular-nums shrink-0">
                                         {Number(item.maxpoints ?? 0) || 0} Yield
                                       </span>
                                     </button>
@@ -5483,7 +5548,7 @@ const AdminDashboard: React.FC<Props> = ({
                                         e.stopPropagation();
                                         handleRemoveContentItem(dept, idx, itemIdx);
                                       }}
-                                      className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+                                      className="p-2 rounded-lg text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors shrink-0"
                                       title="Remove criterion"
                                       aria-label="Remove criterion"
                                     >
@@ -5491,7 +5556,7 @@ const AdminDashboard: React.FC<Props> = ({
                                     </button>
                                   </div>
                                 ))}
-                                <button type="button" onClick={() => handleAddContentItem(dept, idx)} className="flex items-center gap-1.5 text-[10px] font-black text-blue-600 uppercase tracking-wide hover:text-blue-700">
+                                <button type="button" onClick={() => handleAddContentItem(dept, idx)} className="flex items-center gap-1.5 text-[10px] font-black text-blue-600 uppercase tracking-wide hover:text-blue-700 dark:hover:text-blue-400">
                                   <Plus className="w-3.5 h-3.5" /> Add criterion
                                 </button>
                               </div>
@@ -5510,28 +5575,28 @@ const AdminDashboard: React.FC<Props> = ({
       })()}
       {editingNode && (
         <div className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-xl w-full max-w-sm p-5 shadow-sm border border-slate-100 space-y-8 relative overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-sm p-5 shadow-sm border border-slate-100 dark:border-slate-700 space-y-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
             <div className="flex justify-between items-center relative">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center"><Settings className="w-5 h-5 text-white" /></div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide leading-none mb-1">Manage user</h3>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide leading-none mb-1">Manage user</h3>
                   <p className="text-[9px] font-bold text-slate-300 uppercase tracking-wide">Administrative Override</p>
                 </div>
               </div>
-              <button onClick={() => setEditingNode(null)} className="p-2 text-slate-300 hover:text-slate-900 transition-colors"><X className="w-5 h-5" /></button>
+              <button onClick={() => setEditingNode(null)} className="p-2 text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-6 relative">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wide ml-1">Rename Identity</label>
-                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-5 py-2 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all" value={editingNode.name} onChange={(e) => setEditingNode({...editingNode, name: e.target.value})} />
+                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Rename Identity</label>
+                <input type="text" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-5 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all" value={editingNode.name} onChange={(e) => setEditingNode({...editingNode, name: e.target.value})} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wide ml-1">Access Designation</label>
+                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Access Designation</label>
                 <div className="relative">
                   <select 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-5 py-2 text-sm font-black text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 appearance-none cursor-pointer disabled:opacity-50" 
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-5 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 appearance-none cursor-pointer disabled:opacity-50" 
                     value={editingNode.role} 
                     onChange={(e) => setEditingNode({...editingNode, role: e.target.value as UserRole})} 
                     disabled={activeDept === 'Admin'}
@@ -5542,7 +5607,7 @@ const AdminDashboard: React.FC<Props> = ({
                       Object.values(UserRole).filter(role => role !== UserRole.ADMIN).map(role => <option key={role} value={role}>{role}</option>)
                     )}
                   </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-500 pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -5561,15 +5626,15 @@ const AdminDashboard: React.FC<Props> = ({
 
       {unenrollConfirmName && (
         <div className="fixed inset-0 z-[5010] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl w-full max-w-sm p-5 shadow-sm border border-slate-100 space-y-6 relative">
+          <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-sm p-5 shadow-sm border border-slate-100 dark:border-slate-700 space-y-6 relative">
             <div className="text-center space-y-2">
-              <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Are you sure you want to unenroll <span className="text-red-600">{unenrollConfirmName}</span>?</p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">This will permanently remove the user and its data.</p>
+              <p className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Are you sure you want to unenroll <span className="text-red-600">{unenrollConfirmName}</span>?</p>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">This will permanently remove the user and its data.</p>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setUnenrollConfirmName(null)}
-                className="flex-1 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide border-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition-all"
+                className="flex-1 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide border-2 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all"
               >
                 Cancel
               </button>
@@ -5606,12 +5671,12 @@ const AdminDashboard: React.FC<Props> = ({
         {/* Mobile header (navigation moved to burger drawer) */}
         <div className="mb-8 flex flex-col gap-6 lg:hidden">
           <div>
-            <h1 className="text-[34px] font-black text-[#1e293b] tracking-tight leading-none">
+            <h1 className="text-[34px] font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none">
               Admin Dashboard
             </h1>
-            <p className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-slate-100 to-blue-50 border border-slate-200/80 shadow-sm">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Signed in as</span>
-              <span className="text-slate-800 font-bold text-sm uppercase tracking-wide">{user.name}</span>
+            <p className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-slate-100 to-blue-50 border border-slate-200 dark:border-slate-600/80 shadow-sm">
+              <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">Signed in as</span>
+              <span className="text-slate-800 dark:text-slate-200 font-bold text-sm uppercase tracking-wide">{user.name}</span>
             </p>
           </div>
         </div>
@@ -5619,96 +5684,95 @@ const AdminDashboard: React.FC<Props> = ({
         {/* Desktop layout: fixed sidenav + content (reference-style) */}
         <div className="hidden lg:block">
           <aside
-            className={`fixed left-0 ${APP_NAV_SIDENAV_TOP} z-[60] ${APP_NAV_SIDENAV_HEIGHT} overflow-hidden border-r border-slate-200 bg-white text-slate-900 shadow-sm transition-[width] duration-200 ease-out ${
+            className={`fixed left-0 ${APP_NAV_SIDENAV_TOP} z-[60] ${APP_NAV_SIDENAV_HEIGHT} overflow-hidden border-r border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm transition-[width] duration-200 ease-out ${
               railOpen ? 'w-[272px]' : 'w-[76px]'
             }`}
             aria-label="Admin sidenav"
           >
             <div className="flex h-full min-h-0 flex-col">
-              <div className={`shrink-0 pt-4 pb-2 ${railOpen ? 'px-4' : 'flex justify-center px-2'}`}>
+              {/* Nav items — always visible; icon-only when collapsed */}
+              <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-2 pt-3 pb-2">
+                {[
+                  { id: 'registry', label: 'Users & Departments', desc: 'Manage users & departments', icon: Users },
+                  { id: 'validation', label: 'Approve Grades', desc: 'Review & approve submitted grades', icon: ShieldCheck },
+                  { id: 'grading', label: 'Grading System Configuration', desc: 'Set scoring weights & criteria', icon: Scale },
+                  { id: 'performance', label: 'Performance', desc: 'Employee scores & rankings', icon: Trophy },
+                  { id: 'data', label: 'Data & Backup', desc: 'Export data only', icon: Database },
+                  { id: 'summary', label: 'Year-End Summary', desc: 'Annual scores by quarter', icon: CalendarCheck },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  const active = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setActiveTab(item.id as AdminTab)}
+                      title={!railOpen ? item.label : undefined}
+                      className={`group relative flex w-full min-w-0 items-center justify-start rounded-lg border transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400/40 gap-3 px-2 py-2 text-left ${
+                        active
+                          ? 'border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-300 shadow-sm'
+                          : 'border-transparent text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:border-slate-100 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100'
+                      }`}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      <span
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+                          active ? 'border-blue-300 dark:border-blue-600 bg-blue-100' : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 group-hover:bg-slate-100 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <Icon className={`h-[17px] w-[17px] ${active ? 'text-blue-600' : 'text-slate-700 dark:text-slate-300'}`} aria-hidden />
+                      </span>
+                      {railOpen && (
+                        <span className="min-w-0 flex-1 pt-0.5 text-left">
+                          <span className={`block text-xs font-semibold leading-tight ${active ? 'text-blue-900 dark:text-blue-300' : 'text-slate-800 dark:text-slate-200'}`}>
+                            {item.label}
+                          </span>
+                          <span className={`mt-0.5 block text-[10px] font-normal leading-snug ${active ? 'text-blue-700 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500'}`}>
+                            {item.desc}
+                          </span>
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {/* Collapse/expand — above sign out */}
+              <div className={`shrink-0 ${railOpen ? 'px-3 pb-2' : 'px-2 pb-2'}`}>
                 <button
                   type="button"
                   onClick={toggleRail}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+                  title={!railOpen ? 'Expand sidebar' : undefined}
+                  className={`flex w-full items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-400 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400/40 ${
+                    railOpen ? 'gap-2 px-3 py-2' : 'p-2'
+                  }`}
                   aria-expanded={railOpen}
-                  aria-label={railOpen ? 'Close admin menu' : 'Open admin menu'}
+                  aria-label={railOpen ? 'Collapse sidebar' : 'Expand sidebar'}
                 >
-                  <Menu className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+                  {railOpen
+                    ? <><ChevronLeft className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden /><span className="text-[11px] font-semibold">Collapse</span></>
+                    : <ChevronRight className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  }
                 </button>
               </div>
 
               {railOpen && (
-                <>
-                  <nav className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-3 pb-2">
-                    {[
-                      { id: 'registry', label: 'Users & Departments', icon: Users },
-                      { id: 'validation', label: 'Approve Grades', icon: ShieldCheck },
-                      { id: 'grading', label: 'Grading System Configuration', icon: Scale },
-                      { id: 'performance', label: 'Performance', icon: Trophy },
-                      { id: 'data', label: 'Data & Backup', icon: Database },
-                      { id: 'summary', label: 'Year-End Summary', icon: CalendarCheck },
-                    ].map((item) => {
-                      const Icon = item.icon;
-                      const active = activeTab === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => setActiveTab(item.id as AdminTab)}
-                          className={`group relative flex w-full min-w-0 items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-all focus:outline-none focus:ring-2 focus:ring-blue-400/40 ${
-                            active
-                              ? 'border-blue-200 bg-blue-50 text-blue-900 shadow-sm'
-                              : 'border-transparent text-slate-600 hover:border-slate-100 hover:bg-slate-50 hover:text-slate-900'
-                          }`}
-                          aria-current={active ? 'page' : undefined}
-                        >
-                          <span
-                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border transition-colors ${
-                              active ? 'border-blue-300 bg-blue-100' : 'border-slate-200 bg-white group-hover:bg-slate-100'
-                            }`}
-                          >
-                            <Icon className={`h-[18px] w-[18px] ${active ? 'text-blue-600' : 'text-slate-700'}`} aria-hidden />
-                          </span>
-                          <span className="min-w-0 flex-1 pt-0.5">
-                            <span className={`block text-xs font-semibold leading-tight ${active ? 'text-blue-900' : 'text-slate-800'}`}>
-                              {item.label}
-                            </span>
-                            <span className={`mt-0.5 block text-[10px] font-normal leading-snug ${active ? 'text-blue-700' : 'text-slate-400'}`}>
-                              {item.id === 'registry'
-                                ? 'Manage users & departments'
-                                : item.id === 'validation'
-                                ? 'Review & approve submitted grades'
-                                  : item.id === 'grading'
-                                    ? 'Set scoring weights & criteria'
-                                    : item.id === 'performance'
-                                      ? 'Employee scores & rankings'
-                                      : item.id === 'summary'
-                                        ? 'Annual scores by quarter'
-                                        : 'Export data only'}
-                            </span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </nav>
-
-                  <div className="shrink-0 border-t border-slate-100 px-3 pb-4 pt-3">
-                    <button
-                      type="button"
-                      onClick={logout}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-[11px] font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400/30"
-                      aria-label="Sign out"
-                    >
-                      <LogOut className="h-4 w-4 shrink-0" aria-hidden />
-                      Sign out
-                    </button>
-                  </div>
-                </>
+                <div className="shrink-0 border-t border-slate-100 dark:border-slate-700 px-3 pb-4 pt-3">
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-[11px] font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400/30"
+                    aria-label="Sign out"
+                  >
+                    <LogOut className="h-4 w-4 shrink-0" aria-hidden />
+                    Sign out
+                  </button>
+                </div>
               )}
             </div>
           </aside>
 
-          <div className={`${railOpen ? APP_NAV_RAIL_PL_EXPANDED : APP_NAV_RAIL_PL_COLLAPSED} pr-4 sm:pr-6 lg:pr-8 min-h-0`}>
+          <div className={` px-4 min-h-0`}>
             <section className="min-w-0 min-h-0">
               {activeTab === 'registry' && renderRegistry()}
               {activeTab === 'validation' && renderValidation()}

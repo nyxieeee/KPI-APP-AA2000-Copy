@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Transmission, SystemStats, Announcement, DepartmentWeights } from '../types';
+import { User, Transmission, SystemStats, Announcement, DepartmentWeights, SystemNotification } from '../types';
 import TechnicalDashboard from './departments/TechnicalDashboard';
 import SalesDashboard from './departments/SalesDashboard';
 import MarketingDashboard from './departments/MarketingDashboard';
@@ -17,6 +17,8 @@ interface Props {
   onEditSubmission?: (t: Transmission) => void;
   onClearMyLogs?: () => void;
   departmentWeights: DepartmentWeights;
+  notifications?: SystemNotification[];
+  onDeleteNotification?: (id: string) => void;
 }
 
 const EmployeeDashboard: React.FC<Props> = (props) => {

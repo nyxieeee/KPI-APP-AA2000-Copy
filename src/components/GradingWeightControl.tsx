@@ -35,13 +35,13 @@ export const GradingWeightControl: React.FC<GradingWeightControlProps> = ({
     <div className="space-y-6">
       {/* Performance Weight */}
       <div className="space-y-2">
-        <label className="text-xs font-semibold text-slate-700 block">
+        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
           Performance Weight
         </label>
         <select
           value={performance}
           onChange={(e) => onPerformanceChange(Number(e.target.value))}
-          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all"
+          className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all"
         >
           <option value="">Select weight...</option>
           {getAvailableWeights('performance', performance).map((w) => (
@@ -54,13 +54,13 @@ export const GradingWeightControl: React.FC<GradingWeightControlProps> = ({
 
       {/* Proficiency Weight */}
       <div className="space-y-2">
-        <label className="text-xs font-semibold text-slate-700 block">
+        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
           Proficiency Weight
         </label>
         <select
           value={proficiency}
           onChange={(e) => onProficiencyChange(Number(e.target.value))}
-          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all"
+          className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all"
         >
           <option value="">Select weight...</option>
           {getAvailableWeights('proficiency', proficiency).map((w) => (
@@ -73,13 +73,13 @@ export const GradingWeightControl: React.FC<GradingWeightControlProps> = ({
 
       {/* Behavior Weight */}
       <div className="space-y-2">
-        <label className="text-xs font-semibold text-slate-700 block">
+        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
           Behavior Weight
         </label>
         <select
           value={behavior}
           onChange={(e) => onBehaviorChange(Number(e.target.value))}
-          className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all"
+          className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all"
         >
           <option value="">Select weight...</option>
           {getAvailableWeights('behavior', behavior).map((w) => (
@@ -91,16 +91,16 @@ export const GradingWeightControl: React.FC<GradingWeightControlProps> = ({
       </div>
 
       {/* Total Weight Display */}
-      <div className="pt-4 border-t border-slate-200">
+      <div className="pt-4 border-t border-slate-200 dark:border-slate-600">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-semibold text-slate-700">Total Weight</span>
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Total Weight</span>
           <span className={`text-lg font-bold ${isValid ? 'text-green-600' : remaining >= 0 ? 'text-amber-600' : 'text-red-600'}`}>
             {total} / 100
           </span>
         </div>
         
         {/* Progress Bar */}
-        <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
           <div
             className={`h-full transition-all ${
               isValid ? 'bg-green-500' : remaining >= 0 ? 'bg-amber-500' : 'bg-red-500'
@@ -111,7 +111,7 @@ export const GradingWeightControl: React.FC<GradingWeightControlProps> = ({
 
         {/* Remaining Weight */}
         <div className="mt-3 flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-600">
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
             {remaining > 0 ? `${remaining}% remaining` : remaining === 0 ? 'Perfect balance' : `${Math.abs(remaining)}% over`}
           </span>
           {!isValid && (

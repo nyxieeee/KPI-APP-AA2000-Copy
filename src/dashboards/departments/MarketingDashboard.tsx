@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { getSubmissionStatusLabel, getSubmissionStatusSubLabel } from '../../utils/submissionStatus';
-import { User, Transmission, SystemStats, Announcement, DepartmentWeights, CategoryWeightItem } from '../../types';
+import { User, Transmission, SystemStats, Announcement, DepartmentWeights, CategoryWeightItem, SystemNotification } from '../../types';
 import TechnicalCategoryAuditPanel, {
   buildDefaultPmChecklistForCategory,
   computeCategoryAggregateMetrics,
@@ -10,7 +10,7 @@ import { useAuditPanelCategoryHold } from '../../utils/auditPanelHold';
 import { getMarketingWeightedKpiSum } from '../../utils/technicalWeightedKpi';
 import { DraggableLedgerFab } from '../../components/DraggableLedgerFab';
 import { LedgerRegistryPanel } from '../../components/LedgerRegistryModal';
-import { EMPLOYEE_WORKSPACE_ID, scrollEmployeeWorkspaceIntoView } from '../../utils/employeeWorkspaceScroll';
+import { EMPLOYEE_WORKSPACE_ID } from '../../utils/employeeWorkspaceScroll';
 import { computeGradingConfigSignature, isPendingGradingConfigExpired } from '../../utils/gradingConfigSignature';
 import { DirectDirectiveModal } from '../../components/DirectDirectiveModal';
 import { downloadLogDetailPdf, getLogDetailPdfFilename, type CategoryScoreForPdf } from '../../utils/logDetailToPdf';
@@ -21,17 +21,18 @@ import { computeQuarterlyStats, getCurrentQuarter, type Quarter, type Performanc
 import { TechnicalLogDetailAuditReview } from '../../components/TechnicalLogDetailAuditReview';
 import { PerformanceMatrix as PerformanceMatrixCard } from '../../components/PerformanceMatrix';
 import { PdfToast, type PdfToastState } from '../../components/PdfToast';
+import DashboardNotificationBanner from '../../components/DashboardNotificationBanner';
 import { getGradeForScore, getGradeColorClasses } from '../../utils/gradingSystem';
 import { RoleSidenav } from '../../components/RoleSidenav';
 import { APP_NAV_RAIL_PL_COLLAPSED, APP_NAV_RAIL_PL_EXPANDED } from '../../constants/navbarLayout';
 import { useMobileSidenav } from '../../contexts/MobileSidenavContext';
 import { useRoleSidenavRail } from '../../contexts/RoleSidenavRailContext';
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll';
-import { 
+import {
   Activity, CheckCircle2, Clock, FileCheck, ChevronRight, ChevronLeft, ShieldCheck, Zap,
   File as FileIcon, FileImage, Upload, X, Eye, AlertCircle, FileText, Download, Megaphone,
   TrendingUp, ClipboardList, PenTool, CalendarCheck, Landmark, Trophy, Calendar,
-  ShoppingCart, FileStack, Info, Medal, AlertTriangle, XCircle, AlertOctagon, Sparkles, History
+  ShoppingCart, FileStack, Info, Medal, AlertTriangle, XCircle, AlertOctagon, Sparkles, History, Loader2
 } from 'lucide-react';
 
 interface Props {
@@ -45,6 +46,8 @@ interface Props {
   onEditSubmission?: (t: Transmission) => void;
   onClearMyLogs?: () => void;
   departmentWeights?: DepartmentWeights;
+  notifications?: SystemNotification[];
+  onDeleteNotification?: (id: string) => void;
 }
 
 // DEPRECATED: Use departmentWeights instead
@@ -96,7 +99,7 @@ const MARKETING_LOG_CHECKLIST_CONTENT: Record<string, string[]> = {
   'Attendance & Discipline': [],
 };
 
-const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights, onDeleteSubmission, onEditSubmission, onClearMyLogs }) => {
+const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights, onDeleteSubmission, onEditSubmission, onClearMyLogs, notifications = [], onDeleteNotification }) => {
   const { startHoldPanel, stopHold } = useAuditPanelCategoryHold();
   const [isDragging, setIsDragging] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
@@ -106,6 +109,19 @@ const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
   const [showSuccess, setShowSuccess] = useState(false);
   const [isRegistryOpen, setIsRegistryOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<Transmission | null>(null);
+
+  // Keep selectedLog in sync: when supervisor/admin updates a submission, reflect the latest status
+  useEffect(() => {
+    if (!selectedLog) return;
+    const updated = [...pendingTransmissions, ...transmissionHistory].find(t => t.id === selectedLog.id);
+    if (updated && (
+      updated.status !== selectedLog.status ||
+      updated.supervisorRecommendation !== selectedLog.supervisorRecommendation
+    )) {
+      setSelectedLog(updated);
+    }
+  }, [pendingTransmissions, transmissionHistory, selectedLog]);
+
   const logDetailFromLedgerRef = useRef(false);
   const [acknowledgedIds, setAcknowledgedIds] = useState<string[]>(() => {
     try {
@@ -157,7 +173,6 @@ const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
           setActiveStep(Number(id));
           setIsRegistryOpen(false);
         }
-        scrollEmployeeWorkspaceIntoView();
       },
       showSignOut: true,
     });
@@ -557,6 +572,22 @@ const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
     }
   };
 
+  const handlePrevious = () => {
+    if (activeStep === 1) {
+      saveCurrentCategoryData();
+      const currentIndex = CLASSIFICATIONS.findIndex(c => c.name === formData.jobType);
+      if (currentIndex > 0) {
+        setFormData(prev => ({ ...prev, jobType: CLASSIFICATIONS[currentIndex - 1].name }));
+      }
+    } else {
+      if (activeStep === 2) {
+        const lastCategory = CLASSIFICATIONS[CLASSIFICATIONS.length - 1].name;
+        setFormData(prev => ({ ...prev, jobType: lastCategory }));
+      }
+      setActiveStep(prev => Math.max(1, prev - 1));
+    }
+  };
+
   const isStep3Complete = formData.attachments.length > 0;
 
   const handleTransmit = () => {
@@ -732,37 +763,37 @@ const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
       label: c.label,
       weightPct: c.weightPct,
     }));
-    
+
     const getCategoryScoreFallback = (t: Transmission, categoryName: string): number | undefined => {
-        const allData = t.allSalesData || {};
-        const catCfg = departmentWeights?.Marketing?.find((w) => w.label === categoryName);
-        const checklist = (allData[categoryName]?.checklist || {}) as Record<string, unknown>;
+      const allData = t.allSalesData || {};
+      const catCfg = departmentWeights?.Marketing?.find((w) => w.label === categoryName);
+      const checklist = (allData[categoryName]?.checklist || {}) as Record<string, unknown>;
 
-        if (catCfg?.content?.length) {
-          const m = computeCategoryAggregateMetrics(catCfg, checklist as any);
-          return m.categorymaxpoints > 0 ? (m.aggregatePts / m.categorymaxpoints) * 100 : 0;
-        }
+      if (catCfg?.content?.length) {
+        const m = computeCategoryAggregateMetrics(catCfg, checklist as any);
+        return m.categorymaxpoints > 0 ? (m.aggregatePts / m.categorymaxpoints) * 100 : 0;
+      }
 
-        const labels = MARKETING_LOG_CHECKLIST_CONTENT[categoryName] || [];
-        let total = 0;
-        let max = 0;
-        labels.forEach((label, i) => {
-          const key = `task${i + 1}`;
-          const item = checklist[key];
-          const maxpoints = label ? (() => {
-            const mm = label.match(/\((\d+)\s*points?\)/i);
-            return mm ? parseInt(mm[1], 10) : 0;
-          })() : 0;
-          max += maxpoints;
-          if (typeof item === 'object' && item != null && (item as any).score !== undefined) {
-            total += Number((item as any).score) || 0;
-          } else if (item === true) total += maxpoints;
-        });
-        return max > 0 ? (total / max) * 100 : undefined;
+      const labels = MARKETING_LOG_CHECKLIST_CONTENT[categoryName] || [];
+      let total = 0;
+      let max = 0;
+      labels.forEach((label, i) => {
+        const key = `task${i + 1}`;
+        const item = checklist[key];
+        const maxpoints = label ? (() => {
+          const mm = label.match(/\((\d+)\s*points?\)/i);
+          return mm ? parseInt(mm[1], 10) : 0;
+        })() : 0;
+        max += maxpoints;
+        if (typeof item === 'object' && item != null && (item as any).score !== undefined) {
+          total += Number((item as any).score) || 0;
+        } else if (item === true) total += maxpoints;
+      });
+      return max > 0 ? (total / max) * 100 : undefined;
     };
-    
+
     const getFinalScoreFallback = (t: Transmission) => getMarketingWeightedKpiSum(t, departmentWeights, MARKETING_LOG_CHECKLIST_CONTENT, DEFAULT_MARKETING_CLASSIFICATIONS);
-    
+
     return computeQuarterlyStats({
       transmissions: transmissionHistory,
       userId: user.id,
@@ -894,7 +925,7 @@ const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
 
   return (
     <div
-      className={`w-full max-w-full xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 pb-6 sm:pb-12 min-h-0 flex flex-col ${railOpen ? APP_NAV_RAIL_PL_EXPANDED : APP_NAV_RAIL_PL_COLLAPSED}`}
+      className={`w-full max-w-full xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col h-full gap-4`}
     >
       <DirectDirectiveModal
         open={isBroadcastModalOpen}
@@ -905,50 +936,58 @@ const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
         onClose={() => setIsBroadcastModalOpen(false)}
       />
 
+      <DashboardNotificationBanner
+        notifications={notifications}
+        onDismiss={(id) => onDeleteNotification?.(id)}
+      />
+
       {showSuccess && (
         <div className="fixed top-24 right-8 z-[9999] animate-in slide-in-from-right-full fade-in duration-500">
           <div className="bg-[#0b1222] text-white px-6 py-2 rounded-lg shadow-sm border border-blue-500/30 flex items-center gap-4">
             <CheckCircle2 className="w-6 h-6 text-blue-500" />
             <div><p className="text-[11px] font-black uppercase tracking-wide mb-1">Submission sent</p><p className="text-[10px] font-bold text-blue-400 uppercase tracking-tighter">Your supervisor can review it next</p></div>
-                </div>
-              </div>
+          </div>
+        </div>
       )}
 
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-slate-50/90 backdrop-blur-md border-b border-slate-200/60 -mt-4 sm:-mt-6 md:-mt-8 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-2 sm:py-6 md:py-8">
-        <div className="space-y-4">
-          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-none">Marketing KPI Logs</h1>
-          <p className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-slate-100 to-blue-50 border border-slate-200/80 shadow-sm">
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Signed in as</span>
-          <span className="text-slate-800 font-bold text-sm uppercase tracking-wide">{user.name}</span>
-        </p>
-                </div>
-        <button onClick={() => setIsBroadcastModalOpen(true)} className="hidden lg:flex items-center text-left gap-4 bg-white p-6 rounded-xl border border-slate-100 shadow-sm min-w-[350px] max-w-md hover:bg-slate-50 transition-all group">
-          <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center shrink-0 relative">
-            <Megaphone className={`w-6 h-6 text-amber-600 ${isNewBroadcast ? 'animate-pulse' : ''}`} />
-            {isNewBroadcast && <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>}
+      {activeStep === 1 && (
+        <>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-slate-50 dark:bg-[#0b1222] backdrop-blur-md border-b border-slate-200 dark:border-slate-600/60 -mt-4 sm:-mt-6 md:-mt-8 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-2 sm:py-6 md:py-8">
+            <div className="space-y-4">
+              <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none">Welcome, {user.name}!</h1>
+              <p className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-slate-100 to-blue-50 dark:from-slate-800/50 dark:to-slate-800/30 border border-slate-200 dark:border-slate-600/80 shadow-sm">
+                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">Marketing KPI Logs</span>
+              </p>
+            </div>
+            <button onClick={() => setIsBroadcastModalOpen(true)} className="hidden lg:flex items-center text-left gap-4 bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm min-w-[350px] max-w-md hover:bg-slate-50 dark:hover:bg-slate-900 transition-all group">
+              <div className="w-12 h-12 bg-amber-50 dark:bg-amber-900/30 rounded-lg flex items-center justify-center shrink-0 relative">
+                <Megaphone className={`w-6 h-6 text-amber-600 ${isNewBroadcast ? 'animate-pulse' : ''}`} />
+                {isNewBroadcast && <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>}
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mb-1">Team announcements</p>
+                <p className="text-[11px] font-bold text-slate-900 dark:text-slate-100 uppercase truncate">{latestBroadcast ? latestBroadcast.message : 'No new messages from your supervisor'}</p>
+              </div>
+            </button>
           </div>
-          <div className="overflow-hidden">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide mb-1">Team announcements</p>
-            <p className="text-[11px] font-bold text-slate-900 uppercase truncate">{latestBroadcast ? latestBroadcast.message : 'No new messages from your supervisor'}</p>
-          </div>
-        </button>
-      </div>
 
-      <PerformanceMatrixCard
-        title="Performance Scorecard"
-        isValidated={!!quarterlyStats?.ratings}
-        hasUserPending={hasUserPending}
-        displayScore={displayScore}
-        dash={dash}
-        ringOffset={ringOffset}
-        quarterlyStats={quarterlyStats}
-        onDownloadPdf={handleDownloadPdf}
-        suggestion={getScoreSuggestion(quarterlyStats?.ratings?.finalScore, (quarterlyStats?.categoryStats ?? []).map(s => ({ label: s.label, val: s.val })), quarterlyStats?.count ?? 0)}
-        variantStyles={{ excellent: 'text-blue-600', good: 'text-blue-600', solid: 'text-slate-700', progress: 'text-amber-600', growth: 'text-slate-600', empty: 'text-slate-500' }}
-      />
+          <PerformanceMatrixCard
+            title="Performance Scorecard"
+            isValidated={!!quarterlyStats?.ratings}
+            hasUserPending={hasUserPending}
+            displayScore={displayScore}
+            dash={dash}
+            ringOffset={ringOffset}
+            quarterlyStats={quarterlyStats}
+            onDownloadPdf={handleDownloadPdf}
+            suggestion={getScoreSuggestion(quarterlyStats?.ratings?.finalScore, (quarterlyStats?.categoryStats ?? []).map(s => ({ label: s.label, val: s.val })), quarterlyStats?.count ?? 0)}
+            variantStyles={{ excellent: 'text-blue-600', good: 'text-blue-600', solid: 'text-slate-700 dark:text-slate-300', progress: 'text-amber-600', growth: 'text-slate-600 dark:text-slate-400 dark:text-slate-400', empty: 'text-slate-500 dark:text-slate-400 dark:text-slate-400' }}
+          />
+        </>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-12">
+      <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex flex-col flex-1 min-h-0 gap-3">
           <div className="hidden lg:block">
             <RoleSidenav
               roleLabel="Employee"
@@ -976,7 +1015,6 @@ const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
                   setActiveStep(Number(id));
                   setIsRegistryOpen(false);
                 }
-                scrollEmployeeWorkspaceIntoView();
               }}
             />
           </div>
@@ -984,575 +1022,570 @@ const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
           <div className="min-h-0">
             <div
               id={EMPLOYEE_WORKSPACE_ID}
-              className="min-w-0 flex-1 bg-white rounded-xl border border-slate-100 shadow-sm overflow-visible flex flex-col min-h-[500px] scroll-mt-24"
+              className="min-w-0 flex-1 bg-white dark:bg-[#0b1222] rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-sm overflow-y-auto flex flex-col min-h-0"
             >
-            <div className="hidden lg:hidden bg-slate-50 p-6 flex items-center justify-between border-b border-slate-100 rounded-t-[2.5rem]">
-              <div className="flex items-center gap-4">
-                {[{ id: 1, label: 'Core' }, { id: 2, label: 'Verify' }, { id: 3, label: 'Evidence' }, { id: 4, label: 'Submit' }].map(s => (
-                  <div key={s.id} className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] transition-all ${activeStep === s.id ? 'bg-blue-600 text-white shadow-lg scale-110' : (activeStep > s.id ? 'bg-blue-600 text-white' : 'bg-white text-slate-300 border border-slate-200')}`}>
-                      {activeStep > s.id ? <CheckCircle2 className="w-4 h-4" /> : s.id}
+              <div className="hidden lg:hidden bg-slate-50 dark:bg-slate-900 p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-700 rounded-t-[2.5rem]">
+                <div className="flex items-center gap-4">
+                  {[{ id: 1, label: 'Core' }, { id: 2, label: 'Verify' }, { id: 3, label: 'Evidence' }, { id: 4, label: 'Submit' }].map(s => (
+                    <div key={s.id} className="flex items-center gap-2">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] transition-all ${activeStep === s.id ? 'bg-blue-600 text-white shadow-lg scale-110' : (activeStep > s.id ? 'bg-blue-600 text-white' : 'bg-white dark:bg-slate-800 text-slate-300 border border-slate-200 dark:border-slate-600')}`}>
+                        {activeStep > s.id ? <CheckCircle2 className="w-4 h-4" /> : s.id}
+                      </div>
+                      <span className={`text-[10px] font-black uppercase tracking-wide hidden md:inline ${activeStep === s.id ? 'text-slate-900 dark:text-slate-100' : 'text-slate-300'}`}>{s.label}</span>
+                      {s.id < 4 && <div className="w-4 h-px bg-slate-200 dark:bg-slate-700 ml-2 hidden md:block" />}
+                    </div>
+                  ))}
                 </div>
-                    <span className={`text-[10px] font-black uppercase tracking-wide hidden md:inline ${activeStep === s.id ? 'text-slate-900' : 'text-slate-300'}`}>{s.label}</span>
-                    {s.id < 4 && <div className="w-4 h-px bg-slate-200 ml-2 hidden md:block" />}
+                <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg"><ShieldCheck className="w-3 h-3" /><p className="text-[10px] font-black uppercase tracking-wide">Signed in</p></div>
               </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg"><ShieldCheck className="w-3 h-3" /><p className="text-[10px] font-black uppercase tracking-wide">Signed in</p></div>
-            </div>
 
-            <div className="flex-grow p-5 space-y-8 flex flex-col min-h-0">
-              {selectedLog ? (
-                <div className="flex flex-col flex-1 min-h-0 animate-in fade-in duration-300">
-                  <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-slate-100">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${selectedLog.status === 'validated' ? 'bg-emerald-50' : selectedLog.status === 'rejected' ? 'bg-red-50' : 'bg-blue-600'}`}>
-                        <FileText className={`w-6 h-6 ${selectedLog.status === 'validated' ? 'text-emerald-600' : selectedLog.status === 'rejected' ? 'text-red-600' : 'text-white'}`} />
+              <div className="flex-grow p-5 space-y-8 flex flex-col min-h-0">
+                {selectedLog ? (
+                  <div className="flex flex-col flex-1 min-h-0 animate-in fade-in duration-300">
+                    <div className="shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-700">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${selectedLog.status === 'validated' ? 'bg-emerald-50 dark:bg-emerald-900/30' : selectedLog.status === 'rejected' ? 'bg-red-50 dark:bg-red-900/30' : 'bg-blue-600'}`}>
+                          <FileText className={`w-6 h-6 ${selectedLog.status === 'validated' ? 'text-emerald-600' : selectedLog.status === 'rejected' ? 'text-red-600' : 'text-white'}`} />
+                        </div>
+                        <div className="min-w-0">
+                          <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Marketing Log Review</h2>
+                          <p className="text-xs font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide truncate">{selectedLog.id} • {new Date(selectedLog.timestamp).toLocaleString()}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">Marketing Log Review</h2>
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-wide truncate">{selectedLog.id} • {new Date(selectedLog.timestamp).toLocaleString()}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        className="px-4 py-2.5 bg-slate-800 text-white hover:bg-slate-700 rounded-lg transition-all flex items-center gap-2 shadow-md cursor-pointer"
-                        title="Download as PDF"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          try {
-                            const MARKETING_PANEL_NAMES: Record<string, string[]> = {
-                              'Accounting Excellence': ['Financial Accuracy & Compliance', 'Timeliness — Reports & Entries', 'Accounts Receivable Management', 'Reconciliation & Month-End Close'],
-                              'Purchasing Excellence': ['Cost Savings & Budget Compliance', 'Vendor Management & Quality', 'PO Processing & Accuracy'],
-                              'Administrative Excellence': ['Task Completion & SLA', 'Accuracy & Quality', 'Internal Customer Satisfaction'],
-                              'Additional Responsibilities': ['Additional Responsibilities'],
-                              'Attendance & Discipline': ['Attendance', 'Punctuality', 'Discipline'],
-                            };
-                            const categoryScores: CategoryScoreForPdf[] = CLASSIFICATIONS.map((cat) => {
-                              const checklist = (selectedLog.allSalesData || {})[cat.name]?.checklist as Record<string, unknown> | undefined;
-                              const weightPct =
-                                departmentWeights?.Marketing?.find((c) => c.label === cat.name)?.weightPct ??
-                                (parseInt(String(cat.weight).replace('%', ''), 10) || 0);
-                              return {
-                                name: cat.name,
-                                score: computeMarketingCategoryScore(cat.name, checklist),
-                                maxScore: 100,
-                                weightPct,
-                                panelNames: MARKETING_PANEL_NAMES[cat.name] || [],
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          className="px-4 py-2.5 bg-slate-800 text-white hover:bg-slate-700 rounded-lg transition-all flex items-center gap-2 shadow-md cursor-pointer"
+                          title="Download as PDF"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            try {
+                              const MARKETING_PANEL_NAMES: Record<string, string[]> = {
+                                'Accounting Excellence': ['Financial Accuracy & Compliance', 'Timeliness — Reports & Entries', 'Accounts Receivable Management', 'Reconciliation & Month-End Close'],
+                                'Purchasing Excellence': ['Cost Savings & Budget Compliance', 'Vendor Management & Quality', 'PO Processing & Accuracy'],
+                                'Administrative Excellence': ['Task Completion & SLA', 'Accuracy & Quality', 'Internal Customer Satisfaction'],
+                                'Additional Responsibilities': ['Additional Responsibilities'],
+                                'Attendance & Discipline': ['Attendance', 'Punctuality', 'Discipline'],
                               };
-                            });
-                            const finalScore = getWeightedKpiScore(selectedLog);
-                            const opts = {
-                              title: 'Marketing Log Review',
-                              filename: getLogDetailPdfFilename(selectedLog, 'Marketing'),
-                              categoryScores,
-                              finalScore: Number.isFinite(finalScore) ? finalScore : undefined
-                            };
-                            setPdfToast('preparing');
-                            getAppLogoDataUrl()
-                              .then((logoDataUrl) => downloadLogDetailPdf(selectedLog, { ...opts, logoDataUrl }))
-                              .catch(() => downloadLogDetailPdf(selectedLog, { ...opts, logoDataUrl: undefined }))
-                              .finally(() => setPdfToast('done'));
-                          } catch (err) {
-                            console.error('PDF download failed', err);
-                            alert('PDF download failed. Try allowing downloads for this site or check the console.');
-                            setPdfToast(null);
-                          }
-                        }}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e.currentTarget as HTMLElement).click(); } }}
-                      >
-                        <Download className="w-5 h-5" />
-                        <span className="text-[10px] font-black uppercase tracking-wide">PDF</span>
+                              const categoryScores: CategoryScoreForPdf[] = CLASSIFICATIONS.map((cat) => {
+                                const checklist = (selectedLog.allSalesData || {})[cat.name]?.checklist as Record<string, unknown> | undefined;
+                                const weightPct =
+                                  departmentWeights?.Marketing?.find((c) => c.label === cat.name)?.weightPct ??
+                                  (parseInt(String(cat.weight).replace('%', ''), 10) || 0);
+                                const catCfg = departmentWeights?.Marketing?.find((c) => c.label === cat.name);
+                                const maxScore = catCfg?.content?.reduce((s, item) => s + (Number(item.maxpoints) || 0), 0) || undefined;
+                                return {
+                                  name: cat.name,
+                                  score: computeMarketingCategoryScore(cat.name, checklist),
+                                  maxScore,
+                                  weightPct,
+                                  panelNames: MARKETING_PANEL_NAMES[cat.name] || [],
+                                };
+                              });
+                              const finalScore = getWeightedKpiScore(selectedLog);
+                              const opts = {
+                                title: 'Marketing Log Review',
+                                filename: getLogDetailPdfFilename(selectedLog, 'Marketing'),
+                                categoryScores,
+                                finalScore: Number.isFinite(finalScore) ? finalScore : undefined
+                              };
+                              setPdfToast('preparing');
+                              getAppLogoDataUrl()
+                                .then((logoDataUrl) => downloadLogDetailPdf(selectedLog, { ...opts, logoDataUrl }))
+                                .catch(() => downloadLogDetailPdf(selectedLog, { ...opts, logoDataUrl: undefined }))
+                                .finally(() => setPdfToast('done'));
+                            } catch (err) {
+                              console.error('PDF download failed', err);
+                              alert('PDF download failed. Try allowing downloads for this site or check the console.');
+                              setPdfToast(null);
+                            }
+                          }}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e.currentTarget as HTMLElement).click(); } }}
+                        >
+                          <Download className="w-5 h-5" />
+                          <span className="text-[10px] font-black uppercase tracking-wide">PDF</span>
+                        </div>
+                        <button type="button" onClick={closeLogDetail} className="p-3 text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-lg transition-all" aria-label="Close log detail"><X className="w-6 h-6" /></button>
                       </div>
-                      <button type="button" onClick={closeLogDetail} className="p-3 text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-all" aria-label="Close log detail"><X className="w-6 h-6" /></button>
                     </div>
-                  </div>
-                  <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-10 py-6 pr-1">
-                    <div className={`w-full p-6 rounded-lg border flex items-center justify-between ${
-                      selectedLog.status === 'validated' ? 'bg-emerald-50 border-emerald-100' :
-                      selectedLog.status === 'rejected' ? 'bg-red-50 border-red-100' :
-                      'bg-blue-50 border-blue-100'
-                    }`}>
-                      <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                          selectedLog.status === 'validated' ? 'bg-emerald-100 text-emerald-600' :
-                          selectedLog.status === 'rejected' ? 'bg-red-100 text-red-600' :
-                          'bg-blue-100 text-blue-600'
+                    <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-10 py-6 pr-1">
+                      <div className={`w-full p-6 rounded-lg border flex items-center justify-between ${selectedLog.status === 'validated' ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-100' :
+                          selectedLog.status === 'rejected' ? 'bg-red-50 dark:bg-red-900/30 border-red-100' :
+                            'bg-blue-50 dark:bg-blue-900/30 border-blue-100 dark:border-blue-900/50'
                         }`}>
-                          {selectedLog.status === 'validated' ? <CheckCircle2 className="w-6 h-6" /> :
-                           selectedLog.status === 'rejected' ? <XCircle className="w-6 h-6" /> :
-                           <Clock className="w-6 h-6" />}
-                        </div>
-                        <div>
-                          <h3 className={`text-lg font-black uppercase tracking-tight ${
-                            selectedLog.status === 'validated' ? 'text-emerald-900' :
-                            selectedLog.status === 'rejected' ? 'text-red-900' :
-                            selectedLog.supervisorRecommendation ? 'text-orange-900' :
-                            'text-blue-900'
-                          }`}>
-                            {getSubmissionStatusLabel(selectedLog)}
-                          </h3>
-                          <p className={`text-[10px] font-bold uppercase tracking-wide ${
-                            selectedLog.status === 'validated' ? 'text-emerald-600' :
-                            selectedLog.status === 'rejected' ? 'text-red-600' :
-                            selectedLog.supervisorRecommendation ? 'text-orange-600' :
-                            'text-blue-600'
-                          }`}>
-                            {getSubmissionStatusSubLabel(selectedLog)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide ${
-                        selectedLog.status === 'validated' ? 'bg-emerald-200 text-emerald-800' :
-                        selectedLog.status === 'rejected' ? 'bg-red-200 text-red-800' :
-                        selectedLog.supervisorRecommendation ? 'bg-orange-200 text-orange-800' :
-                        'bg-blue-200 text-blue-800'
-                      }`}>
-                        {getSubmissionStatusLabel(selectedLog)}
-                      </div>
-                    </div>
-
-                    {selectedLog.status === 'validated' && selectedLog.ratings && (
-                      <div className="w-full p-5 bg-slate-900 rounded-xl shadow-sm relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
-                        <div className="relative z-[1] flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            {(() => {
-                              const gradeInfo = getGradeForScore(selectedLog.ratings.finalScore);
-                              const cls = getGradeColorClasses(gradeInfo.color);
-                              return (
-                                <div className={`px-5 py-2.5 rounded-2xl border ${cls.bg} ${cls.text} ${cls.border} flex flex-col items-center leading-none shadow-lg shadow-black/20`}>
-                                  <span className="text-2xl font-black">{gradeInfo.letter}</span>
-                                  <span className="text-[10px] uppercase font-bold tracking-tighter opacity-80 mt-0.5">{gradeInfo.label}</span>
-                                </div>
-                              );
-                            })()}
-                            <div>
-                              <h3 className="text-xl font-black text-white uppercase tracking-tight mb-0.5">Final Grade</h3>
-                              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wide">Official Performance Outcome</p>
-                            </div>
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedLog.status === 'validated' ? 'bg-emerald-100 text-emerald-600' :
+                              selectedLog.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                                'bg-blue-100 text-blue-600'
+                            }`}>
+                            {selectedLog.status === 'validated' ? <CheckCircle2 className="w-6 h-6" /> :
+                              selectedLog.status === 'rejected' ? <XCircle className="w-6 h-6" /> :
+                                <Clock className="w-6 h-6" />}
                           </div>
-                          <div className="text-right">
-                            <span className="text-6xl font-black text-white tracking-tighter tabular-nums">{selectedLog.ratings.finalScore}%</span>
-                            <div className="flex items-center gap-2 justify-end mt-1">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide ${selectedLog.ratings.finalScore >= 90 ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-300'}`}>
-                                {selectedLog.ratings.finalScore >= 90 ? 'Quota Met' : 'Below Target'}
-                              </span>
-                            </div>
+                          <div>
+                            <h3 className={`text-lg font-black uppercase tracking-tight ${selectedLog.status === 'validated' ? 'text-emerald-900' :
+                                selectedLog.status === 'rejected' ? 'text-red-900' :
+                                  selectedLog.supervisorRecommendation ? 'text-orange-900' :
+                                    'text-blue-900 dark:text-blue-300'
+                              }`}>
+                              {getSubmissionStatusLabel(selectedLog)}
+                            </h3>
+                            <p className={`text-[10px] font-bold uppercase tracking-wide ${selectedLog.status === 'validated' ? 'text-emerald-600' :
+                                selectedLog.status === 'rejected' ? 'text-red-600' :
+                                  selectedLog.supervisorRecommendation ? 'text-orange-600' :
+                                    'text-blue-600'
+                              }`}>
+                              {getSubmissionStatusSubLabel(selectedLog)}
+                            </p>
                           </div>
                         </div>
+                        <div className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide ${selectedLog.status === 'validated' ? 'bg-emerald-200 text-emerald-800' :
+                            selectedLog.status === 'rejected' ? 'bg-red-200 text-red-800' :
+                              selectedLog.supervisorRecommendation ? 'bg-orange-200 text-orange-800' :
+                                'bg-blue-200 text-blue-800'
+                          }`}>
+                          {getSubmissionStatusLabel(selectedLog)}
+                        </div>
                       </div>
-                    )}
 
-                    <TechnicalLogDetailAuditReview
-                      selectedLog={selectedLog}
-                      departmentKey="Marketing"
-                      departmentWeights={departmentWeights}
-                      CLASSIFICATIONS={CLASSIFICATIONS}
-                      CHECKLIST_CONTENT={MARKETING_LOG_CHECKLIST_CONTENT}
-                      getReviewTotalScoreLegacy={getReviewTotalScoreLegacyForLogDetail}
-                      handleDownload={handleDownload}
-                    />
+                      {selectedLog.status === 'validated' && selectedLog.ratings && (
+                        <div className="w-full p-5 bg-slate-900 rounded-xl shadow-sm relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+                          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
+                          <div className="relative z-[1] flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              {(() => {
+                                const gradeInfo = getGradeForScore(selectedLog.ratings.finalScore);
+                                const cls = getGradeColorClasses(gradeInfo.color);
+                                return (
+                                  <div className={`px-5 py-2.5 rounded-2xl border ${cls.bg} ${cls.text} ${cls.border} flex flex-col items-center leading-none shadow-lg shadow-black/20`}>
+                                    <span className="text-2xl font-black">{gradeInfo.letter}</span>
+                                    <span className="text-[10px] uppercase font-bold tracking-tighter opacity-80 mt-0.5">{gradeInfo.label}</span>
+                                  </div>
+                                );
+                              })()}
+                              <div>
+                                <h3 className="text-xl font-black text-white uppercase tracking-tight mb-0.5">Final Grade</h3>
+                                <p className="text-slate-400 dark:text-slate-500 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wide">Official Performance Outcome</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-6xl font-black text-white tracking-tighter tabular-nums">{selectedLog.ratings.finalScore}%</span>
+                              <div className="flex items-center gap-2 justify-end mt-1">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wide ${selectedLog.ratings.finalScore >= 90 ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                                  {selectedLog.ratings.finalScore >= 90 ? 'Quota Met' : 'Below Target'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <ClipboardList className="w-4 h-4 text-slate-900" />
-                        <h3 className="text-xs font-black uppercase tracking-wide text-black">Your report</h3>
-                      </div>
-                      <div className="p-5 bg-slate-50 border border-slate-100 rounded-3xl">
-                        <p className="text-sm font-medium text-slate-700 leading-relaxed italic">&quot;{selectedLog.projectReport || 'No narrative provided.'}&quot;</p>
-                      </div>
-                    </div>
+                      <TechnicalLogDetailAuditReview
+                        selectedLog={selectedLog}
+                        departmentKey="Marketing"
+                        departmentWeights={departmentWeights}
+                        CLASSIFICATIONS={CLASSIFICATIONS}
+                        CHECKLIST_CONTENT={MARKETING_LOG_CHECKLIST_CONTENT}
+                        getReviewTotalScoreLegacy={getReviewTotalScoreLegacyForLogDetail}
+                        handleDownload={handleDownload}
+                      />
 
-                    {selectedLog.attachments && selectedLog.attachments.length > 0 && (
                       <div className="space-y-4">
                         <div className="flex items-center gap-3">
-                          <FileCheck className="w-4 h-4 text-slate-900" />
-                          <h3 className="text-xs font-black uppercase tracking-wide text-black">Attachments</h3>
+                          <ClipboardList className="w-4 h-4 text-slate-900 dark:text-slate-100" />
+                          <h3 className="text-xs font-black uppercase tracking-wide text-black dark:text-white">Your report</h3>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {selectedLog.attachments.map((file: { name: string; type?: string; size?: string; data?: string }, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-lg group/file overflow-hidden">
-                              <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
-                                {file.type?.includes('image') ? <FileImage className="w-4 h-4 text-blue-500 shrink-0" /> : <FileIcon className="w-4 h-4 text-slate-400 shrink-0" />}
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-[10px] font-black text-slate-900 truncate uppercase">{file.name}</p>
-                                  <p className="text-[10px] font-bold text-slate-400">{file.size}</p>
-                                </div>
-                              </div>
-                              <button type="button" onClick={() => handleDownload(file)} className="p-2 shrink-0 opacity-0 group-hover/file:opacity-100 text-slate-400 hover:text-blue-600 transition-all">
-                                <Download className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ))}
+                        <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-3xl">
+                          <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed italic">&quot;{selectedLog.projectReport || 'No narrative provided.'}&quot;</p>
                         </div>
                       </div>
-                    )}
 
-                    {(selectedLog.status === 'validated' || selectedLog.status === 'rejected') && (
-                      <div className="p-5 bg-amber-50 border border-amber-100 rounded-lg space-y-3">
-                        <div className="flex items-center gap-2 text-amber-700">
-                          <AlertCircle className="w-4 h-4" />
-                          <p className="text-[10px] font-black uppercase tracking-wide">Supervisor feedback</p>
-                        </div>
-                        <p className="text-sm font-bold text-amber-900 leading-relaxed italic">&quot;{selectedLog.supervisorComment || 'No supervisor justification recorded.'}&quot;</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="shrink-0 pt-6 border-t border-slate-100 flex justify-end">
-                    <button type="button" onClick={closeLogDetail} className="px-10 py-2 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-wide shadow-sm">Close</button>
-                  </div>
-                </div>
-              ) : isRegistryOpen ? (
-                <LedgerRegistryPanel
-                  className="flex-1 min-h-0"
-                  title="My Submissions"
-                  emptyText="No local marketing records found."
-                  records={mySubmissions}
-                  onSelect={(log) => {
-                    logDetailFromLedgerRef.current = true;
-                    setSelectedLog(log);
-                    setIsRegistryOpen(false);
-                    scrollEmployeeWorkspaceIntoView();
-                  }}
-                  getInitialScore={(t) => getWeightedKpiScore({ ...t, status: undefined })}
-                  getValidatedScore={(t) =>
-                    t.status === 'validated' && t.ratings?.finalScore != null ? t.ratings.finalScore : undefined
-                  }
-                  isGradingExpired={(t) => isPendingGradingConfigExpired(t, 'Marketing', departmentWeights)}
-                  onDelete={onDeleteSubmission}
-                  onEdit={onEditSubmission}
-                  onClearLogs={onClearMyLogs}
-                />
-              ) : (
-                <>
-              {activeStep === 1 && (
-                <div className="space-y-6 animate-in slide-in-from-left-4 fade-in duration-500">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wide ml-1">KPI Category Selection</label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {CLASSIFICATIONS.map(c => {
-                        const isActive = formData.jobType === c.name;
-                        const isCompleted = completedCategories.includes(c.name);
-                        const isClickable = isActive || isCompleted;
-                        return (
-                          <div key={c.name} className="relative group">
-                            <button
-                              type="button"
-                              disabled={!isClickable}
-                              onClick={() => {
-                                if (isClickable) {
-                                  saveCurrentCategoryData();
-                                  setFormData(prev => ({ ...prev, jobType: c.name }));
-                                }
-                              }}
-                              className={`w-full text-left px-5 py-2 border rounded-lg font-bold text-xs transition-all flex justify-between items-center ${
-                                isActive
-                                  ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                                  : isCompleted
-                                    ? 'bg-[#1B367B] text-white border-[#1B367B] shadow-md'
-                                    : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-white hover:border-[#1B367B] hover:shadow-md'
-                              } ${!isClickable ? 'opacity-40 cursor-not-allowed filter grayscale-[0.5]' : ''}`}
-                            >
-                              <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                                <c.icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-400' : isCompleted ? 'text-white/90' : 'text-slate-400'}`} />
-                                <span className="uppercase tracking-tight truncate">{c.name}</span>
-                              </div>
-                              <span className={`text-sm font-black tabular-nums shrink-0 ${isActive || isCompleted ? 'text-white/90' : 'text-slate-400'}`}>{c.weight}</span>
-                            </button>
+                      {selectedLog.attachments && selectedLog.attachments.length > 0 && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3">
+                            <FileCheck className="w-4 h-4 text-slate-900 dark:text-slate-100" />
+                            <h3 className="text-xs font-black uppercase tracking-wide text-black dark:text-white">Attachments</h3>
                           </div>
-                        );
-                      })}
-                  </div>
-               </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {selectedLog.attachments.map((file: { name: string; type?: string; size?: string; data?: string }, idx: number) => (
+                              <div key={idx} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg group/file overflow-hidden">
+                                <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
+                                  {file.type?.includes('image') ? <FileImage className="w-4 h-4 text-blue-500 shrink-0" /> : <FileIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-500 shrink-0" />}
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-[10px] font-black text-slate-900 dark:text-slate-100 truncate uppercase">{file.name}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500">{file.size}</p>
+                                  </div>
+                                </div>
+                                <button type="button" onClick={() => handleDownload(file)} className="p-2 shrink-0 opacity-0 group-hover/file:opacity-100 text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-blue-600 transition-all">
+                                  <Download className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
-                  {selectedCategoryConfig && (selectedCategoryConfig.content?.length ?? 0) > 0 ? (
-                    <div className="bg-white p-5 rounded-lg border border-slate-100 shadow-sm mt-6 animate-in slide-in-from-top-4 duration-500 flex flex-col">
-                      <TechnicalCategoryAuditPanel
-                        category={selectedCategoryConfig}
-                        pmChecklist={formData.pmChecklist as any}
-                        setFormData={setFormData}
-                        startHold={startHoldPanel}
-                        stopHold={stopHold}
-                      />
+                      {(selectedLog.status === 'validated' || selectedLog.status === 'rejected') && (
+                        <div className="p-5 bg-amber-50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-800/50 rounded-lg space-y-3">
+                          <div className="flex items-center gap-2 text-amber-700">
+                            <AlertCircle className="w-4 h-4" />
+                            <p className="text-[10px] font-black uppercase tracking-wide">Supervisor feedback</p>
+                          </div>
+                          <p className="text-sm font-bold text-amber-900 dark:text-amber-300 leading-relaxed italic">&quot;{selectedLog.supervisorComment || 'No supervisor justification recorded.'}&quot;</p>
+                        </div>
+                      )}
                     </div>
+                    <div className="shrink-0 pt-6 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+                      <button type="button" onClick={closeLogDetail} className="px-10 py-2 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-wide shadow-sm">Close</button>
+                    </div>
+                  </div>
+                ) : isRegistryOpen ? (
+                  <LedgerRegistryPanel
+                    className="flex-1 min-h-0"
+                    title="My Submissions"
+                    emptyText="No local marketing records found."
+                    records={mySubmissions}
+                    onSelect={(log) => {
+                      logDetailFromLedgerRef.current = true;
+                      setSelectedLog(log);
+                      setIsRegistryOpen(false);
+                    }}
+                    getInitialScore={(t) => getWeightedKpiScore({ ...t, status: undefined })}
+                    getValidatedScore={(t) =>
+                      t.status === 'validated' && t.ratings?.finalScore != null ? t.ratings.finalScore : undefined
+                    }
+                    isGradingExpired={(t) => isPendingGradingConfigExpired(t, 'Marketing', departmentWeights)}
+                    onDelete={onDeleteSubmission}
+                    onEdit={onEditSubmission}
+                    onClearLogs={onClearMyLogs}
+                  />
+                ) : (
+                  <>
+                    {activeStep === 1 && (
+                      <div className="space-y-6 animate-in slide-in-from-left-4 fade-in duration-500">
+                        <div className="space-y-4">
+                          <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">KPI Category Selection</label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {CLASSIFICATIONS.map(c => {
+                              const isActive = formData.jobType === c.name;
+                              const isCompleted = completedCategories.includes(c.name);
+                              const isClickable = isActive || isCompleted;
+                              return (
+                                <div key={c.name} className="relative group">
+                                  <button
+                                    type="button"
+                                    disabled={!isClickable}
+                                    onClick={() => {
+                                      if (isClickable) {
+                                        saveCurrentCategoryData();
+                                        setFormData(prev => ({ ...prev, jobType: c.name }));
+                                      }
+                                    }}
+                                    className={`w-full text-left px-5 py-2 border rounded-lg font-bold text-xs transition-all flex justify-between items-center ${isActive
+                                        ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                                        : isCompleted
+                                          ? 'bg-[#1B367B] text-white border-[#1B367B] shadow-md'
+                                          : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 dark:text-slate-400 border-slate-100 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 hover:border-[#1B367B] hover:shadow-md'
+                                      } ${!isClickable ? 'opacity-40 cursor-not-allowed filter grayscale-[0.5]' : ''}`}
+                                  >
+                                    <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                                      <c.icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-400' : isCompleted ? 'text-white/90' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500'}`} />
+                                      <span className="uppercase tracking-tight truncate">{c.name}</span>
+                                    </div>
+                                    <span className={`text-sm font-black tabular-nums shrink-0 ${isActive || isCompleted ? 'text-white/90' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500'}`}>{c.weight}</span>
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {selectedCategoryConfig && (selectedCategoryConfig.content?.length ?? 0) > 0 ? (
+                          <div className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm mt-6 animate-in slide-in-from-top-4 duration-500 flex flex-col">
+                            <TechnicalCategoryAuditPanel
+                              category={selectedCategoryConfig}
+                              pmChecklist={formData.pmChecklist as any}
+                              setFormData={setFormData}
+                              startHold={startHoldPanel}
+                              stopHold={stopHold}
+                            />
+                          </div>
+                        ) : (
+                          <div className="p-5 mt-6 rounded-lg border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 text-center space-y-3">
+                            <p className="text-sm font-black text-amber-900 dark:text-amber-300 uppercase tracking-tight">Department grading not configured</p>
+                            <p className="text-xs text-amber-800/90 max-w-lg mx-auto leading-relaxed">
+                              This category has no audit criteria from the administrator yet. Configure <span className="font-bold">Department grading breakdown</span> for Marketing in admin.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {activeStep === 2 && (() => {
+                      const getWeightNum = (w: string) => parseInt(w.replace('%', ''), 10) || 0;
+                      const scoreBadge = (score: number, max: number) => score === max ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600';
+                      const getWeightedScoreColor = (score: number) => score >= 85 ? 'text-emerald-600' : score >= 70 ? 'text-blue-600' : score >= 50 ? 'text-amber-600' : 'text-rose-600';
+
+                      return (
+                        <div className="space-y-8 animate-in slide-in-from-left-4 fade-in duration-500 pb-10">
+                          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-6">
+                            <div>
+                              <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Review & Verification</h3>
+                              <p className="text-slate-400 dark:text-slate-500 dark:text-slate-500 text-sm font-medium mt-1">Please verify all inputs before proceeding to evidence submission.</p>
+                            </div>
+                            <div className="px-6 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-xl text-xs font-black uppercase tracking-wide border border-blue-100 dark:border-blue-900/50">
+                              Status: Ready for Review
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-6">
+                            {(departmentWeights?.Marketing?.length
+                              ? departmentWeights.Marketing.map((c: any) => [c.label, categoryInputsRef.current[c.label]] as const)
+                              : (Object.entries(categoryInputsRef.current) as [string, { checklist: Record<string, unknown>; status: string }][])
+                            ).map(([cat, data]: [string, any]) => {
+                              const catCfg = departmentWeights?.Marketing?.find((w: any) => w.label === cat);
+                              const checklist = (data?.checklist ?? (formData.jobType === cat ? formData.pmChecklist : {})) as Record<string, unknown>;
+                              const hasAdminCriteria = Boolean(catCfg?.content?.length);
+                              const agg = hasAdminCriteria && catCfg
+                                ? computeCategoryAggregateMetrics(catCfg, checklist as any)
+                                : null;
+
+                              const totalScore = agg ? agg.aggregatePts : computeMarketingCategoryScore(cat, checklist);
+                              const weightPct =
+                                catCfg?.weightPct ??
+                                parseInt(DEFAULT_MARKETING_CLASSIFICATIONS.find((c: any) => c.name === cat)?.weight ?? '0', 10) ??
+                                0;
+
+                              const weightedScoreText = agg
+                                ? `+${agg.weightedImpactPct.toFixed(2)}%`
+                                : (totalScore * (weightPct / 100)).toFixed(2) + '%';
+
+                              const ReviewIcon = getEmployeeCategoryIcon(catCfg?.icon);
+                              const reviewRows =
+                                catCfg?.content?.length
+                                  ? catCfg.content.map((c: any, taskIdx: number) => ({ mainText: c.label, maxpoints: c.maxpoints, taskIdx }))
+                                  : (MARKETING_LOG_CHECKLIST_CONTENT[cat] || []).map((label: string, taskIdx: number) => {
+                                    const cleanLabel = label.replace(' - CRITICAL METRIC', '');
+                                    const match = cleanLabel.match(/(.*)\s*\(([\d.]+)\s*(?:points?|Yield)\)/i);
+                                    const mainText = match ? match[1].trim() : cleanLabel;
+                                    const maxpoints = match ? parseFloat(match[2]) : 0;
+                                    return { mainText, maxpoints, taskIdx };
+                                  });
+
+                              const scoreBadge = (s: number, m: number) => {
+                                const p = m > 0 ? (s / m) * 100 : 0;
+                                return p >= 90 ? 'bg-emerald-100 text-emerald-600' : p >= 70 ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600';
+                              };
+
+                              return (
+                                <div key={cat} className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-6">
+                                  <div className="flex items-center justify-between border-b border-slate-50 dark:border-slate-700 pb-4">
+                                    <div className="flex items-center gap-4">
+                                      <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                                        <ReviewIcon className="w-5 h-5 text-blue-600" />
+                                      </div>
+                                      <div>
+                                        <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">{cat}</h4>
+                                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
+                                          {hasAdminCriteria ? 'Aggregate' : 'Total score'}: {Number.isInteger(totalScore) ? totalScore : totalScore.toFixed(1)} pts
+                                          {agg && agg.categorymaxpoints > 0 ? (
+                                            <span className="text-slate-300"> / {agg.categorymaxpoints} max</span>
+                                          ) : null}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
+                                        {hasAdminCriteria ? 'Weighted impact (category)' : 'Weighted score'}
+                                      </span>
+                                      <span className={`text-lg font-black tracking-tight ${totalScore >= 70 ? 'text-blue-600' : 'text-amber-600'}`}>
+                                        {weightedScoreText}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {reviewRows.map((row: any) => {
+                                      const key = `task${row.taskIdx + 1}`;
+                                      const value = checklist[key];
+                                      const maxpoints = row.maxpoints;
+                                      const score =
+                                        typeof value === 'object' && value != null && (value as any).score != null
+                                          ? Number((value as any).score) || 0
+                                          : value === true
+                                            ? maxpoints
+                                            : 0;
+
+                                      return (
+                                        <div key={row.taskIdx} className="bg-slate-50 dark:bg-slate-900 p-5 rounded-lg border border-slate-100 dark:border-slate-700 flex flex-col justify-between gap-3 hover:border-blue-200 dark:hover:border-blue-700 transition-colors">
+                                          <div>
+                                            <div className="flex justify-between items-start mb-2">
+                                              <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight leading-tight">{row.mainText}</span>
+                                              <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${scoreBadge(score, maxpoints)}`}>
+                                                {score} / {maxpoints}
+                                              </span>
+                                            </div>
+
+                                            {typeof value === 'object' && value != null && (
+                                              <div className="space-y-1.5">
+                                                {(value as any).num !== undefined && (
+                                                  <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 dark:text-slate-400"><span>Value:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String((value as any).num)}</span></div>
+                                                )}
+                                                {(value as any).rate !== undefined && (
+                                                  <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 dark:text-slate-400"><span>Rate:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{(value as any).rate}%</span></div>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div className="bg-slate-900 p-5 rounded-xl text-white flex items-center justify-between shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full -mr-32 -mt-32"></div>
+                            <div className="relative z-10 flex items-center gap-6">
+                              <div className="w-16 h-16 bg-white dark:bg-slate-800/10 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/20">
+                                <ShieldCheck className="w-8 h-8 text-blue-400" />
+                              </div>
+                              <div>
+                                <h4 className="text-xl font-black tracking-tight uppercase">Confirm Entries</h4>
+                                <p className="text-slate-400 dark:text-slate-500 dark:text-slate-500 text-xs font-medium mt-1">Please ensure all recorded scores are accurate before submitting.</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {activeStep === 3 && (
+                      <div className="space-y-8 animate-in slide-in-from-left-4 fade-in duration-500 pt-2">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Project report</label>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-400">{formData.projectReport.length} characters</span>
+                          </div>
+                          <textarea
+                            placeholder="Provide a detailed summary of your activities, metrics achieved, and compliance notes for this period..."
+                            className="w-full h-48 p-5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg font-medium text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-blue-500 transition-colors resize-none no-scrollbar"
+                            value={formData.projectReport}
+                            onChange={e => setFormData(prev => ({ ...prev, projectReport: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-4">
+                          <label className="text-xs font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Global Proof (PDF/PNG/JPG) *</label>
+                          <div className="flex flex-col md:flex-row gap-4 h-auto md:h-56">
+                            <div
+                              onClick={() => fileInputRef.current?.click()}
+                              onDragOver={handleDragOver}
+                              onDragLeave={handleDragLeave}
+                              onDrop={handleDrop}
+                              className={`w-full md:w-1/3 group flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed transition-all cursor-pointer flex-shrink-0 py-6 md:py-0 ${isDragging ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-400 scale-[1.02]' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:border-blue-300 dark:hover:border-blue-600'}`}
+                            >
+                              <div className="w-14 h-14 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                <Upload className="w-7 h-7 text-blue-600" />
+                              </div>
+                              <p className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Upload Evidence</p>
+                              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Attach supporting files</p>
+                              <input ref={fileInputRef} type="file" className="hidden" multiple accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileSelect} />
+                            </div>
+                            <div className="w-full md:w-2/3 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg p-5 flex flex-col min-h-0 overflow-hidden flex-shrink-0">
+                              <div className="flex items-center justify-between mb-3 sticky top-0 bg-white dark:bg-slate-800 z-10 pb-2 border-b border-slate-100 dark:border-slate-700">
+                                <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide">Attached Files ({formData.attachments.length})</span>
+                                {formData.attachments.length > 0 && (
+                                  <button type="button" onClick={() => setFormData(prev => ({ ...prev, attachments: [] }))} className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-500 uppercase tracking-wide">Clear All</button>
+                                )}
+                              </div>
+                              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1">
+                                {formData.attachments.length === 0 ? (
+                                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                                    <FileIcon className="w-10 h-10 text-slate-200 mb-2" />
+                                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-wide">No files attached</p>
+                                  </div>
+                                ) : (
+                                  formData.attachments.map((file, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl group">
+                                      <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                                        <div className="w-9 h-9 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center border border-slate-100 dark:border-slate-700 shrink-0">
+                                          {file.type.includes('image') ? <FileImage className="w-4 h-4 text-blue-500" /> : <FileIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-500" />}
+                                        </div>
+                                        <div className="overflow-hidden min-w-0">
+                                          <p className="text-[10px] font-black text-slate-900 dark:text-slate-100 truncate uppercase">{file.name}</p>
+                                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500">{file.size}</p>
+                                        </div>
+                                      </div>
+                                      <button type="button" onClick={() => removeFile(idx)} className="p-2 text-slate-300 hover:text-red-500 transition-colors shrink-0">
+                                        <X className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeStep === 4 && (
+                      <div className="flex flex-col items-center justify-center py-10 space-y-10 animate-in zoom-in-95 duration-500">
+                        <div className="w-24 h-24 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm animate-pulse">
+                          <FileCheck className="w-12 h-12 text-white" />
+                        </div>
+                        <div className="text-center space-y-3">
+                          <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">Ready to Submit</h3>
+                          <p className="text-slate-400 dark:text-slate-500 dark:text-slate-500 text-base font-medium">Review your details, then submit your KPI log for supervisor review.</p>
+                        </div>
+                        <div className="w-full max-w-sm space-y-4">
+                          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-5 rounded-xl space-y-4">
+                            <div className="flex justify-between items-center text-xs font-black uppercase tracking-wide">
+                              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-500">Submission status</span>
+                              <span className="text-blue-500">{isTransmitting ? 'Sending…' : 'Ready to send'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs font-black uppercase tracking-wide">
+                              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-500">Submitted by</span>
+                              <span className="text-blue-600">{user.name}</span>
+                            </div>
+                            <div className="flex justify-between items-start text-xs font-black uppercase tracking-wide border-t border-slate-100 dark:border-slate-700 pt-3 mt-1">
+                              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-500 mt-1">Grade Outcome</span>
+                              {(() => {
+                                const gradeInfo = getGradeForScore(currentTotalWeightedScore);
+                                const cls = getGradeColorClasses(gradeInfo.color);
+                                return (
+                                  <div className={`px-4 py-1.5 rounded-xl border ${cls.bg} ${cls.text} ${cls.border} flex flex-col items-center leading-none shadow-sm`}>
+                                    <span className="text-lg font-black">{gradeInfo.letter}</span>
+                                    <span className="text-[8px] uppercase font-bold tracking-tighter opacity-80">{gradeInfo.label}</span>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                            <div className="flex justify-between items-center text-xs font-black uppercase tracking-wide">
+                              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-500">Weighted score (est.)</span>
+                              <span className="text-slate-900 dark:text-slate-100">{currentTotalWeightedScore}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {!selectedLog && !isRegistryOpen && (
+                <div className="px-10 py-6 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-4 flex-wrap">
+                  <button type="button" onClick={handlePrevious} disabled={activeStep === 1 && CLASSIFICATIONS.findIndex(c => c.name === formData.jobType) === 0} className={`flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-wide transition-all ${activeStep === 1 && CLASSIFICATIONS.findIndex(c => c.name === formData.jobType) === 0 ? 'opacity-0' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}><ChevronLeft className="w-4 h-4" /> Previous</button>
+                  {activeStep < 4 ? (
+                    <button type="button" onClick={handleNext} disabled={activeStep === 3 && !isStep3Complete} className={`flex items-center gap-2 px-10 py-2 rounded-xl text-[10px] font-black uppercase tracking-wide shadow-sm transition-all ${(activeStep === 1 || activeStep === 2 || (activeStep === 3 && isStep3Complete)) ? 'bg-slate-900 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 dark:text-slate-500 cursor-not-allowed'}`}>Continue <ChevronRight className="w-4 h-4" /></button>
                   ) : (
-                    <div className="p-5 mt-6 rounded-lg border border-amber-200 bg-amber-50/90 text-center space-y-3">
-                      <p className="text-sm font-black text-amber-900 uppercase tracking-tight">Department grading not configured</p>
-                      <p className="text-xs text-amber-800/90 max-w-lg mx-auto leading-relaxed">
-                        This category has no audit criteria from the administrator yet. Configure <span className="font-bold">Department grading breakdown</span> for Marketing in admin.
-                      </p>
-                    </div>
+                    <button type="button" onClick={handleTransmit} disabled={isTransmitting} className="bg-blue-600 text-white px-12 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide shadow-sm active:scale-95 flex items-center gap-3">{isTransmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />} {isTransmitting ? 'Submitting…' : 'Submit KPI log'}</button>
                   )}
                 </div>
               )}
-              {activeStep === 2 && (() => {
-                const getWeightNum = (w: string) => parseInt(w.replace('%', ''), 10) || 0;
-                const scoreBadge = (score: number, max: number) => score === max ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600';
-                const getWeightedScoreColor = (score: number) => score >= 85 ? 'text-emerald-600' : score >= 70 ? 'text-blue-600' : score >= 50 ? 'text-amber-600' : 'text-rose-600';
-                
-                return (
-                  <div className="space-y-8 animate-in slide-in-from-left-4 fade-in duration-500 pb-10">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-6">
-                      <div>
-                        <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Review & Verification</h3>
-                        <p className="text-slate-400 text-sm font-medium mt-1">Please verify all inputs before proceeding to evidence submission.</p>
-                      </div>
-                      <div className="px-6 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-black uppercase tracking-wide border border-blue-100">
-                        Status: Ready for Review
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-6">
-                      {(departmentWeights?.Marketing?.length
-                        ? departmentWeights.Marketing.map((c: any) => [c.label, categoryInputsRef.current[c.label]] as const)
-                        : (Object.entries(categoryInputsRef.current) as [string, { checklist: Record<string, unknown>; status: string }][])
-                      ).map(([cat, data]: [string, any]) => {
-                        const catCfg = departmentWeights?.Marketing?.find((w: any) => w.label === cat);
-                        const checklist = (data?.checklist ?? (formData.jobType === cat ? formData.pmChecklist : {})) as Record<string, unknown>;
-                        const hasAdminCriteria = Boolean(catCfg?.content?.length);
-                        const agg = hasAdminCriteria && catCfg
-                          ? computeCategoryAggregateMetrics(catCfg, checklist as any)
-                          : null;
-                        
-                        const totalScore = agg ? agg.aggregatePts : computeMarketingCategoryScore(cat, checklist);
-                        const weightPct =
-                          catCfg?.weightPct ??
-                          parseInt(DEFAULT_MARKETING_CLASSIFICATIONS.find((c: any) => c.name === cat)?.weight ?? '0', 10) ??
-                          0;
-                        
-                        const weightedScoreText = agg
-                          ? `+${agg.weightedImpactPct.toFixed(2)}%`
-                          : (totalScore * (weightPct / 100)).toFixed(2) + '%';
-                        
-                        const ReviewIcon = getEmployeeCategoryIcon(catCfg?.icon);
-                        const reviewRows =
-                          catCfg?.content?.length
-                            ? catCfg.content.map((c: any, taskIdx: number) => ({ mainText: c.label, maxpoints: c.maxpoints, taskIdx }))
-                            : (MARKETING_LOG_CHECKLIST_CONTENT[cat] || []).map((label: string, taskIdx: number) => {
-                                const cleanLabel = label.replace(' - CRITICAL METRIC', '');
-                                const match = cleanLabel.match(/(.*)\s*\(([\d.]+)\s*(?:points?|Yield)\)/i);
-                                const mainText = match ? match[1].trim() : cleanLabel;
-                                const maxpoints = match ? parseFloat(match[2]) : 0;
-                                return { mainText, maxpoints, taskIdx };
-                              });
-
-                        const scoreBadge = (s: number, m: number) => {
-                          const p = m > 0 ? (s/m)*100 : 0;
-                          return p >= 90 ? 'bg-emerald-100 text-emerald-600' : p >= 70 ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600';
-                        };
-
-                        return (
-                          <div key={cat} className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm space-y-6">
-                            <div className="flex items-center justify-between border-b border-slate-50 pb-4">
-                              <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                                  <ReviewIcon className="w-5 h-5 text-blue-600" />
-                                </div>
-                                <div>
-                                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{cat}</h4>
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                                    {hasAdminCriteria ? 'Aggregate' : 'Total score'}: {Number.isInteger(totalScore) ? totalScore : totalScore.toFixed(1)} pts
-                                    {agg && agg.categorymaxpoints > 0 ? (
-                                      <span className="text-slate-300"> / {agg.categorymaxpoints} max</span>
-                                    ) : null}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-end">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                                  {hasAdminCriteria ? 'Weighted impact (category)' : 'Weighted score'}
-                                </span>
-                                <span className={`text-lg font-black tracking-tight ${totalScore >= 70 ? 'text-blue-600' : 'text-amber-600'}`}>
-                                  {weightedScoreText}
-                                </span>
-                              </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {reviewRows.map((row: any) => {
-                                const key = `task${row.taskIdx + 1}`;
-                                const value = checklist[key];
-                                const maxpoints = row.maxpoints;
-                                const score =
-                                  typeof value === 'object' && value != null && (value as any).score != null
-                                    ? Number((value as any).score) || 0
-                                    : value === true
-                                      ? maxpoints
-                                      : 0;
-
-                                return (
-                                  <div key={row.taskIdx} className="bg-slate-50 p-5 rounded-lg border border-slate-100 flex flex-col justify-between gap-3 hover:border-blue-200 transition-colors">
-                                    <div>
-                                      <div className="flex justify-between items-start mb-2">
-                                        <span className="text-[11px] font-black text-slate-700 uppercase tracking-tight leading-tight">{row.mainText}</span>
-                                        <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${scoreBadge(score, maxpoints)}`}>
-                                          {score} / {maxpoints}
-                                        </span>
-                                      </div>
-                                      
-                                      {typeof value === 'object' && value != null && (
-                                        <div className="space-y-1.5">
-                                          {(value as any).num !== undefined && (
-                                            <div className="flex justify-between text-[10px] text-slate-500"><span>Value:</span> <span className="font-bold text-slate-900">{String((value as any).num)}</span></div>
-                                          )}
-                                          {(value as any).rate !== undefined && (
-                                            <div className="flex justify-between text-[10px] text-slate-500"><span>Rate:</span> <span className="font-bold text-slate-900">{(value as any).rate}%</span></div>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="bg-slate-900 p-5 rounded-xl text-white flex items-center justify-between shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full -mr-32 -mt-32"></div>
-                      <div className="relative z-10 flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/20">
-                          <ShieldCheck className="w-8 h-8 text-blue-400" />
-                        </div>
-                        <div>
-                          <h4 className="text-xl font-black tracking-tight uppercase">Confirm Entries</h4>
-                          <p className="text-slate-400 text-xs font-medium mt-1">Please ensure all recorded scores are accurate before submitting.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {activeStep === 3 && (
-                <div className="space-y-8 animate-in slide-in-from-left-4 fade-in duration-500 pt-2">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-black text-slate-400 uppercase tracking-wide ml-1">Project report</label>
-                      <span className="text-xs text-slate-500">{formData.projectReport.length} characters</span>
-                    </div>
-                    <textarea
-                      placeholder="Provide a detailed summary of your activities, metrics achieved, and compliance notes for this period..."
-                      className="w-full h-48 p-5 bg-slate-50 border border-slate-200 rounded-lg font-medium text-sm text-slate-900 outline-none focus:border-blue-500 transition-colors resize-none no-scrollbar"
-                      value={formData.projectReport}
-                      onChange={e => setFormData(prev => ({ ...prev, projectReport: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-4">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-wide ml-1">Global Proof (PDF/PNG/JPG) *</label>
-                    <div className="flex flex-col md:flex-row gap-4 h-auto md:h-56">
-                      <div
-                        onClick={() => fileInputRef.current?.click()}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        className={`w-full md:w-1/3 group flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed transition-all cursor-pointer flex-shrink-0 py-6 md:py-0 ${isDragging ? 'bg-blue-50 border-blue-400 scale-[1.02]' : 'bg-slate-50 border-slate-200 hover:bg-blue-50 hover:border-blue-300'}`}
-                      >
-                        <div className="w-14 h-14 rounded-lg bg-white border border-slate-100 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                          <Upload className="w-7 h-7 text-blue-600" />
-                        </div>
-                        <p className="text-xs font-black text-slate-900 uppercase tracking-wide">Upload Evidence</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Attach supporting files</p>
-                        <input ref={fileInputRef} type="file" className="hidden" multiple accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileSelect} />
-                      </div>
-                      <div className="w-full md:w-2/3 bg-white border border-slate-100 rounded-lg p-5 flex flex-col min-h-0 overflow-hidden flex-shrink-0">
-                        <div className="flex items-center justify-between mb-3 sticky top-0 bg-white z-10 pb-2 border-b border-slate-100">
-                          <span className="text-xs font-black text-slate-700 uppercase tracking-wide">Attached Files ({formData.attachments.length})</span>
-                          {formData.attachments.length > 0 && (
-                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, attachments: [] }))} className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-wide">Clear All</button>
-                          )}
-                        </div>
-                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1">
-                          {formData.attachments.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-8 text-center">
-                              <FileIcon className="w-10 h-10 text-slate-200 mb-2" />
-                              <p className="text-[10px] font-black text-slate-300 uppercase tracking-wide">No files attached</p>
-                            </div>
-                          ) : (
-                            formData.attachments.map((file, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl group">
-                                <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                                  <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center border border-slate-100 shrink-0">
-                                    {file.type.includes('image') ? <FileImage className="w-4 h-4 text-blue-500" /> : <FileIcon className="w-4 h-4 text-slate-400" />}
-                                  </div>
-                                  <div className="overflow-hidden min-w-0">
-                                    <p className="text-[10px] font-black text-slate-900 truncate uppercase">{file.name}</p>
-                                    <p className="text-[10px] font-bold text-slate-400">{file.size}</p>
-                                  </div>
-                                </div>
-                                <button type="button" onClick={() => removeFile(idx)} className="p-2 text-slate-300 hover:text-red-500 transition-colors shrink-0">
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeStep === 4 && (
-                <div className="flex flex-col items-center justify-center py-10 space-y-10 animate-in zoom-in-95 duration-500">
-                  <div className="w-24 h-24 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm animate-pulse">
-                    <FileCheck className="w-12 h-12 text-white" />
-                  </div>
-                  <div className="text-center space-y-3">
-                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Ready to Submit</h3>
-                    <p className="text-slate-400 text-base font-medium">Review your details, then submit your KPI log for supervisor review.</p>
-                  </div>
-                  <div className="w-full max-w-sm space-y-4">
-                    <div className="bg-slate-50 border border-slate-100 p-5 rounded-xl space-y-4">
-                      <div className="flex justify-between items-center text-xs font-black uppercase tracking-wide">
-                        <span className="text-slate-400">Submission status</span>
-                        <span className="text-blue-500">{isTransmitting ? 'Sending…' : 'Ready to send'}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs font-black uppercase tracking-wide">
-                        <span className="text-slate-400">Submitted by</span>
-                        <span className="text-blue-600">{user.name}</span>
-                      </div>
-                      <div className="flex justify-between items-start text-xs font-black uppercase tracking-wide border-t border-slate-100 pt-3 mt-1">
-                        <span className="text-slate-400 mt-1">Grade Outcome</span>
-                        {(() => {
-                          const gradeInfo = getGradeForScore(currentTotalWeightedScore);
-                          const cls = getGradeColorClasses(gradeInfo.color);
-                          return (
-                            <div className={`px-4 py-1.5 rounded-xl border ${cls.bg} ${cls.text} ${cls.border} flex flex-col items-center leading-none shadow-sm`}>
-                              <span className="text-lg font-black">{gradeInfo.letter}</span>
-                              <span className="text-[8px] uppercase font-bold tracking-tighter opacity-80">{gradeInfo.label}</span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                      <div className="flex justify-between items-center text-xs font-black uppercase tracking-wide">
-                        <span className="text-slate-400">Weighted score (est.)</span>
-                        <span className="text-slate-900">{currentTotalWeightedScore}%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-                </>
-              )}
-            </div>
-
-            {!selectedLog && !isRegistryOpen && (
-            <div className="px-10 py-6 border-t border-slate-100 flex items-center justify-between gap-4 flex-wrap">
-              <button type="button" onClick={() => setActiveStep(prev => Math.max(1, prev - 1))} disabled={activeStep === 1} className={`flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-wide transition-all ${activeStep === 1 ? 'opacity-0' : 'text-slate-400 hover:text-slate-900'}`}><ChevronLeft className="w-4 h-4" /> Previous</button>
-              {activeStep < 4 ? (
-                <button type="button" onClick={handleNext} disabled={activeStep === 3 && !isStep3Complete} className={`flex items-center gap-2 px-10 py-2 rounded-xl text-[10px] font-black uppercase tracking-wide shadow-sm transition-all ${(activeStep === 1 || activeStep === 2 || (activeStep === 3 && isStep3Complete)) ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Continue <ChevronRight className="w-4 h-4" /></button>
-              ) : (
-                <button type="button" onClick={handleTransmit} disabled={isTransmitting} className="bg-blue-600 text-white px-12 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide shadow-sm active:scale-95 flex items-center gap-3">{isTransmitting ? <Activity className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />} {isTransmitting ? 'Submitting…' : 'Submit KPI log'}</button>
-              )}
-            </div>
-            )}
             </div>
           </div>
         </div>

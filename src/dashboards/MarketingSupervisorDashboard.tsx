@@ -604,35 +604,35 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
   const renderDashboard = () => (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Company productivity + department leaderboard */}
-      <div className="bg-slate-100 rounded-xl p-5 border border-slate-200 shadow-lg h-[22rem] min-h-[22rem] flex flex-col">
+      <div className="bg-slate-100 dark:bg-[#0b1222] rounded-xl p-5 border border-slate-200 dark:border-slate-600 shadow-lg h-[22rem] min-h-[22rem] flex flex-col">
         <div className="flex flex-col lg:flex-row gap-8 items-stretch flex-1 min-h-0">
           {/* Company productivity ring */}
           <div className="w-full lg:w-1/3 flex flex-col items-center justify-center">
             <div className="w-full flex items-center justify-between mb-4">
               <div>
-                <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">
+                <p className="text-[10px] font-black tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase">
                   Company productivity
                 </p>
-                <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">
+                <h2 className="mt-1 text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight uppercase">
                   This quarter
                 </h2>
               </div>
-              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 border border-slate-200 shadow-sm">
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600 shadow-sm">
                 <Activity className="w-3.5 h-3.5 text-blue-500" />
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wide">
+                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">
                   Live average
                 </span>
               </div>
             </div>
             <div className="flex flex-col items-center justify-center">
-              <div className="relative flex items-center justify-center w-40 h-40 mb-3 rounded-full bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 shadow-inner">
+              <div className="relative flex items-center justify-center w-40 h-40 mb-3 rounded-full bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 dark:from-slate-800 dark:to-slate-700 shadow-inner">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                   <circle
                     cx="50"
                     cy="50"
                     r="42"
                     fill="none"
-                    stroke="rgb(226 232 240)"
+                    stroke="var(--ring-track)"
                     strokeWidth="10"
                   />
                   <circle
@@ -658,17 +658,17 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+                  <span className="text-[10px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500">
                     Average score
                   </span>
-                  <span className="text-xl font-black tabular-nums leading-none text-blue-700 mt-1">
+                  <span className="text-xl font-black tabular-nums leading-none text-blue-700 dark:text-blue-400 mt-1">
                     {companyAuditCount > 0
                       ? `${productivityDisplayScore.toFixed(1)}%`
                       : '—'}
                   </span>
                 </div>
               </div>
-              <p className="text-[10px] font-medium text-slate-500 text-center">
+              <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 dark:text-slate-400 text-center">
                 Based on{' '}
                 <span className="font-black">
                   {companyAuditCount > 0 ? companyAuditCount : 'no'}
@@ -682,21 +682,21 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-4 shrink-0">
               <div>
-                <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">
+                <p className="text-[10px] font-black tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase">
                   Department leaderboard
                 </p>
-                <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">
+                <h2 className="mt-1 text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight uppercase">
                   {user.department} employees
                 </h2>
-                <p className="mt-1 text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                <p className="mt-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">
                   Ranked by average final score in {leaderboardQuarter}
                 </p>
               </div>
               <div className="flex flex-col items-end">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-1.5">
                   Select quarter
                 </p>
-                <div className="flex w-full max-w-[22rem] bg-slate-100/90 p-2 rounded-lg gap-2 shadow-inner border border-slate-200/60">
+                <div className="flex w-full max-w-[22rem] bg-slate-100 dark:bg-[#0b1222]/90 p-2 rounded-lg gap-2 shadow-inner border border-slate-200 dark:border-slate-600/60">
                   {(['Q1', 'Q2', 'Q3', 'Q4'] as const).map(q => (
                   <button
                     key={q}
@@ -705,7 +705,7 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
                     className={`flex-1 min-w-[4.5rem] py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wide transition-all duration-200 ${
                       leaderboardQuarter === q
                         ? 'bg-blue-600 text-white shadow-md border border-blue-600 ring-2 ring-blue-200/50'
-                        : 'bg-white border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 hover:border-slate-300 hover:text-slate-700 hover:shadow'
+                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 dark:text-slate-400 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:shadow'
                     }`}
                     aria-pressed={leaderboardQuarter === q}
                   >
@@ -715,16 +715,16 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-lg border border-slate-200/80 shadow-sm p-4 md:p-5 flex-1 min-h-0 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600/80 shadow-sm p-4 md:p-5 flex-1 min-h-0 overflow-y-auto">
               {departmentLeaderboard.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-[#0b1222] flex items-center justify-center mb-3">
                     <BarChart3 className="w-6 h-6 text-slate-300" />
                   </div>
-                  <p className="text-sm font-bold text-slate-500 uppercase tracking-wide">
+                  <p className="text-sm font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">
                     No data for {leaderboardQuarter}
                   </p>
-                  <p className="mt-1 text-[10px] font-medium text-slate-400 max-w-xs">
+                  <p className="mt-1 text-[10px] font-medium text-slate-400 dark:text-slate-500 dark:text-slate-500 max-w-xs">
                     Once audits are validated this quarter, employees will appear here
                     ranked by their average performance.
                   </p>
@@ -734,23 +734,23 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
                   {departmentLeaderboard.map((entry, index) => (
                     <div
                       key={entry.name}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-slate-50 transition-colors"
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                     >
                       <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs font-black">
                         #{index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-slate-900 truncate">
+                        <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
                           {entry.name}
                         </p>
-                        <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                        <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                           {entry.auditCount} audit
                           {entry.auditCount === 1 ? '' : 's'} ·{' '}
                           {entry.avgScore.toFixed(1)}%
                         </p>
                       </div>
                       <div className="flex items-center gap-2 w-40 max-w-[11rem]">
-                        <div className="flex-1 h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                        <div className="flex-1 h-2.5 rounded-full bg-slate-100 dark:bg-[#0b1222] overflow-hidden">
                           <div
                             className="h-full rounded-full bg-blue-500"
                             style={{
@@ -761,7 +761,7 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
                             }}
                           />
                         </div>
-                        <span className="w-12 text-right text-[10px] font-black text-slate-700 tabular-nums">
+                        <span className="w-12 text-right text-[10px] font-black text-slate-700 dark:text-slate-300 tabular-nums">
                           {entry.avgScore.toFixed(1)}%
                         </span>
                       </div>
@@ -776,25 +776,25 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         <div className="lg:col-span-5 flex flex-col">
-          <div className="bg-slate-100 rounded-xl p-5 border border-slate-200 shadow-lg overflow-hidden h-[22rem] min-h-[22rem] flex flex-col">
+          <div className="bg-slate-100 dark:bg-[#0b1222] rounded-xl p-5 border border-slate-200 dark:border-slate-600 shadow-lg overflow-hidden h-[22rem] min-h-[22rem] flex flex-col">
             <div className="flex items-center justify-between gap-2 mb-4 shrink-0">
               <div>
-                <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">Message to your team</p>
-                <h2 className="mt-0.5 text-base font-black text-slate-900 tracking-tight">New announcement</h2>
+                <p className="text-[10px] font-black tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase">Message to your team</p>
+                <h2 className="mt-0.5 text-base font-black text-slate-900 dark:text-slate-100 tracking-tight">New announcement</h2>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/80 border border-slate-200 text-[9px] font-black text-slate-500 uppercase tracking-wide shadow-sm whitespace-nowrap">Dept only</span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600 text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide shadow-sm whitespace-nowrap">Dept only</span>
             </div>
-            <div className="flex-1 min-h-0 flex flex-col gap-3 bg-white rounded-lg p-4 border border-slate-200/80 shadow-sm overflow-hidden">
+            <div className="flex-1 min-h-0 flex flex-col gap-3 bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-600/80 shadow-sm overflow-hidden">
               <textarea
                 value={announcementMsg}
                 onChange={e => setAnnouncementMsg(e.target.value)}
                 placeholder="Write a message for your team…"
-                className="w-full flex-1 min-h-[120px] bg-slate-50/80 border border-slate-100 rounded-xl px-5 py-2 text-sm font-medium text-slate-700 placeholder:text-slate-400 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 transition-all resize-none"
+                className="w-full flex-1 min-h-[120px] bg-slate-50 dark:bg-[#0b1222]/80 border border-slate-100 dark:border-slate-700 rounded-xl px-5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 placeholder:text-slate-400 dark:text-slate-500 dark:text-slate-500 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all resize-none"
               />
               <button
                 onClick={handleDispatchAnnouncement}
                 disabled={!announcementMsg.trim()}
-                className="w-full flex items-center justify-center gap-2.5 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-wide bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-blue-200/50 shrink-0 mt-auto"
+                className="w-full flex items-center justify-center gap-2.5 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-wide bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-blue-200/50 dark:shadow-none shrink-0 mt-auto"
               >
                 <Send className="w-4 h-4 shrink-0" aria-hidden />
                 Post to team
@@ -803,55 +803,55 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
           </div>
         </div>
         <div className="lg:col-span-7 flex flex-col">
-          <div className="bg-slate-100 rounded-xl p-5 border border-slate-200 shadow-lg overflow-hidden h-[22rem] min-h-[22rem] flex flex-col">
+          <div className="bg-slate-100 dark:bg-[#0b1222] rounded-xl p-5 border border-slate-200 dark:border-slate-600 shadow-lg overflow-hidden h-[22rem] min-h-[22rem] flex flex-col">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6 shrink-0">
               <div>
-                <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">This quarter</p>
-                <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight">Announcements sent</h2>
+                <p className="text-[10px] font-black tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase">This quarter</p>
+                <h2 className="mt-1 text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Announcements sent</h2>
               </div>
               {activeAnnouncements.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-700 uppercase tracking-wide">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-900/50 text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-wide">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                   {activeAnnouncements.length} active
                 </span>
               )}
             </div>
-            <div className="flex-1 min-h-0 flex flex-col bg-white rounded-lg border border-slate-200/80 shadow-sm overflow-hidden">
+            <div className="flex-1 min-h-0 flex flex-col bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600/80 shadow-sm overflow-hidden">
               {activeAnnouncements.length === 0 ? (
                 <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-6 text-center shrink-0">
-                  <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4 border border-slate-200">
+                  <div className="w-16 h-16 bg-slate-100 dark:bg-[#0b1222] rounded-lg flex items-center justify-center mx-auto mb-4 border border-slate-200 dark:border-slate-600">
                     <Megaphone className="w-8 h-8 text-slate-300" aria-hidden />
                   </div>
-                  <p className="text-sm font-bold text-slate-500 uppercase tracking-wide">No announcements yet</p>
-                  <p className="mt-1 text-[10px] font-medium text-slate-400 max-w-[220px]">Messages sent this quarter will appear here.</p>
+                  <p className="text-sm font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">No announcements yet</p>
+                  <p className="mt-1 text-[10px] font-medium text-slate-400 dark:text-slate-500 dark:text-slate-500 max-w-[220px]">Messages sent this quarter will appear here.</p>
                 </div>
               ) : (
                 <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4 pr-2 custom-scrollbar">
                   {activeAnnouncements.map(a => (
                     <div
                       key={a.id}
-                      className="relative group p-5 rounded-lg bg-slate-50/80 border border-slate-100 hover:bg-blue-50/60 hover:border-blue-100 hover:shadow-sm transition-all"
+                      className="relative group p-5 rounded-lg bg-slate-50 dark:bg-[#0b1222]/80 border border-slate-100 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-blue-900/30/60 hover:border-blue-100 dark:hover:border-blue-900/50 hover:shadow-sm transition-all"
                     >
                       <button
                         onClick={() => handleDeleteBroadcast(a.id)}
-                        className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all focus:outline-none focus:ring-2 focus:ring-red-300"
+                        className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all focus:outline-none focus:ring-2 focus:ring-red-300"
                         aria-label={`Delete announcement ${a.id}`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
-                      <p className="text-sm font-medium text-slate-700 leading-relaxed pr-10">&quot;{a.message}&quot;</p>
-                      <p className="mt-1 text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300 leading-relaxed pr-10">&quot;{a.message}&quot;</p>
+                      <p className="mt-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                         Supervisor: {a.senderName}
                       </p>
-                      <div className="flex items-center justify-between gap-3 pt-4 mt-4 border-t border-slate-200/80">
-                        <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wide">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      <div className="flex items-center justify-between gap-3 pt-4 mt-4 border-t border-slate-200 dark:border-slate-600/80">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
+                          <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-500" />
                           {new Date(a.timestamp).toLocaleString(undefined, {
                             dateStyle: 'medium',
                             timeStyle: 'short'
                           })}
                         </span>
-                        <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase rounded-full border border-blue-100">
+                        <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 text-[10px] font-black uppercase rounded-full border border-blue-100 dark:border-blue-900/50">
                           Active
                         </span>
                       </div>
@@ -874,20 +874,20 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
     return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Unit Overview panel — above Registry Management */}
-      <div className="bg-slate-100 rounded-xl p-5 border border-slate-200 shadow-lg">
+      <div className="bg-slate-100 dark:bg-[#0b1222] rounded-xl p-5 border border-slate-200 dark:border-slate-600 shadow-lg">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">
+            <p className="text-[10px] font-black tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase">
               Department Audit
             </p>
-            <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">
+            <h2 className="mt-1 text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight uppercase">
               Department Audit Overview
             </h2>
           </div>
           <div className="hidden md:flex items-center gap-2">
-            <div className="h-10 px-4 rounded-full bg-white/80 border border-slate-200 shadow-sm flex items-center gap-2">
+            <div className="h-10 px-4 rounded-full bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600 shadow-sm flex items-center gap-2">
               <span className="inline-flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-wide text-slate-500">
+              <span className="text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-400">
                 Live audit status
               </span>
             </div>
@@ -897,72 +897,72 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => { setQueueTab('pending'); setSearchTerm(''); }}
-            className={`w-full p-5 rounded-lg border flex flex-col items-center text-left transition-transform duration-200 ease-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-100 hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-lg ${queueTab === 'pending' ? 'bg-blue-50 border-blue-300 shadow-md scale-[1.06] -translate-y-1' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
+            className={`w-full p-5 rounded-lg border flex flex-col items-center text-left transition-transform duration-200 ease-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-lg ${queueTab === 'pending' ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-600 shadow-md scale-[1.06] -translate-y-1' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900'}`}
             aria-label="Show pending audits in registry"
             aria-pressed={queueTab === 'pending'}
           >
-            <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'pending' ? 'text-blue-700' : 'text-slate-400'}`}>Pending Review</p>
-            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'pending' ? 'text-blue-600/90' : 'text-slate-500'}`}>Marketing Department</p>
+            <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'pending' ? 'text-blue-700 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500'}`}>Pending Review</p>
+            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'pending' ? 'text-blue-600/90' : 'text-slate-500 dark:text-slate-400 dark:text-slate-400'}`}>Marketing Department</p>
             <div className="relative flex items-center justify-center w-40 h-40">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="rgb(226 232 240)" strokeWidth="10" />
+                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--ring-track)" strokeWidth="10" />
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgb(59 130 246)" strokeWidth="10" strokeLinecap="round" strokeDasharray={2 * Math.PI * 42} strokeDashoffset={2 * Math.PI * 42 * (1 - (marketingTotalAudits ? Math.min(1, marketingPendingCount / marketingTotalAudits) : 0))} className="transition-[stroke-dashoffset] duration-500 animate-ring-pulse" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className={`text-2xl font-black tabular-nums leading-none ${queueTab === 'pending' ? 'text-blue-700' : 'text-blue-600'}`}>{marketingPendingCount}/{marketingTotalAudits}</span>
-                <span className={`text-[10px] font-bold uppercase tracking-wide mt-1 ${queueTab === 'pending' ? 'text-blue-600' : 'text-slate-400'}`}>submitted</span>
+                <span className={`text-2xl font-black tabular-nums leading-none ${queueTab === 'pending' ? 'text-blue-700 dark:text-blue-400' : 'text-blue-600'}`}>{marketingPendingCount}/{marketingTotalAudits}</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wide mt-1 ${queueTab === 'pending' ? 'text-blue-600' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500'}`}>submitted</span>
               </div>
             </div>
           </button>
           <button
             type="button"
             onClick={() => { setQueueTab('history'); setSearchTerm(''); }}
-            className={`w-full p-5 rounded-lg border flex flex-col items-center text-left transition-transform duration-200 ease-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-100 hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-lg ${queueTab === 'history' ? 'bg-emerald-50 border-emerald-300 shadow-md scale-[1.06] -translate-y-1' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
+            className={`w-full p-5 rounded-lg border flex flex-col items-center text-left transition-transform duration-200 ease-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-lg ${queueTab === 'history' ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-600 shadow-md scale-[1.06] -translate-y-1' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900'}`}
             aria-label="Show validated audits in registry"
             aria-pressed={queueTab === 'history'}
           >
-            <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'history' ? 'text-emerald-700' : 'text-slate-400'}`}>Approved</p>
-            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'history' ? 'text-emerald-600/90' : 'text-slate-500'}`}>Marketing Department</p>
+            <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'history' ? 'text-emerald-700' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500'}`}>Approved</p>
+            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'history' ? 'text-emerald-600/90' : 'text-slate-500 dark:text-slate-400 dark:text-slate-400'}`}>Marketing Department</p>
             <div className="relative flex items-center justify-center w-40 h-40">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="rgb(226 232 240)" strokeWidth="10" />
+                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--ring-track)" strokeWidth="10" />
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgb(16 185 129)" strokeWidth="10" strokeLinecap="round" strokeDasharray={2 * Math.PI * 42} strokeDashoffset={2 * Math.PI * 42 * (1 - (marketingTotalAudits ? Math.min(1, marketingValidatedCount / marketingTotalAudits) : 0))} className="transition-[stroke-dashoffset] duration-500 animate-ring-pulse" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className={`text-2xl font-black tabular-nums leading-none ${queueTab === 'history' ? 'text-emerald-700' : 'text-emerald-600'}`}>{marketingValidatedCount}/{marketingTotalAudits}</span>
-                <span className={`text-[10px] font-bold uppercase tracking-wide mt-1 ${queueTab === 'history' ? 'text-emerald-600' : 'text-slate-400'}`}>validated</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wide mt-1 ${queueTab === 'history' ? 'text-emerald-600' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500'}`}>validated</span>
               </div>
             </div>
           </button>
           <button
             type="button"
             onClick={() => { setQueueTab('rejected'); setSearchTerm(''); }}
-            className={`w-full p-5 rounded-lg border flex flex-col items-center text-left transition-transform duration-200 ease-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-slate-100 hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-lg ${queueTab === 'rejected' ? 'bg-red-50 border-red-300 shadow-md scale-[1.06] -translate-y-1' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
+            className={`w-full p-5 rounded-lg border flex flex-col items-center text-left transition-transform duration-200 ease-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-lg ${queueTab === 'rejected' ? 'bg-red-50 dark:bg-red-900/30 border-red-300 dark:border-red-600 shadow-md scale-[1.06] -translate-y-1' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900'}`}
             aria-label="Show rejected audits in registry"
             aria-pressed={queueTab === 'rejected'}
           >
-            <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'rejected' ? 'text-red-700' : 'text-slate-400'}`}>Rejected</p>
-            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'rejected' ? 'text-red-600/90' : 'text-slate-500'}`}>Marketing Department</p>
+            <p className={`text-[10px] font-black uppercase tracking-wide mb-1 ${queueTab === 'rejected' ? 'text-red-700' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500'}`}>Rejected</p>
+            <p className={`text-[10px] font-bold uppercase tracking-wide mb-4 ${queueTab === 'rejected' ? 'text-red-600/90' : 'text-slate-500 dark:text-slate-400 dark:text-slate-400'}`}>Marketing Department</p>
             <div className="relative flex items-center justify-center w-40 h-40">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="rgb(226 232 240)" strokeWidth="10" />
+                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--ring-track)" strokeWidth="10" />
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgb(239 68 68)" strokeWidth="10" strokeLinecap="round" strokeDasharray={2 * Math.PI * 42} strokeDashoffset={2 * Math.PI * 42 * (1 - (marketingTotalAudits ? Math.min(1, marketingRejectedCount / marketingTotalAudits) : 0))} className="transition-[stroke-dashoffset] duration-500 animate-ring-pulse" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className={`text-2xl font-black tabular-nums leading-none ${queueTab === 'rejected' ? 'text-red-700' : 'text-red-500'}`}>{marketingRejectedCount}/{marketingTotalAudits}</span>
-                <span className={`text-[10px] font-bold uppercase tracking-wide mt-1 ${queueTab === 'rejected' ? 'text-red-600' : 'text-slate-400'}`}>rejected</span>
+                <span className={`text-[10px] font-bold uppercase tracking-wide mt-1 ${queueTab === 'rejected' ? 'text-red-600' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500'}`}>rejected</span>
               </div>
             </div>
           </button>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-lg border border-slate-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-100 dark:border-slate-700">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><ListTodo className="w-5 h-5 text-white" /></div>
           <div>
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Submissions</h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+            <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Submissions</h3>
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
               {queueTab === 'pending' ? 'Awaiting Review' : queueTab === 'history' ? 'Approved Records' : 'Rejected Records'}
             </p>
           </div>
@@ -973,7 +973,7 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
             <input
               type="text"
               placeholder="SEARCH MARKETING REGISTRY..."
-              className="pl-9 pr-5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-black text-black tracking-[0.05em] focus:outline-none focus:ring-4 focus:ring-blue-500/15 w-full md:w-80 lg:w-96 transition-all focus:bg-white focus:border-blue-200"
+              className="pl-9 pr-5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg text-[11px] font-black text-black dark:text-white tracking-[0.05em] focus:outline-none focus:ring-4 focus:ring-blue-500/15 w-full md:w-80 lg:w-96 transition-all focus:bg-white dark:bg-slate-800 focus:border-blue-200 dark:border-blue-700"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
@@ -981,7 +981,7 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
         </div>
       </div>
       <div
-        className="registry-list-scroll h-[19rem] min-h-[19rem] rounded-lg border border-slate-200 bg-slate-50/50 shadow-sm"
+        className="registry-list-scroll h-[19rem] min-h-[19rem] rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-[#0b1222]/50 shadow-sm"
         onWheelCapture={(e) => {
           const el = e.currentTarget;
           const { scrollTop, scrollHeight, clientHeight } = el;
@@ -1000,8 +1000,8 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
       >
         <div className={`registry-list-inner space-y-3 py-1 ${registryElastic ? `elastic-${registryElastic}` : ''}`}>
         {filteredQueue.length === 0 ? (
-          <div className="py-20 text-center bg-white rounded-lg border border-slate-50 border-dashed">
-            <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-4"><ClipboardCheck className="w-8 h-8 text-slate-200" /></div>
+          <div className="py-20 text-center bg-white dark:bg-slate-800 rounded-lg border border-slate-50 dark:border-slate-700 border-dashed">
+            <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-3xl flex items-center justify-center mx-auto mb-4"><ClipboardCheck className="w-8 h-8 text-slate-200" /></div>
             <p className="text-[10px] font-black text-slate-300 uppercase tracking-wide">
               {searchTerm.trim() ? 'No records match your search' : 'No submissions in this view'}
             </p>
@@ -1012,19 +1012,19 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
             const kpiVal = getWeightedKpiForEntry(item);
             const valueColor = kpiVal >= 90 ? 'text-emerald-600' : kpiVal >= 70 ? 'text-blue-600' : kpiVal >= 50 ? 'text-amber-600' : 'text-red-600';
             return (
-              <div key={item.id} className="group flex items-center justify-between p-6 rounded-lg border bg-white border-slate-50 hover:shadow-md transition-all">
+              <div key={item.id} className="group flex items-center justify-between p-6 rounded-lg border bg-white dark:bg-slate-800 border-slate-50 dark:border-slate-700 hover:shadow-md transition-all">
                 <div className="flex items-center gap-6">
-                  <div className="w-14 h-14 rounded-lg flex items-center justify-center font-black bg-slate-100 text-slate-600 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                  <div className="w-14 h-14 rounded-lg flex items-center justify-center font-black bg-slate-100 dark:bg-[#0b1222] text-slate-600 dark:text-slate-400 dark:text-slate-400 group-hover:bg-blue-50 dark:hover:bg-blue-900/30 group-hover:text-blue-600 transition-colors">
                     {item.userName.charAt(0)}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-black text-slate-900">{item.userName}</p>
-                      {queueTab === 'history' && <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded border border-emerald-100 uppercase">APPROVED</span>}
+                      <p className="text-sm font-black text-slate-900 dark:text-slate-100">{item.userName}</p>
+                      {queueTab === 'history' && <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-black rounded border border-emerald-100 uppercase">APPROVED</span>}
                     </div>
                     <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mt-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">TX ID: {item.id} • {item.jobId || '—'}</p>
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md border w-fit bg-slate-50 border-slate-100 text-slate-400">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500">TX ID: {item.id} • {item.jobId || '—'}</p>
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md border w-fit bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-500 dark:text-slate-500">
                         <Clock className="w-2.5 h-2.5" />
                         <span className="text-[10px] font-black uppercase tracking-wide">{formattedTime}</span>
                       </div>
@@ -1057,8 +1057,8 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
                     );
                   })()}
                   {queueTab === 'rejected' && (
-                    <div className="w-[8rem] min-w-[8rem] py-2.5 rounded-xl flex flex-col items-center justify-center border shrink-0 bg-red-50 border-red-100 text-red-700">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Status</p>
+                    <div className="w-[8rem] min-w-[8rem] py-2.5 rounded-xl flex flex-col items-center justify-center border shrink-0 bg-red-50 dark:bg-red-900/30 border-red-100 text-red-700">
+                      <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">Status</p>
                       <p className="text-sm font-extrabold leading-none uppercase">REJECTED</p>
                     </div>
                   )}
@@ -1085,27 +1085,27 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
     const employeeCount = sortedTeam.length - supervisorCount;
     return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-lg border border-slate-100 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"><Users className="w-5 h-5 text-white" /></div>
           <div>
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">Marketing Unit Matrix</h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">Department roster and roles</p>
+            <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Marketing Unit Matrix</h3>
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mt-0.5">Department roster and roles</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
+          <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-xl border border-blue-100 dark:border-blue-900/50">
             <span className="text-[10px] font-black uppercase tracking-wide">{sortedTeam.length} team members</span>
           </div>
         </div>
       </div>
-      <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-100">
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">
+      <div className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700">
+        <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">
           {supervisorCount} Supervisor{supervisorCount !== 1 ? 's' : ''} · {employeeCount} Employee{employeeCount !== 1 ? 's' : ''}
         </p>
       </div>
       <div
-        className="registry-list-scroll h-[19rem] min-h-[19rem] rounded-lg border border-slate-200 bg-slate-50/50 shadow-sm"
+        className="registry-list-scroll h-[19rem] min-h-[19rem] rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-[#0b1222]/50 shadow-sm"
         onWheelCapture={(e) => {
           const el = e.currentTarget;
           const { scrollTop, scrollHeight, clientHeight } = el;
@@ -1124,23 +1124,23 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
       >
         <div className={`registry-list-inner space-y-3 py-1 ${teamElastic ? `elastic-${teamElastic}` : ''}`}>
         {sortedTeam.length === 0 ? (
-          <div className="py-20 text-center bg-white rounded-lg border border-slate-50 border-dashed mx-1">
-            <div className="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-4"><Users className="w-8 h-8 text-slate-200" /></div>
+          <div className="py-20 text-center bg-white dark:bg-slate-800 rounded-lg border border-slate-50 dark:border-slate-700 border-dashed mx-1">
+            <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-3xl flex items-center justify-center mx-auto mb-4"><Users className="w-8 h-8 text-slate-200" /></div>
             <p className="text-[10px] font-black text-slate-300 uppercase tracking-wide">No team members in this department</p>
           </div>
         ) : (
           sortedTeam.map((member, idx) => (
-            <div key={idx} className={`group flex items-center justify-between p-6 rounded-lg border transition-all ${member.isSupervisor ? 'bg-blue-50 border-blue-200 shadow-sm shadow-blue-50' : 'bg-white border-slate-50 hover:shadow-md hover:-translate-y-0.5'}`}>
+            <div key={idx} className={`group flex items-center justify-between p-6 rounded-lg border transition-all ${member.isSupervisor ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700 shadow-sm shadow-blue-50' : 'bg-white dark:bg-slate-800 border-slate-50 dark:border-slate-700 hover:shadow-md hover:-translate-y-0.5'}`}>
               <div className="flex items-center gap-6">
-                <div className={`w-14 h-14 rounded-lg flex items-center justify-center font-black transition-colors shrink-0 ${member.isSupervisor ? 'bg-blue-600 text-white ring-2 ring-blue-200' : 'bg-slate-100 text-slate-600 ring-2 ring-slate-100'}`}>
+                <div className={`w-14 h-14 rounded-lg flex items-center justify-center font-black transition-colors shrink-0 ${member.isSupervisor ? 'bg-blue-600 text-white ring-2 ring-blue-200' : 'bg-slate-100 dark:bg-[#0b1222] text-slate-600 dark:text-slate-400 dark:text-slate-400 ring-2 ring-slate-100'}`}>
                   {member.name.charAt(0)}
                 </div>
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <p className={`font-black text-slate-900 ${member.isSupervisor ? 'text-base' : 'text-sm'}`}>{member.name}</p>
-                    {member.name === user.name && member.isSupervisor && <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-black rounded uppercase">YOU</span>}
+                    <p className={`font-black text-slate-900 dark:text-slate-100 ${member.isSupervisor ? 'text-base' : 'text-sm'}`}>{member.name}</p>
+                    {member.name === user.name && member.isSupervisor && <span className="px-2 py-0.5 bg-slate-100 dark:bg-[#0b1222] text-slate-600 dark:text-slate-400 dark:text-slate-400 text-[10px] font-black rounded uppercase">YOU</span>}
                   </div>
-                  <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wide mt-1">{member.role}</span>
+                  <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 dark:bg-[#0b1222] text-slate-500 dark:text-slate-400 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wide mt-1">{member.role}</span>
                 </div>
               </div>
               {member.isSupervisor && (
@@ -1215,21 +1215,21 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
 
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
-        <div className="bg-slate-100 rounded-xl p-5 border border-slate-200 shadow-sm">
+        <div className="bg-slate-100 dark:bg-[#0b1222] rounded-xl p-5 border border-slate-200 dark:border-slate-600 shadow-sm">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
-              <p className="text-[10px] font-black tracking-wide text-slate-400 uppercase">Performance</p>
-              <h2 className="mt-1 text-xl font-black text-slate-900 tracking-tight uppercase">Marketing Performance</h2>
-              <p className="mt-2 text-[10px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
+              <p className="text-[10px] font-black tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase">Performance</p>
+              <h2 className="mt-1 text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight uppercase">Marketing Performance</h2>
+              <p className="mt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide flex items-center gap-2">
                 <Calendar className="w-3 h-3" />
                 Quarterly cycle: {qInfo.q} ({qInfo.months}) · Payout Est. {qInfo.payout}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {schedules.map(s => (
-                <div key={s.q} className={`px-4 py-2.5 rounded-xl border flex flex-col items-center min-w-[90px] ${s.q === qInfo.q ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-500'}`}>
+                <div key={s.q} className={`px-4 py-2.5 rounded-xl border flex flex-col items-center min-w-[90px] ${s.q === qInfo.q ? 'bg-blue-600 border-blue-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 dark:text-slate-400'}`}>
                   <span className="text-[10px] font-black uppercase tracking-wide">{s.q}</span>
-                  <span className={`text-[10px] font-black ${s.q === qInfo.q ? 'text-blue-100' : 'text-slate-700'}`}>{s.payout}</span>
+                  <span className={`text-[10px] font-black ${s.q === qInfo.q ? 'text-blue-100' : 'text-slate-700 dark:text-slate-300'}`}>{s.payout}</span>
                 </div>
               ))}
             </div>
@@ -1238,61 +1238,61 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
 
         <SupervisorIncentiveMatrixPanel tiers={incentiveTiers} departmentLabel="Marketing" />
 
-        <div className="bg-blue-50/80 border border-blue-100 rounded-lg p-6 flex items-start gap-4">
-          <div className="p-2 bg-blue-100 rounded-lg text-blue-600 shrink-0">
+        <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 rounded-lg p-6 flex items-start gap-4">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
             <Info className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-[10px] font-black text-blue-900 uppercase tracking-wide mb-1">Policy note (under review)</p>
-            <p className="text-xs font-medium text-blue-700 leading-relaxed">
+            <p className="text-[10px] font-black text-blue-900 dark:text-blue-300 uppercase tracking-wide mb-1">Policy note (under review)</p>
+            <p className="text-xs font-medium text-blue-700 dark:text-blue-400 leading-relaxed">
               Incentive amounts are indicative until final approval. Ranges are based on quarterly performance (average of monthly scores). Policy as of {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}.
             </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-wide">Employee Performance Tracking</h4>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-slate-100">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+          <div className="px-6 py-2 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-[#0b1222]/50">
+            <h4 className="text-[10px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Employee Performance Tracking</h4>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
               <Activity className="w-3.5 h-3.5 text-blue-500" />
-              <span className="text-[10px] font-black text-slate-600 uppercase tracking-wide">Real-Time Aggregation</span>
+              <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">Real-Time Aggregation</span>
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-wide">Marketing Personnel</th>
-                  <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-wide text-center">Audits ({qInfo.q})</th>
-                  <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-wide text-center">Quarterly Avg</th>
-                  <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-wide">Tier Status</th>
-                  <th className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-wide text-right">Potential Payout</th>
+                <tr className="bg-slate-50 dark:bg-[#0b1222]/50 border-b border-slate-100 dark:border-slate-700">
+                  <th className="px-6 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Marketing Personnel</th>
+                  <th className="px-6 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide text-center">Audits ({qInfo.q})</th>
+                  <th className="px-6 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide text-center">Quarterly Avg</th>
+                  <th className="px-6 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Tier Status</th>
+                  <th className="px-6 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide text-right">Potential Payout</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {employeeIncentives.map((emp, idx) => (
-                  <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
+                  <tr key={idx} className="group hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
                     <td className="px-6 py-2">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-600 text-sm border border-slate-100">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-[#0b1222] flex items-center justify-center font-black text-slate-600 dark:text-slate-400 dark:text-slate-400 text-sm border border-slate-100 dark:border-slate-700">
                           {emp.name.charAt(0)}
                         </div>
                         <div>
-                          <p className="text-sm font-black text-slate-900">{emp.name}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Last audit: {emp.lastUpdated ? new Date(emp.lastUpdated).toLocaleDateString() : 'None'}</p>
+                          <p className="text-sm font-black text-slate-900 dark:text-slate-100">{emp.name}</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-tight">Last audit: {emp.lastUpdated ? new Date(emp.lastUpdated).toLocaleDateString() : 'None'}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-2 text-center">
-                      <span className="px-2.5 py-1 bg-slate-100 rounded-lg text-[10px] font-black text-slate-600">{emp.auditCount}</span>
+                      <span className="px-2.5 py-1 bg-slate-100 dark:bg-[#0b1222] rounded-lg text-[10px] font-black text-slate-600 dark:text-slate-400 dark:text-slate-400">{emp.auditCount}</span>
                     </td>
                     <td className="px-6 py-2 text-center">
                       <div className="flex flex-col items-center">
-                        <span className={`text-base font-black ${emp.avgScore >= 90 ? 'text-blue-700' : emp.avgScore >= 70 ? 'text-blue-600' : 'text-slate-300'}`}>
+                        <span className={`text-base font-black ${emp.avgScore >= 90 ? 'text-blue-700 dark:text-blue-400' : emp.avgScore >= 70 ? 'text-blue-600' : 'text-slate-300'}`}>
                           {emp.avgScore > 0 ? `${emp.avgScore}%` : '--'}
                         </span>
                         {emp.avgScore > 0 && (
-                          <div className="w-14 h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                          <div className="w-14 h-1 bg-slate-100 dark:bg-[#0b1222] rounded-full mt-1 overflow-hidden">
                             <div className={`h-full rounded-full ${emp.avgScore >= 90 ? 'bg-blue-600' : emp.avgScore >= 70 ? 'bg-blue-500' : 'bg-slate-300'}`} style={{ width: `${Math.min(100, emp.avgScore)}%` }} />
                           </div>
                         )}
@@ -1302,8 +1302,8 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
                       <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide border ${emp.tierColor}`}>{emp.tier}</span>
                     </td>
                     <td className="px-6 py-2 text-right">
-                      <p className={`text-sm font-black ${emp.avgScore >= 70 ? 'text-slate-900' : 'text-slate-300'}`}>{emp.potentialAmount}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">Est. {qInfo.payout}</p>
+                      <p className={`text-sm font-black ${emp.avgScore >= 70 ? 'text-slate-900 dark:text-slate-100' : 'text-slate-300'}`}>{emp.potentialAmount}</p>
+                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mt-0.5">Est. {qInfo.payout}</p>
                     </td>
                   </tr>
                 ))}
@@ -1324,19 +1324,19 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
     ).length;
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
-        <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide mb-6">Marketing Department — Last 30 Days</h3>
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
+          <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide mb-6">Marketing Department — Last 30 Days</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="p-6 bg-emerald-50 rounded-lg border border-emerald-100">
+            <div className="p-6 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg border border-emerald-100">
               <p className="text-[10px] font-black text-emerald-600 uppercase tracking-wide mb-1">Validated</p>
-              <p className="text-xl font-black text-slate-900 tabular-nums">{recentValidated}</p>
+              <p className="text-xl font-black text-slate-900 dark:text-slate-100 tabular-nums">{recentValidated}</p>
             </div>
-            <div className="p-6 bg-red-50 rounded-lg border border-red-100">
+            <div className="p-6 bg-red-50 dark:bg-red-900/30 rounded-lg border border-red-100">
               <p className="text-[10px] font-black text-red-600 uppercase tracking-wide mb-1">Rejected</p>
-              <p className="text-xl font-black text-slate-900 tabular-nums">{recentRejected}</p>
+              <p className="text-xl font-black text-slate-900 dark:text-slate-100 tabular-nums">{recentRejected}</p>
             </div>
           </div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mt-6">Export and detailed reports coming soon.</p>
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mt-6">Export and detailed reports coming soon.</p>
         </div>
       </div>
     );
@@ -1348,25 +1348,25 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
 
     return (
       <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden pb-12">
-          <div className="p-5 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden pb-12">
+          <div className="p-5 border-b border-slate-50 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-[#0b1222]/50">
             <div className="flex items-center gap-6">
-              <button onClick={() => setCurrentPage('queue')} className="flex items-center gap-2 p-3 text-slate-400 hover:text-slate-900 hover:bg-white rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label="Back to List"><X className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-wide">Back to List</span></button>
+              <button onClick={() => setCurrentPage('queue')} className="flex items-center gap-2 p-3 text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-800 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label="Back to List"><X className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-wide">Back to List</span></button>
               <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                   {isReadOnly ? (selectedItem.status === 'rejected' ? 'Rejected entry' : 'Approved entry') : 'Review entry'}
                 </h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Record ID: {selectedItem.id}</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Record ID: {selectedItem.id}</p>
               </div>
             </div>
             {isReadOnly && (
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${selectedItem.status === 'rejected' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${selectedItem.status === 'rejected' ? 'bg-red-50 dark:bg-red-900/30 text-red-600 border-red-100' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 border-emerald-100'}`}>
                 {selectedItem.status === 'rejected' ? <X className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
                 <span className="text-[10px] font-black uppercase tracking-wide">{selectedItem.status === 'rejected' ? 'Rejected' : 'Validated'}</span>
               </div>
             )}
             {!isReadOnly && (
-              <div className={`px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-wide flex items-center gap-2 ${calculatedScore.incentivePct > 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100 animate-pulse' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+              <div className={`px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-wide flex items-center gap-2 ${calculatedScore.incentivePct > 0 ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 border-emerald-100 animate-pulse' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 border-blue-100 dark:border-blue-900/50'}`}>
                 {calculatedScore.incentivePct > 0 ? <Trophy className="w-3.5 h-3.5" /> : <Activity className="w-3.5 h-3.5" />}
                 {calculatedScore.incentivePct > 0 ? 'Incentive target met' : 'Below incentive target'}
               </div>
@@ -1394,7 +1394,7 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
                         <div key={category} className="space-y-2">
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-2">
-                              <Icon className="w-3 h-3 text-slate-400" />
+                              <Icon className="w-3 h-3 text-slate-400 dark:text-slate-500 dark:text-slate-500" />
                               <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wide">{category} ({(weight * 100).toFixed(0)}%)</span>
                             </div>
                             <span className="text-xs font-black text-white">{value} PTS</span>
@@ -1446,27 +1446,27 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
               </div>
               <div className="lg:col-span-5 flex flex-col gap-6 min-h-0">
                 {!isReadOnly ? (
-                  <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm h-full flex flex-col min-h-0">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wide ml-1 flex-shrink-0">Supervisor Justification</label>
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm h-full flex flex-col min-h-0">
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1 flex-shrink-0">Supervisor Justification</label>
                     <textarea
                       ref={justificationTextareaRef}
                       value={overrideReason}
                       onChange={e => setOverrideReason(e.target.value)}
                       placeholder="Notes are required when requesting changes."
-                      className="w-full min-h-[140px] bg-slate-50 border border-slate-200 rounded-lg p-5 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none overflow-auto flex-1"
+                      className="w-full min-h-[140px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-5 text-sm font-medium text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none overflow-auto flex-1"
                       aria-label="Supervisor justification (required for rejection or score override)"
                     />
                     <div className="grid grid-cols-2 gap-4 flex-shrink-0 pt-2">
-                      <button onClick={() => handleAction('REJECT')} className="py-2 rounded-xl bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-wide hover:bg-red-100 transition-colors">Request Changes</button>
-                      <button onClick={() => handleAction('APPROVE')} className="py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200">Approve</button>
+                      <button onClick={() => handleAction('REJECT')} className="py-2 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-600 text-[10px] font-black uppercase tracking-wide hover:bg-red-100 transition-colors">Request Changes</button>
+                      <button onClick={() => handleAction('APPROVE')} className="py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200 dark:shadow-none">Approve</button>
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm space-y-6 h-full flex flex-col justify-center">
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm space-y-6 h-full flex flex-col justify-center">
                     <div className="space-y-4 text-center">
-                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto"><ShieldCheck className="w-8 h-8 text-slate-400" /></div>
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-wide">Record Finalized</h4>
-                      <p className="text-xs font-medium text-slate-500 max-w-[200px] mx-auto leading-relaxed">This audit has been processed and is now part of the permanent registry.</p>
+                      <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto"><ShieldCheck className="w-8 h-8 text-slate-400 dark:text-slate-500 dark:text-slate-500" /></div>
+                      <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Record Finalized</h4>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 dark:text-slate-400 max-w-[200px] mx-auto leading-relaxed">This audit has been processed and is now part of the permanent registry.</p>
                     </div>
                     <button onClick={() => setCurrentPage('queue')} className="w-full py-2 bg-slate-900 text-white rounded-lg text-[11px] font-black uppercase tracking-wide transition-all mt-6">Back to List</button>
                   </div>
@@ -1475,16 +1475,16 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center"><MessageSquare className="w-4 h-4 text-white" /></div><p className="text-[10px] font-black text-slate-900 uppercase tracking-wide">Employee Narrative</p></div>
-              <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
-                <p className="text-sm font-medium text-slate-600 leading-relaxed italic">&quot;{selectedItem.projectReport}&quot;</p>
+              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center"><MessageSquare className="w-4 h-4 text-white" /></div><p className="text-[10px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Employee Narrative</p></div>
+              <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400 dark:text-slate-400 leading-relaxed italic">&quot;{selectedItem.projectReport}&quot;</p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center"><ClipboardCheck className="w-4 h-4 text-white" /></div><p className="text-[10px] font-black text-slate-900 uppercase tracking-wide">Supervisor Justification</p></div>
-              <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
-                <p className="text-sm font-medium text-slate-600 leading-relaxed italic">&quot;{selectedItem.supervisorComment || (isReadOnly ? 'No supervisor justification recorded.' : 'Not validated yet.')}&quot;</p>
+              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center"><ClipboardCheck className="w-4 h-4 text-white" /></div><p className="text-[10px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Supervisor Justification</p></div>
+              <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400 dark:text-slate-400 leading-relaxed italic">&quot;{selectedItem.supervisorComment || (isReadOnly ? 'No supervisor justification recorded.' : 'Not validated yet.')}&quot;</p>
               </div>
             </div>
 
@@ -1499,24 +1499,24 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
             />
 
             <div className="space-y-4">
-              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center"><Paperclip className="w-4 h-4 text-white" /></div><p className="text-[10px] font-black text-slate-900 uppercase tracking-wide">Attachments</p></div>
+              <div className="flex items-center gap-3"><div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center"><Paperclip className="w-4 h-4 text-white" /></div><p className="text-[10px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Attachments</p></div>
               {selectedItem.attachments && selectedItem.attachments.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {selectedItem.attachments.map((file: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-lg group/file overflow-hidden">
+                    <div key={idx} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg group/file overflow-hidden">
                       <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
-                        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center shrink-0">{file.type?.includes?.('image') ? <FileImage className="w-5 h-5 text-blue-500" /> : <FileIcon className="w-5 h-5 text-slate-400" />}</div>
+                        <div className="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center justify-center shrink-0">{file.type?.includes?.('image') ? <FileImage className="w-5 h-5 text-blue-500" /> : <FileIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 dark:text-slate-500" />}</div>
                         <div className="overflow-hidden min-w-0 flex-1">
-                          <p className="text-[10px] font-black text-slate-900 truncate uppercase">{file.name}</p>
-                          <p className="text-[10px] font-bold text-slate-400">{file.size}</p>
+                          <p className="text-[10px] font-black text-slate-900 dark:text-slate-100 truncate uppercase">{file.name}</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500">{file.size}</p>
                         </div>
                       </div>
-                      <button onClick={() => handleDownload(file)} className="p-2 shrink-0 opacity-0 group-hover/file:opacity-100 text-slate-400 hover:text-blue-600 transition-all"><Download className="w-4 h-4" /></button>
+                      <button onClick={() => handleDownload(file)} className="p-2 shrink-0 opacity-0 group-hover/file:opacity-100 text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-blue-600 transition-all"><Download className="w-4 h-4" /></button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm font-medium text-slate-400 italic py-2">No attached file</p>
+                <p className="text-sm font-medium text-slate-400 dark:text-slate-500 dark:text-slate-500 italic py-2">No attached file</p>
               )}
             </div>
           </div>
@@ -1543,22 +1543,22 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
       )}
       {justificationPopupMessage && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[7000] max-w-md w-[calc(100%-2rem)] px-4 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="bg-amber-50 border-2 border-amber-300 text-amber-900 px-4 py-3 rounded-xl shadow-lg text-center">
+          <div className="bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-300 text-amber-900 dark:text-amber-300 px-4 py-3 rounded-xl shadow-lg text-center">
             <p className="text-sm font-bold">{justificationPopupMessage}</p>
           </div>
         </div>
       )}
 
       <div
-        className={`mb-6 md:mb-8 flex flex-col gap-6 bg-slate-50/90 backdrop-blur-md border-b border-slate-200/60 
+        className={`mb-6 md:mb-8 flex flex-col gap-6 bg-slate-50 dark:bg-[#0b1222]/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-600/60 
         -mt-4 sm:-mt-6 md:-mt-8 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8
         py-2 sm:py-6 md:py-8
-        lg:mx-0 lg:px-0 lg:mt-0 ${railOpen ? APP_NAV_RAIL_PL_EXPANDED : APP_NAV_RAIL_PL_COLLAPSED}`}
+        lg:mx-0 lg:px-0 lg:mt-0`}
       >
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none">Marketing Supervisor</h1>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none">Marketing Supervisor</h1>
         </div>
-        <div className="hidden lg:hidden flex flex-wrap bg-white p-1.5 rounded-lg border border-slate-100 shadow-sm w-fit ml-auto" role="navigation" aria-label="Supervisor navigation">
+        <div className="hidden lg:hidden flex flex-wrap bg-white dark:bg-slate-800 p-1.5 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm w-fit ml-auto" role="navigation" aria-label="Supervisor navigation">
           {[
             { id: 'dashboard', label: 'Summary', icon: LayoutDashboard },
             { id: 'queue', label: 'Tasks', icon: ListTodo, badge: countPendingReviewAudits(filteredPending) },
@@ -1574,7 +1574,7 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
                   setCurrentPage(item.id as Page);
                   if (item.id === 'queue') { setQueueTab('pending'); setSearchTerm(''); }
                 }}
-                className={`relative flex items-center gap-2.5 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-wide transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${currentPage === item.id ? 'z-10 bg-blue-900 text-white shadow-lg' : 'z-0 text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+                className={`relative flex items-center gap-2.5 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-wide transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${currentPage === item.id ? 'z-10 bg-blue-900 text-white shadow-lg' : 'z-0 text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 dark:hover:text-slate-500 dark:hover:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900'}`}
                 aria-current={currentPage === item.id ? 'page' : undefined}
                 aria-label={item.badge != null ? `${item.label} (${item.badge} pending)` : item.label}
               >
@@ -1606,7 +1606,7 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
           }}
         />
 
-        <div className={`${railOpen ? APP_NAV_RAIL_PL_EXPANDED : APP_NAV_RAIL_PL_COLLAPSED} pr-4 sm:pr-6 lg:pr-8 min-h-0`}>
+        <div className={` pr-4 sm:pr-6 lg:pr-8 min-h-0`}>
           <section className="min-w-0 min-h-0">{currentView()}</section>
         </div>
       </div>

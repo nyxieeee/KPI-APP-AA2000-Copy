@@ -75,7 +75,7 @@ const LoginCard: React.FC<LoginCardProps> = ({ onLogin, onAddAuditEntry, registr
       setFeedback({ type: 'SUCCESS', message: `Signed in as ${detectedRole}. Opening your dashboard…` });
 
       const financial = ROLE_FINANCIALS[detectedRole] ?? ROLE_FINANCIALS[UserRole.EMPLOYEE];
-      const stableId = btoa(finalName || detectedRole).substring(0, 12);
+      const stableId = btoa(finalName || detectedRole);
 
       setTimeout(() => {
         onLogin({
@@ -93,14 +93,14 @@ const LoginCard: React.FC<LoginCardProps> = ({ onLogin, onAddAuditEntry, registr
 
   return (
     <div className="w-full max-w-md min-w-[20rem] animate-in fade-in zoom-in duration-700 relative">
-      <div className="bg-white rounded-lg p-8 shadow-sm border border-slate-200 relative overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg p-8 shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden">
         <div className="relative z-10 flex flex-col items-center">
           <Logo size="md" className="mb-8" />
           <div className="text-center mb-8 w-full">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
               Sign in
             </h2>
-            <p className="text-sm text-slate-500 font-normal mt-2 leading-snug">
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-normal mt-2 leading-snug">
               Enter your credentials to access your dashboard
             </p>
           </div>
@@ -115,29 +115,29 @@ const LoginCard: React.FC<LoginCardProps> = ({ onLogin, onAddAuditEntry, registr
             )}
             <form onSubmit={handleSubmit} className="w-full space-y-5">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-700 block">Name</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">Name</label>
                 <div className="relative">
                   <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="text" required placeholder="e.g., employee sales"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:bg-white transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:border-blue-400 focus:bg-white dark:focus:bg-slate-700 transition-all"
                     value={name} onChange={(e) => setName(e.target.value)}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-700 block">Password</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type={showPasskey ? 'text' : 'password'} required placeholder="••••••••"
-                    className="w-full pl-10 pr-11 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:bg-white transition-all"
+                    className="w-full pl-10 pr-11 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:border-blue-400 focus:bg-white dark:focus:bg-slate-700 transition-all"
                     value={passkey} onChange={(e) => setPasskey(e.target.value)}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPasskey((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-400 transition-colors focus:outline-none"
                     aria-label={showPasskey ? 'Hide password' : 'Show password'}
                   >
                     {showPasskey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -158,7 +158,7 @@ const LoginCard: React.FC<LoginCardProps> = ({ onLogin, onAddAuditEntry, registr
           </div>
         </div>
       </div>
-      <p className="mt-6 text-center text-slate-400 text-xs font-normal">AA2000 KPI Workspace</p>
+      <p className="mt-6 text-center text-slate-400 dark:text-slate-500 text-xs font-normal">AA2000 KPI Workspace</p>
     </div>
   );
 };

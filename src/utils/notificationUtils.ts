@@ -28,7 +28,7 @@ export function notifyDepartmentSupervisorsOnSubmission(
   const now = new Date().toISOString();
   const out: SystemNotification[] = [];
   for (const sup of supervisors) {
-    const targetUserId = btoa(sup.name).substring(0, 12);
+    const targetUserId = btoa(sup.name);
     if (targetUserId === submitterUserId) continue;
     out.push({
       id: genId(9),

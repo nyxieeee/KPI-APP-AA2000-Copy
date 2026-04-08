@@ -34,102 +34,102 @@ function CriterionDetailFields({ value }: { value: Record<string, unknown> }) {
   return (
     <div className="space-y-1.5">
       {value.backJobs !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Back-jobs:</span> <span className="font-bold text-slate-900">{String(value.backJobs)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Back-jobs:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.backJobs)}</span>
         </div>
       )}
       {value.fixTime !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Fix Time:</span> <span className="font-bold text-slate-900">{String(value.fixTime)} hrs</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Fix Time:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.fixTime)} hrs</span>
         </div>
       )}
       {value.projectsCompleted !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Projects:</span> <span className="font-bold text-slate-900">{String(value.projectsCompleted)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Projects:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.projectsCompleted)}</span>
         </div>
       )}
       {value.requiresBackJob !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Req. Back-job:</span> <span className="font-bold text-slate-900">{String(value.requiresBackJob)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Req. Back-job:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.requiresBackJob)}</span>
         </div>
       )}
       {value.percentage !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Success Rate:</span> <span className="font-bold text-slate-900">{String(value.percentage)}%</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Success Rate:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.percentage)}%</span>
         </div>
       )}
       {value.totalProjects !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Total Projects:</span> <span className="font-bold text-slate-900">{String(value.totalProjects)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Total Projects:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.totalProjects)}</span>
         </div>
       )}
       {value.onTimeProjects !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>On-Time:</span> <span className="font-bold text-slate-900">{String(value.onTimeProjects)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>On-Time:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.onTimeProjects)}</span>
         </div>
       )}
       {value.csatRating !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>CSAT:</span> <span className="font-bold text-slate-900">{String(value.csatRating)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>CSAT:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.csatRating)}</span>
         </div>
       )}
       {value.complaints !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Complaints:</span> <span className="font-bold text-slate-900">{String(value.complaints)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Complaints:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.complaints)}</span>
         </div>
       )}
       {value.severity !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Severity:</span> <span className="font-bold text-slate-900">{String(value.severity)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Severity:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.severity)}</span>
         </div>
       )}
       {value.visits !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Visits / month:</span> <span className="font-bold text-slate-900">{String(value.visits)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Visits / month:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.visits)}</span>
         </div>
       )}
       {value.conversionRate !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Conversion rate:</span> <span className="font-bold text-slate-900">{String(value.conversionRate)}%</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Conversion rate:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.conversionRate)}%</span>
         </div>
       )}
       {value.rating !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Rating:</span> <span className="font-bold text-slate-900">{String(value.rating)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Rating:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.rating)}</span>
         </div>
       )}
       {value.num !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
           <span>Value:</span>{' '}
-          <span className="font-bold text-slate-900">{value.num === '' ? '—' : String(value.num)}</span>
+          <span className="font-bold text-slate-900 dark:text-slate-100">{value.num === '' ? '—' : String(value.num)}</span>
         </div>
       )}
       {Array.isArray(value.checks) && (
-        <div className="flex justify-between text-[10px] text-slate-500">
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
           <span>Checked:</span>{' '}
-          <span className="font-bold text-slate-900">
+          <span className="font-bold text-slate-900 dark:text-slate-100">
             {(value.checks as boolean[]).filter(Boolean).length} / {(value.checks as boolean[]).length}
           </span>
         </div>
       )}
       {value.rate !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Rate:</span> <span className="font-bold text-slate-900">{String(value.rate)}%</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Rate:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.rate)}%</span>
         </div>
       )}
       {value.absences !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Absences:</span> <span className="font-bold text-slate-900">{String(value.absences)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Absences:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.absences)}</span>
         </div>
       )}
       {value.tardies !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Tardies:</span> <span className="font-bold text-slate-900">{String(value.tardies)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Tardies:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.tardies)}</span>
         </div>
       )}
       {value.violations !== undefined && (
-        <div className="flex justify-between text-[10px] text-slate-500">
-          <span>Violations:</span> <span className="font-bold text-slate-900">{String(value.violations)}</span>
+        <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400">
+          <span>Violations:</span> <span className="font-bold text-slate-900 dark:text-slate-100">{String(value.violations)}</span>
         </div>
       )}
     </div>
@@ -167,7 +167,7 @@ export function TechnicalLogDetailAuditReview({
         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
           <FileCheck className="w-4 h-4 text-white" />
         </div>
-        <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Detailed Audit Review</p>
+        <p className="text-[10px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest">Detailed Audit Review</p>
       </div>
       {categoryOrder.map((category) => {
         const catData = allData[category] || { checklist: {} };
@@ -194,14 +194,14 @@ export function TechnicalLogDetailAuditReview({
           const aggLabel = `${Number.isInteger(m.aggregatePts) ? m.aggregatePts : m.aggregatePts.toFixed(1)} / ${m.categorymaxpoints} pts`;
 
           return (
-            <div key={category} className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-200/50 pb-4">
+            <div key={category} className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-600/50 pb-4">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
                     <Icon className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <h4 className="text-base font-black text-slate-900 uppercase tracking-tight">{displayCategoryName}</h4>
+                    <h4 className="text-base font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">{displayCategoryName}</h4>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                       Category Weight: {weightPct}% · Aggregate: {aggLabel}
                     </p>
@@ -237,11 +237,11 @@ export function TechnicalLogDetailAuditReview({
                   return (
                     <div
                       key={key}
-                      className="bg-white p-5 rounded-[1.5rem] border border-slate-100 flex flex-col justify-between gap-3 hover:border-blue-200 transition-colors shadow-sm"
+                      className="bg-white dark:bg-slate-800 p-5 rounded-[1.5rem] border border-slate-100 dark:border-slate-700 flex flex-col justify-between gap-3 hover:border-blue-200 dark:hover:border-blue-700 transition-colors shadow-sm"
                     >
                       <div>
                         <div className="flex justify-between items-start mb-2">
-                          <span className="text-[11px] font-black text-slate-700 uppercase tracking-tight leading-tight">{mainText}</span>
+                          <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight leading-tight">{mainText}</span>
                           <span className="text-[10px] font-black px-2 py-1 rounded-lg bg-blue-100 text-blue-600">
                             {rowScore} / {maxPts}
                           </span>
@@ -262,14 +262,14 @@ export function TechnicalLogDetailAuditReview({
         const FallbackIcon = CLASSIFICATIONS.find((c) => c.name === category)?.icon || Wrench;
 
         return (
-          <div key={category} className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-200/50 pb-4">
+          <div key={category} className="bg-slate-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-600/50 pb-4">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
                   <FallbackIcon className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h4 className="text-base font-black text-slate-900 uppercase tracking-tight">{displayCategoryName}</h4>
+                  <h4 className="text-base font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">{displayCategoryName}</h4>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category Weight: {weightPct}%</p>
                 </div>
               </div>
@@ -309,11 +309,11 @@ export function TechnicalLogDetailAuditReview({
                 return (
                   <div
                     key={key}
-                    className="bg-white p-5 rounded-[1.5rem] border border-slate-100 flex flex-col justify-between gap-3 hover:border-blue-200 transition-colors shadow-sm"
+                    className="bg-white dark:bg-slate-800 p-5 rounded-[1.5rem] border border-slate-100 dark:border-slate-700 flex flex-col justify-between gap-3 hover:border-blue-200 dark:hover:border-blue-700 transition-colors shadow-sm"
                   >
                     <div>
                       <div className="flex justify-between items-start mb-2">
-                        <span className="text-[11px] font-black text-slate-700 uppercase tracking-tight leading-tight">{mainText}</span>
+                        <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight leading-tight">{mainText}</span>
                         <span className="text-[10px] font-black px-2 py-1 rounded-lg bg-blue-100 text-blue-600">
                           {numScore} / {maxpoints}
                         </span>
@@ -324,8 +324,8 @@ export function TechnicalLogDetailAuditReview({
                     </div>
 
                     {typeof value === 'object' && value != null && (value as { file?: { name: string } }).file && (
-                      <div className="mt-2 pt-2 border-t border-slate-200/50">
-                        <div className="flex items-center gap-2 text-blue-600 bg-blue-50/50 px-3 py-2 rounded-xl border border-blue-100 w-fit">
+                      <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-600/50">
+                        <div className="flex items-center gap-2 text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-3 py-2 rounded-xl border border-blue-100 dark:border-blue-900/50 w-fit">
                           <FileCheck className="w-3 h-3 shrink-0" />
                           <span className="text-[9px] font-bold truncate max-w-[150px]">
                             {(value as { file: { name: string } }).file.name}

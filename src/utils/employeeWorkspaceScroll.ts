@@ -2,13 +2,13 @@
 export const EMPLOYEE_WORKSPACE_ID = 'employee-workspace';
 
 /**
- * The app scrolls inside `<main>`; the page title and scorecard stay above the fold, so
- * changing the sidenav step can look like a no-op unless we scroll this card into view.
+ * Scrolls the main scrollable container back to the top when switching sidebar tabs,
+ * so the new content is immediately visible without the user needing to scroll up.
  */
 export function scrollEmployeeWorkspaceIntoView(): void {
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      document.getElementById(EMPLOYEE_WORKSPACE_ID)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    const main = document.querySelector('main') as HTMLElement | null;
+    if (main) { main.scrollTop = 0; return; }
+    document.getElementById(EMPLOYEE_WORKSPACE_ID)?.scrollIntoView({ behavior: 'instant', block: 'start' });
   });
 }
