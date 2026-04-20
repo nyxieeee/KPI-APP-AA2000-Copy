@@ -1,22 +1,27 @@
 import type { Transmission } from '../types';
 
+export type CategoryAvg = {
+  name: string;
+  avgScore: number;
+  weightPct: number;
+};
+
 export type QuarterlyBreakdown = {
   quarter: 1 | 2 | 3 | 4;
   submissionCount: number;
-  avgPerformance: number;
-  avgProficiency: number;
-  avgProfessionalism: number;
   avgFinalScore: number;
+  topCategories: CategoryAvg[];
 };
 
 export type AnnualSummary = {
   year: number;
-  yearAvgPerformance: number;
-  yearAvgProficiency: number;
-  yearAvgProfessionalism: number;
   yearAvgFinalScore: number;
   totalSubmissions: number;
   quarterly: QuarterlyBreakdown[];
+  // kept for backwards compat
+  yearAvgPerformance: number;
+  yearAvgProficiency: number;
+  yearAvgProfessionalism: number;
 };
 
 export type YearTrendRow = {
@@ -44,6 +49,28 @@ function isValidated(t: Transmission): boolean {
   return t.status === 'validated';
 }
 
+function topCategoriesFromGroup(txs: Transmission[]): CategoryAvg[] {
+  const catMap: Record<string, { scores: number[]; weightPct: number }> = {};
+  for (const t of txs) {
+    const snap = t.ratings?.logDetailSnapshot;
+    if (!snap?.length) continue;
+    for (const entry of snap) {
+      if (!entry?.name) continue;
+      if (!catMap[entry.name]) catMap[entry.name] = { scores: [], weightPct: entry.weightPct ?? 0 };
+      catMap[entry.name].scores.push(entry.score ?? 0);
+      catMap[entry.name].weightPct = entry.weightPct ?? catMap[entry.name].weightPct;
+    }
+  }
+  return Object.entries(catMap)
+    .map(([name, { scores, weightPct }]) => ({
+      name,
+      avgScore: parseFloat(mean(scores).toFixed(1)),
+      weightPct,
+    }))
+    .sort((a, b) => b.weightPct - a.weightPct)
+    .slice(0, 4);
+}
+
 export function getAvailableYears(transmissions: Transmission[]): number[] {
   const years = new Set<number>();
   for (const t of transmissions) {
@@ -56,11 +83,8 @@ export function getAvailableYears(transmissions: Transmission[]): number[] {
 
 export function calculateAnnualSummary(transmissions: Transmission[], year: number): AnnualSummary {
   const inYear = transmissions.filter((t) => isValidated(t) && transmissionYear(t) === year);
-
-  const performances = inYear.map((t) => Number(t.ratings?.performance ?? 0));
-  const proficiencies = inYear.map((t) => Number(t.ratings?.proficiency ?? 0));
-  const professionals = inYear.map((t) => Number(t.ratings?.professionalism ?? 0));
   const finals = inYear.map((t) => Number(t.ratings?.finalScore ?? 0));
+  const yearAvgFinalScore = parseFloat(mean(finals).toFixed(1));
 
   const byQuarter: Record<1 | 2 | 3 | 4, Transmission[]> = { 1: [], 2: [], 3: [], 4: [] };
   for (const t of inYear) {
@@ -75,30 +99,28 @@ export function calculateAnnualSummary(transmissions: Transmission[], year: numb
       return {
         quarter: q,
         submissionCount: arr.length,
-        avgPerformance: mean(arr.map((x) => Number(x.ratings?.performance ?? 0))),
-        avgProficiency: mean(arr.map((x) => Number(x.ratings?.proficiency ?? 0))),
-        avgProfessionalism: mean(arr.map((x) => Number(x.ratings?.professionalism ?? 0))),
-        avgFinalScore: mean(arr.map((x) => Number(x.ratings?.finalScore ?? 0))),
+        avgFinalScore: parseFloat(mean(arr.map((x) => Number(x.ratings?.finalScore ?? 0))).toFixed(1)),
+        topCategories: topCategoriesFromGroup(arr),
       };
     })
     .filter((q) => q.submissionCount > 0);
 
   return {
     year,
-    yearAvgPerformance: mean(performances),
-    yearAvgProficiency: mean(proficiencies),
-    yearAvgProfessionalism: mean(professionals),
-    yearAvgFinalScore: mean(finals),
+    yearAvgFinalScore,
     totalSubmissions: inYear.length,
     quarterly,
+    yearAvgPerformance: yearAvgFinalScore,
+    yearAvgProficiency: yearAvgFinalScore,
+    yearAvgProfessionalism: yearAvgFinalScore,
   };
 }
 
 export function compareAnnualPerformance(summaries: AnnualSummary[]): YearTrendRow[] {
   const sorted = [...summaries].sort((a, b) => a.year - b.year);
   return sorted.map((s, i) => {
-    const prevPerf = i > 0 ? sorted[i - 1].yearAvgPerformance : null;
-    const perf = s.yearAvgPerformance;
+    const prevPerf = i > 0 ? sorted[i - 1].yearAvgFinalScore : null;
+    const perf = s.yearAvgFinalScore;
     let trend: 'up' | 'down' | 'flat' = 'flat';
     if (prevPerf != null) {
       const delta = perf - prevPerf;

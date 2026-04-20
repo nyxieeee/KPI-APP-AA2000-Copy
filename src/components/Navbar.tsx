@@ -64,13 +64,13 @@ const Navbar: React.FC<NavbarProps> = ({ user, onClearLocalCache, registry, onUp
         />
       )}
 
-      <nav className={`bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 lg:sticky lg:top-0 z-[1000] h-20 flex items-center shadow-sm dark:shadow-slate-900/50 transition-opacity duration-150 ${isSettingsOpen ? 'opacity-0 pointer-events-none select-none' : ''}`}>
-        <div className="max-w-[1800px] mx-auto w-full px-4 md:px-12 flex items-center justify-between">
-          <div className="flex items-center gap-3 sm:gap-6 md:gap-10">
+      <nav className={`bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-[1000] h-16 sm:h-20 flex items-center shadow-sm dark:shadow-slate-900/50 transition-opacity duration-150 ${isSettingsOpen ? 'opacity-0 pointer-events-none select-none' : ''}`}>
+        <div className="max-w-[1800px] mx-auto w-full px-3 sm:px-4 md:px-12 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-6 md:gap-10">
             <button
               type="button"
               onClick={mobileNav.toggle}
-              className="lg:hidden p-2.5 rounded-2xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              className="lg:hidden p-2 sm:p-2.5 rounded-2xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               aria-label="Open navigation menu"
               title="Menu"
             >
@@ -81,17 +81,17 @@ const Navbar: React.FC<NavbarProps> = ({ user, onClearLocalCache, registry, onUp
             </Link>
           </div>
 
-          <div className="flex items-center gap-1 md:gap-2">
+          <div className="flex items-center gap-0 sm:gap-1 md:gap-2">
             {/* Dark mode toggle */}
             <button
               onClick={toggleDark}
-              className="p-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white rounded-2xl transition-all"
+              className="p-2 sm:p-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white rounded-2xl transition-all"
               aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
               title={isDark ? 'Light mode' : 'Dark mode'}
             >
               {isDark
-                ? <Sun className="w-5 h-5 text-amber-400" />
-                : <Moon className="w-5 h-5" />
+                ? <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+                : <Moon className="w-4 h-4 sm:w-5 sm:h-5" />
               }
             </button>
 
@@ -99,16 +99,16 @@ const Navbar: React.FC<NavbarProps> = ({ user, onClearLocalCache, registry, onUp
             <div className="relative" ref={bellRef}>
               <button
                 onClick={() => setIsBellOpen(o => !o)}
-                className="relative p-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white rounded-2xl transition-all"
+                className="relative p-2 sm:p-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white rounded-2xl transition-all"
                 aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
               >
-                <Bell className="w-5 h-5" />
+                <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
+                  <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
                 )}
               </button>
               {isBellOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-lg z-[2000] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed sm:absolute left-2 right-2 sm:left-auto sm:right-0 top-[4.5rem] sm:top-full sm:mt-2 sm:w-80 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-lg z-[2000] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                   <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                     <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Notifications</h3>
                     {unreadCount > 0 && (
@@ -120,7 +120,7 @@ const Navbar: React.FC<NavbarProps> = ({ user, onClearLocalCache, registry, onUp
                       </button>
                     )}
                   </div>
-                  <div className="max-h-72 overflow-y-auto">
+                  <div className="max-h-[50vh] sm:max-h-72 overflow-y-auto">
                     {notifications.length === 0 ? (
                       <div className="px-5 py-8 text-center">
                         <Bell className="w-8 h-8 text-slate-200 dark:text-slate-600 mx-auto mb-2" />
@@ -151,13 +151,13 @@ const Navbar: React.FC<NavbarProps> = ({ user, onClearLocalCache, registry, onUp
             {/* Settings */}
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="p-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white rounded-2xl transition-all"
+              className="p-2 sm:p-3 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white rounded-2xl transition-all"
               aria-label="Open settings"
             >
-              <Settings className="w-5 h-5" />
+              <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
-            <div className="h-8 w-px bg-slate-100 dark:bg-[#0d1526] mx-1 md:mx-2"></div>
+            <div className="hidden sm:block h-8 w-px bg-slate-100 dark:bg-[#0d1526] mx-1 md:mx-2"></div>
 
             <div className="hidden md:block text-right">
               <p className="text-xs font-black text-slate-900 dark:text-white leading-none">{user.name}</p>

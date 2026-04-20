@@ -2202,7 +2202,8 @@ const AdminDashboard: React.FC<Props> = ({
 
             return (
               <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-sm overflow-hidden">
-                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-0 text-[10px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500 px-5 py-3 border-b border-slate-100 dark:border-slate-700">
+                <div className="overflow-x-auto">
+                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-0 text-[10px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500 px-5 py-3 border-b border-slate-100 dark:border-slate-700 min-w-[340px]">
                   <span>Employee</span>
                   <span className="text-center px-4">Last Month</span>
                   <span className="text-center px-4">This Month</span>
@@ -2211,7 +2212,7 @@ const AdminDashboard: React.FC<Props> = ({
                 {rows.map(row => {
                   const diff = row.current != null && row.last != null ? row.current - row.last : null;
                   return (
-                    <div key={row.name} className="grid grid-cols-[1fr_auto_auto_auto] gap-0 items-center px-5 py-2 border-b border-slate-50 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                    <div key={row.name} className="grid grid-cols-[1fr_auto_auto_auto] gap-0 items-center px-5 py-2 border-b border-slate-50 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors min-w-[340px]">
                       <div>
                         <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{row.name}</p>
                         <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">{row.dept}</p>
@@ -2251,6 +2252,7 @@ const AdminDashboard: React.FC<Props> = ({
                     </div>
                   );
                 })}
+                </div>{/* end overflow-x-auto */}
               </div>
             );
           })()}
@@ -2554,11 +2556,11 @@ const AdminDashboard: React.FC<Props> = ({
       return (
         <div
           key={userName}
-          className={`group flex items-center justify-between p-5 rounded-lg transition-all border ${baseBg}`}
+          className={`group flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 sm:p-5 rounded-lg transition-all border ${baseBg}`}
         >
           <div className="flex items-center gap-4">
             <div
-              className={`w-12 h-12 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-xs font-black shadow-sm border-2 ${
+              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-xs font-black shadow-sm border-2 shrink-0 ${
                 isActive
                   ? 'border-blue-700 text-blue-700 dark:text-blue-400'
                   : 'border-red-400 text-red-500'
@@ -2566,21 +2568,21 @@ const AdminDashboard: React.FC<Props> = ({
             >
               {userName.charAt(0)}
             </div>
-            <div>
-              <p className="text-sm font-black text-slate-900 dark:text-slate-100">
+            <div className="min-w-0">
+              <p className="text-sm font-black text-slate-900 dark:text-slate-100 truncate">
                 {userName} - {roleMap[userName]?.role || 'Employee'}
               </p>
-              <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
+              <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wide">
                 USER_ID: {btoa(userName).substring(0, 8).toUpperCase()}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-3">
-            <span className="text-[9px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500">
+          <div className="flex flex-row items-center justify-end sm:flex-col sm:items-end gap-2 sm:gap-3">
+            <span className="text-[9px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500 mr-auto sm:mr-0">
               {isActive ? 'Active' : 'Inactive'}
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => handleToggleStatus(userName)}
                 disabled={isLastActiveAdmin}
@@ -2608,7 +2610,7 @@ const AdminDashboard: React.FC<Props> = ({
               </button>
               <button
                 onClick={() => handleOpenEdit(userName)}
-                className="p-2.5 rounded-xl text-slate-300 hover:text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all"
+                className="p-1.5 sm:p-2.5 rounded-xl text-slate-300 hover:text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all"
                 title="Edit user"
               >
                 <Settings className="w-4 h-4" />
@@ -2617,7 +2619,7 @@ const AdminDashboard: React.FC<Props> = ({
                 <div className="relative" data-transfer-menu="true">
                   <button
                     onClick={() => setTransferringNode(transferringNode === userName ? null : userName)}
-                    className={`p-2.5 rounded-xl transition-all ${
+                    className={`p-1.5 sm:p-2.5 rounded-xl transition-all ${
                       transferringNode === userName
                         ? 'text-blue-600'
                         : 'text-slate-300 hover:text-blue-500 hover:bg-slate-50 dark:hover:bg-slate-900'
@@ -2696,7 +2698,7 @@ const AdminDashboard: React.FC<Props> = ({
         </div>
 
         {/* Department status overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(180px,1fr)_minmax(0,2.8fr)] gap-6 items-stretch bg-slate-50 dark:bg-slate-900 rounded-lg pt-7 pb-3 px-6 lg:pt-9 lg:pb-4 lg:px-10 shadow-lg border border-slate-200 dark:border-slate-600/70 text-slate-900 dark:text-slate-100 relative overflow-hidden mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(180px,1fr)_minmax(0,2.8fr)] gap-6 items-stretch bg-slate-50 dark:bg-slate-900 rounded-lg pt-4 pb-3 px-4 lg:pt-9 lg:pb-4 lg:px-10 shadow-lg border border-slate-200 dark:border-slate-600/70 text-slate-900 dark:text-slate-100 relative overflow-hidden mb-6">
           {/* Decorative background blobs removed for pure light background */}
           {/* Panel 1/3: Team status */}
           <div className="flex flex-col gap-3 min-w-0 justify-start pb-4 border-b border-slate-200 dark:border-slate-600/70 lg:pb-0 lg:border-b-0">
@@ -2733,10 +2735,9 @@ const AdminDashboard: React.FC<Props> = ({
             </div>
           </div>
 
-          <div className="rounded-[1.75rem] bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-600/70 p-5 lg:p-6 w-full min-w-0 overflow-x-auto">
+          <div className="rounded-[1.75rem] bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-600/70 p-5 lg:p-6 w-full min-w-0">
             <div
-              className="grid grid-cols-1 xl:grid-cols-[max-content_minmax(420px,1fr)] gap-6 items-start w-max min-w-full"
-              style={{ minWidth: '860px' }}
+              className="grid grid-cols-1 xl:grid-cols-[max-content_minmax(0,1fr)] gap-6 items-start w-full"
             >
               {/* Panel 2/3: Department average — donut LEFT, Q1-Q4 bars RIGHT */}
               <div className="flex flex-col justify-start pb-4 xl:pb-0 border-b xl:border-b-0 border-slate-200 dark:border-slate-600/60 min-w-0">
@@ -2753,8 +2754,8 @@ const AdminDashboard: React.FC<Props> = ({
                     </p>
                   </div>
                 </div>
-                {/* Donut + Q1-Q4: flex-shrink-0 wrapper so the whole unit never compresses */}
-                <div className="flex items-center flex-shrink-0 w-max gap-10">
+                {/* Donut + Q1-Q4: mobile = centered column, sm+ = row */}
+                <div className="flex flex-col items-center sm:flex-row sm:items-center sm:flex-wrap gap-6 sm:gap-10">
                   <div className="relative w-36 h-36 flex-shrink-0">
                     <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                       <circle cx="50" cy="50" r="40" fill="none" stroke="rgb(30 64 175 / 0.25)" strokeWidth="10" strokeLinecap="round" />
@@ -2764,35 +2765,55 @@ const AdminDashboard: React.FC<Props> = ({
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-[9px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500">Dept avg</span>
+                      <span className="text-[9px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500">Dept avg</span>
                       <span className="text-2xl font-black text-blue-500">
                         {Math.round(animatedDeptPerfRatio * 100)}%
                       </span>
                     </div>
                   </div>
-                  {/* Q1–Q4 bars keep constant size; container scrolls instead of shrinking */}
+
+                  {/* Mobile: horizontal bars. sm+: vertical bars */}
+                  {/* VERTICAL bars (sm and up) */}
                   <div
-                    className="flex items-end flex-shrink-0"
+                    className="hidden sm:flex items-end flex-shrink-0"
                     style={{ height: '144px', gap: '10px' }}
                   >
                     {['Q1', 'Q2', 'Q3', 'Q4'].map((label, idx) => {
                       const value = deptQuarterScores[idx] || 0;
                       const animatedVal = animatedDeptQuarterScores[idx] ?? 0;
                       const heightPct = Math.min(100, Math.max(0, animatedVal));
-                      const barWidth = '22px';
                       return (
-                        <div key={label} className="flex flex-col items-center justify-end gap-0.5 flex-shrink-0 h-full" style={{ width: barWidth }}>
-                          <span className="font-black text-slate-600 dark:text-slate-400 dark:text-slate-400 tabular-nums text-center leading-none text-[8px]">
+                        <div key={label} className="flex flex-col items-center justify-end gap-0.5 flex-shrink-0 h-full" style={{ width: '22px' }}>
+                          <span className="font-black text-slate-600 dark:text-slate-400 tabular-nums text-center leading-none text-[8px]">
                             {Math.round(value)}%
                           </span>
                           <div className="relative flex-1 w-full rounded-sm bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-end">
-                            <div
-                              className="w-full bg-[#3880F0] transition-none"
-                              style={{ height: `${heightPct}%` }}
-                            />
+                            <div className="w-full bg-[#3880F0] transition-none" style={{ height: `${heightPct}%` }} />
                           </div>
-                          <span className="font-black uppercase tracking-wide text-slate-500 dark:text-slate-400 dark:text-slate-400 leading-none text-[8px]">
+                          <span className="font-black uppercase tracking-wide text-slate-500 dark:text-slate-400 leading-none text-[8px]">
                             {label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* HORIZONTAL bars (mobile only) */}
+                  <div className="flex sm:hidden flex-col gap-2 w-full">
+                    {['Q1', 'Q2', 'Q3', 'Q4'].map((label, idx) => {
+                      const value = deptQuarterScores[idx] || 0;
+                      const animatedVal = animatedDeptQuarterScores[idx] ?? 0;
+                      const widthPct = Math.min(100, Math.max(0, animatedVal));
+                      return (
+                        <div key={label} className="flex items-center gap-2">
+                          <span className="w-5 text-[8px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400 shrink-0">
+                            {label}
+                          </span>
+                          <div className="flex-1 h-4 rounded-sm bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                            <div className="h-full bg-[#3880F0] transition-none" style={{ width: `${widthPct}%` }} />
+                          </div>
+                          <span className="w-7 text-right text-[8px] font-black text-slate-600 dark:text-slate-400 tabular-nums shrink-0">
+                            {Math.round(value)}%
                           </span>
                         </div>
                       );
@@ -2802,7 +2823,7 @@ const AdminDashboard: React.FC<Props> = ({
               </div>
 
               {/* Panel 3/3: Department performance — compact */}
-              <div className="flex flex-col justify-start overflow-hidden py-2 lg:py-0">
+              <div className="flex flex-col justify-start overflow-hidden py-2 lg:py-0 xl:pl-6">
                 <div className="flex items-center gap-3 mb-2 min-h-[36px]">
                   <div className="w-8 h-8 bg-white dark:bg-slate-800/70 rounded-lg flex items-center justify-center shadow shadow-sky-500/10 border border-slate-200 dark:border-slate-600 flex-shrink-0">
                     <Cpu className="w-4 h-4 text-sky-500" />
@@ -2839,7 +2860,7 @@ const AdminDashboard: React.FC<Props> = ({
           </div>
       </div>
 
-        <div className="space-y-4 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800/70 shadow-sm p-6">
+        <div className="space-y-4 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800/70 shadow-sm p-4 sm:p-6">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex flex-col gap-2 flex-1">
@@ -2857,14 +2878,14 @@ const AdminDashboard: React.FC<Props> = ({
                   />
                 </div>
               </div>
-              <div className="flex items-center gap-3 flex-wrap justify-between md:justify-end">
-                <div className="flex bg-slate-100 dark:bg-[#0d1526]/90 p-1.5 rounded-lg border border-slate-200 dark:border-slate-600/60 shadow-inner gap-1">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                <div className="grid grid-cols-3 w-full sm:w-auto bg-slate-100 dark:bg-[#0d1526]/90 p-1.5 rounded-lg border border-slate-200 dark:border-slate-600/60 shadow-inner gap-1">
                   {(['all', 'active', 'inactive'] as const).map(filter => (
                     <button
                       key={filter}
                       type="button"
                       onClick={() => setRegistryStatusFilter(filter)}
-                      className={`min-w-[3.5rem] px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.18em] transition-all ${
+                      className={`w-full py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.18em] transition-all ${
                         (registryStatusFilter ?? 'all') === filter
                           ? 'bg-blue-600 text-white shadow-md'
                           : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-500'
@@ -2876,7 +2897,7 @@ const AdminDashboard: React.FC<Props> = ({
                 </div>
                   <button
                   onClick={() => setIsProvisioning(true)}
-                  className="flex items-center gap-2.5 px-5 py-3 rounded-lg bg-blue-600 text-white text-[11px] font-black uppercase tracking-wide shadow-md shadow-blue-600/25 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-600/30 active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-[10px] font-black uppercase tracking-wide shadow-md shadow-blue-600/25 hover:bg-blue-500 active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   <UserPlus className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
                   Add user
@@ -3076,14 +3097,14 @@ const AdminDashboard: React.FC<Props> = ({
           
           <button 
             onClick={handleExportLogs}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-600/20 text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-2"
+            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm text-[9px] font-black uppercase tracking-wide flex items-center gap-1.5 shrink-0 whitespace-nowrap"
           >
-            <Download className="w-4 h-4 text-white" />
-            <span className="text-[10px] font-black uppercase tracking-[0.15em]">EXPORT SYSTEM LOGS</span>
+            <Download className="w-3 h-3 text-white shrink-0" />
+            <span>Export Logs</span>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-5 bg-white dark:bg-slate-800/80 rounded-3xl border border-slate-200 dark:border-slate-600 shadow-sm">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 md:p-5 bg-white dark:bg-slate-800/80 rounded-3xl border border-slate-200 dark:border-slate-600 shadow-sm">
           <div className="space-y-1.5">
             <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Department</label>
             <div className="relative">
@@ -3237,8 +3258,8 @@ const AdminDashboard: React.FC<Props> = ({
         />
 
         {/* Header + Search */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-4 sm:p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div className="flex items-center gap-4 min-w-0">
               <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
                 <ShieldCheck className="w-5 h-5 text-white" />
@@ -3257,13 +3278,13 @@ const AdminDashboard: React.FC<Props> = ({
                 value={validationSearch}
                 onChange={(e) => setValidationSearch(e.target.value)}
                 placeholder="Search by name or submission ID..."
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-[10px] font-black text-slate-800 dark:text-slate-200 outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-300 dark:border-blue-600"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-[10px] font-black text-slate-800 dark:text-slate-200 outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-blue-300 dark:border-blue-600"
               />
             </div>
           </div>
 
           {/* Status Sub-tabs: Pending / Validated / Rejected */}
-          <div className="mt-4 flex gap-2 flex-wrap">
+          <div className="mt-4 grid grid-cols-3 gap-2">
             {statusTabConfig.map(({ key, label, count, color }) => {
               const isActive = validationStatusTab === key;
               const colorMap = {
@@ -3277,7 +3298,7 @@ const AdminDashboard: React.FC<Props> = ({
                   key={key}
                   type="button"
                   onClick={() => { setValidationStatusTab(key); setValidationSearch(''); }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-[10px] font-black uppercase tracking-wide transition-all ${isActive ? c.active : `bg-white dark:bg-slate-800 ${c.inactive}`}`}
+                  className={`w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-[9px] font-black uppercase tracking-wide transition-all ${isActive ? c.active : `bg-white dark:bg-slate-800 ${c.inactive}`}`}
                 >
                   {label}
                   <span className={`inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-md text-[9px] font-black ${isActive ? c.badge : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
@@ -3297,7 +3318,7 @@ const AdminDashboard: React.FC<Props> = ({
             <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 max-w-[360px] leading-relaxed">{emptyMessages[validationStatusTab].desc}</p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-6">
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-3 sm:p-6">
             <div className="flex flex-col gap-3">
               {filtered
                 .slice()
@@ -3308,7 +3329,7 @@ const AdminDashboard: React.FC<Props> = ({
                   return (
                     <div
                       key={t.id}
-                      className="group flex items-center justify-between gap-4 p-5 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-700 hover:shadow-sm transition-all"
+                      className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-5 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-700 hover:shadow-sm transition-all"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-3 flex-wrap">
@@ -3362,7 +3383,7 @@ const AdminDashboard: React.FC<Props> = ({
 
                       {/* Action buttons — only for pending */}
                       {validationStatusTab === 'pending' && (
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 w-full sm:w-auto sm:shrink-0">
                           <button
                             type="button"
                             onClick={() => {
@@ -3693,7 +3714,7 @@ const AdminDashboard: React.FC<Props> = ({
   };
 
   return (
-    <div className="w-full max-w-full xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 flex flex-col pb-6 md:pb-12 min-h-0 flex-1 overflow-auto">
+    <div className="w-full max-w-full xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto flex flex-col pb-6 md:pb-12 flex-1">
       {dataDeleteCountdownOpen && (
         <div className="fixed inset-0 z-[9500] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm overflow-hidden">
@@ -5432,7 +5453,7 @@ const AdminDashboard: React.FC<Props> = ({
                         className={`rounded-xl border overflow-visible shadow-sm ${isContentPointSumValid ? 'border-slate-200 dark:border-slate-600/90 bg-slate-50 dark:bg-slate-900/40' : 'border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30'}`}
                       >
                         <div className="p-4 space-y-3">
-                            <div className="grid grid-cols-[auto_minmax(0,240px)_1fr_auto] gap-3 items-center min-w-0">
+                            <div className="grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_minmax(0,240px)_1fr_auto] gap-3 items-center min-w-0">
                             <div className="relative shrink-0" style={{ zIndex: gradingIconPickerOpen === idx ? 5100 : undefined }}>
                               <button
                                 type="button"
@@ -5676,16 +5697,18 @@ const AdminDashboard: React.FC<Props> = ({
 
       <div className="flex-grow flex flex-col min-h-0">
         {/* Mobile header (navigation moved to burger drawer) */}
-        <div className="mb-8 flex flex-col gap-6 lg:hidden">
+        {/* Mobile header */}
+        <div className="mb-3 flex flex-col gap-2 lg:hidden">
           <div>
-            <h1 className="text-[34px] font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none">
+            <h1 className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none">
               Admin Dashboard
             </h1>
-            <p className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-slate-100 to-blue-50 border border-slate-200 dark:border-slate-600/80 shadow-sm">
-              <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">Signed in as</span>
-              <span className="text-slate-800 dark:text-slate-200 font-bold text-sm uppercase tracking-wide">{user.name}</span>
+            <p className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-slate-100 to-blue-50 dark:from-slate-800/50 dark:to-slate-800/30 border border-slate-200 dark:border-slate-600/80 shadow-sm">
+              <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide">Signed in as</span>
+              <span className="text-slate-800 dark:text-slate-200 font-bold text-xs uppercase tracking-wide">{user.name}</span>
             </p>
           </div>
+
         </div>
 
         {/* Desktop layout: fixed sidenav + content (reference-style) */}
@@ -5802,8 +5825,8 @@ const AdminDashboard: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Non-desktop: keep mobile header + top tabs */}
-        <div className="lg:hidden">
+        {/* Non-desktop: content panel */}
+        <div className="lg:hidden flex flex-col gap-4 pb-8">
           {activeTab === 'registry' && renderRegistry()}
           {activeTab === 'validation' && renderValidation()}
           {activeTab === 'grading' && renderGrading()}

@@ -1,5 +1,11 @@
 /* Global layout and scrollbar behavior. Tailwind loaded via CDN in index.html. */
-html, body, #root {
+html, body {
+  margin: 0;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden; /* prevent sideways scrolling from negative-margin bleed / fixed elements */
+}
+#root {
   margin: 0;
   min-height: 100vh;
   width: 100%;
@@ -30,7 +36,7 @@ html.dark *::-webkit-scrollbar-thumb:hover {
   flex-direction: column;
 }
 
-/* Style scrollbars globally but don't hide them — non-tech users rely on scrollbars to know content continues */
+/* Style scrollbars globally */
 * {
   scrollbar-width: thin;
   scrollbar-color: #e2e8f0 transparent;
@@ -51,7 +57,7 @@ html.dark *::-webkit-scrollbar-thumb:hover {
   background: #cbd5e1;
 }
 
-/* Minimal scrollbar for Directive History and other custom-scrollbar containers (right side, draggable) */
+/* Minimal scrollbar for custom-scrollbar containers */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
@@ -77,21 +83,6 @@ html.dark *::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 .custom-scrollbar::-webkit-scrollbar-button {
-  width: 0;
-  height: 0;
-  background: transparent;
-  border: 0;
-}
-.custom-scrollbar::-webkit-scrollbar-button:single-button {
-  width: 0;
-  height: 0;
-  background: transparent;
-  border: 0;
-}
-.custom-scrollbar::-webkit-scrollbar-button:vertical:start:decrement,
-.custom-scrollbar::-webkit-scrollbar-button:vertical:end:increment,
-.custom-scrollbar::-webkit-scrollbar-button:horizontal:start:decrement,
-.custom-scrollbar::-webkit-scrollbar-button:horizontal:end:increment {
   width: 0;
   height: 0;
   background: transparent;
@@ -123,7 +114,7 @@ html.dark *::-webkit-scrollbar-thumb:hover {
   animation: ring-pulse 2.2s ease-in-out infinite;
 }
 
-/* Gradient range slider (edit weighted scores panel): gray track, gradient fill (light blue → dark blue), set --value on input */
+/* Gradient range slider */
 .range-gradient {
   -webkit-appearance: none;
   appearance: none;
@@ -171,62 +162,24 @@ html.dark *::-webkit-scrollbar-thumb:hover {
 }
 
 /* ============================================================
-   UI CLEANUP OVERRIDES — tighter spacing, cleaner cards
+   BORDER RADIUS — tighten extreme pill shapes
+   ============================================================ */
+.rounded-\[3rem\]    { border-radius: 1rem !important; }
+.rounded-\[2\.5rem\] { border-radius: 0.875rem !important; }
+.rounded-\[2rem\]    { border-radius: 0.75rem !important; }
+.rounded-\[1\.5rem\] { border-radius: 0.625rem !important; }
+.rounded-\[1rem\]    { border-radius: 0.5rem !important; }
+
+/* ============================================================
+   MOBILE LAYOUT — safe overflow containment
    ============================================================ */
 
-/* Tighten the extreme border-radius pill shapes down to something clean */
-.rounded-\[3rem\]  { border-radius: 1rem !important; }
-.rounded-\[2\.5rem\] { border-radius: 0.875rem !important; }
-.rounded-\[2rem\]  { border-radius: 0.75rem !important; }
-.rounded-\[1\.5rem\] { border-radius: 0.625rem !important; }
-.rounded-\[1rem\]  { border-radius: 0.5rem !important; }
-
-/* Tighten modal/card padding on mobile */
-@media (max-width: 768px) {
-  .p-8 { padding: 1.25rem !important; }
-  .p-10 { padding: 1.5rem !important; }
-  .p-12 { padding: 1.5rem !important; }
-  .md\:p-12 { padding: 1.5rem !important; }
-  .p-6 { padding: 1rem !important; }
+/* Prevent any child from creating horizontal overflow */
+.overflow-y-auto {
+  overflow-x: hidden;
 }
 
-/* Fix the floating toast feedback — stop it from floating off-screen or overlapping */
-.absolute.bottom-full {
-  position: static !important;
-  transform: none !important;
-  margin-bottom: 0 !important;
-  margin-top: 0 !important;
-  width: 100% !important;
-}
-/* Wrap the toast container so it flows in normal layout instead of floating */
-.w-full.relative > .absolute.bottom-full {
-  display: block;
-  margin-bottom: 0.75rem;
-}
-
-/* Shrink oversized buttons — py-4 is too tall */
-button.py-4:not(.range-gradient) {
-  padding-top: 0.6rem !important;
-  padding-bottom: 0.6rem !important;
-}
-button.py-5 {
-  padding-top: 0.65rem !important;
-  padding-bottom: 0.65rem !important;
-}
-
-/* Reduce tracking on uppercase button labels — too spread out */
-.tracking-\[0\.2em\] { letter-spacing: 0.05em !important; }
-.tracking-\[0\.3em\] { letter-spacing: 0.06em !important; }
-.tracking-widest    { letter-spacing: 0.08em !important; }
-
-/* Tighten card padding inside dashboards on all screens */
-.p-8.rounded-\[2rem\],
-.p-8.rounded-\[2\.5rem\],
-.p-8.rounded-\[3rem\] {
-  padding: 1.25rem !important;
-}
-
-/* Reduce the 22rem fixed-height panels that clip content on small screens */
+/* Reduce fixed-height panels that clip content on small screens */
 @media (max-width: 1024px) {
   .h-\[22rem\], .min-h-\[22rem\] {
     height: auto !important;
@@ -234,63 +187,141 @@ button.py-5 {
   }
 }
 
-/* Soften the shadow overkill */
-.shadow-2xl { box-shadow: 0 4px 24px rgba(0,0,0,0.08) !important; }
-.shadow-xl  { box-shadow: 0 2px 12px rgba(0,0,0,0.07) !important; }
-
-/* Login card: don't let it get too wide on mobile */
+/* Login card: full-width on very small screens */
 @media (max-width: 480px) {
-  .max-w-md { max-width: 100% !important; }
+  .max-w-md { max-width: calc(100vw - 2rem) !important; }
   .min-w-\[20rem\] { min-width: unset !important; }
 }
 
-/* Navbar height — keep consistent at 80px to match sidenav top-20 */
-/* nav.h-20 override removed — keeping h-20 (5rem) to match APP_NAV_SIDENAV_TOP */
+/* ============================================================
+   MOBILE DASHBOARD — comprehensive type + spacing scale-down
+   ============================================================ */
 
-/* Reduce the large stat numbers' surrounding padding */
+/* --- Global type scale (all screens, cap the extremes) --- */
+.text-6xl { font-size: 2.25rem !important; line-height: 1.05 !important; }
+.text-5xl { font-size: 2rem    !important; line-height: 1.08 !important; }
+.text-4xl { font-size: 1.65rem !important; line-height: 1.12 !important; }
+.text-3xl { font-size: 1.35rem !important; line-height: 1.2  !important; }
+.text-2xl { font-size: 1.15rem !important; line-height: 1.25 !important; }
+.text-xl  { font-size: 1rem    !important; line-height: 1.3  !important; }
+.text-lg  { font-size: 0.9375rem !important; line-height: 1.4 !important; }
+.text-base{ font-size: 0.875rem !important; line-height: 1.45 !important; }
+
+/* --- Tighter heading combos used in dashboards --- */
+h1.font-black, h2.font-black { letter-spacing: -0.01em !important; }
+h3.font-black { letter-spacing: 0.02em !important; }
+
+/* Welcome headline specifically */
+h1.text-2xl.font-black,
+h1.text-3xl.font-black { font-size: 1.15rem !important; }
+
+/* --- Spacing: all screens, reduce generous defaults --- */
+.space-y-10 > * + * { margin-top: 1.5rem  !important; }
+.space-y-8  > * + * { margin-top: 1.25rem !important; }
+.space-y-6  > * + * { margin-top: 1rem    !important; }
+
+/* --- Mobile-specific (≤640 px) --- */
+@media (max-width: 640px) {
+
+  /* Type */
+  .text-6xl  { font-size: 1.6rem  !important; }
+  .text-5xl  { font-size: 1.5rem  !important; }
+  .text-4xl  { font-size: 1.3rem  !important; }
+  .text-3xl  { font-size: 1.1rem  !important; }
+  .text-2xl  { font-size: 1rem    !important; }
+  .text-xl   { font-size: 0.9rem  !important; }
+  .text-lg   { font-size: 0.875rem !important; }
+  .text-base { font-size: 0.8125rem !important; }
+  .text-sm   { font-size: 0.75rem !important; }
+
+  /* Welcome headline */
+  h1.font-black { font-size: 1rem !important; }
+
+  /* Padding — cards & sections */
+  .p-10 { padding: 1rem     !important; }
+  .p-8  { padding: 0.875rem !important; }
+  .p-6  { padding: 0.75rem  !important; }
+  .p-5  { padding: 0.625rem !important; }
+  .px-10, .px-8 { padding-left: 0.875rem !important; padding-right: 0.875rem !important; }
+  .px-6  { padding-left: 0.75rem  !important; padding-right: 0.75rem  !important; }
+  .px-5  { padding-left: 0.625rem !important; padding-right: 0.625rem !important; }
+  .py-10, .py-8 { padding-top: 0.875rem !important; padding-bottom: 0.875rem !important; }
+  .py-6  { padding-top: 0.75rem  !important; padding-bottom: 0.75rem  !important; }
+  .py-5  { padding-top: 0.625rem !important; padding-bottom: 0.625rem !important; }
+  .py-4  { padding-top: 0.5rem   !important; padding-bottom: 0.5rem   !important; }
+
+  /* Gaps */
+  .gap-10 { gap: 0.875rem !important; }
+  .gap-8  { gap: 0.75rem  !important; }
+  .gap-6  { gap: 0.625rem !important; }
+  .gap-5  { gap: 0.5rem   !important; }
+  .gap-4  { gap: 0.5rem   !important; }
+
+  /* Spacing helpers */
+  .space-y-10 > * + * { margin-top: 1rem    !important; }
+  .space-y-8  > * + * { margin-top: 0.875rem !important; }
+  .space-y-6  > * + * { margin-top: 0.75rem  !important; }
+  .space-y-5  > * + * { margin-top: 0.625rem !important; }
+  .space-y-4  > * + * { margin-top: 0.5rem   !important; }
+
+  /* Submit step — "Ready to Submit" section */
+  .py-10.space-y-10 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+
+  /* Footer nav bar in dashboards */
+  .rounded-b-\[2\.5rem\] .p-6 { padding: 0.625rem 0.75rem !important; }
+
+  /* Grade badge large letter */
+  .text-2xl.font-black.tabular-nums,
+  span.text-2xl.font-black { font-size: 1.1rem !important; }
+
+  /* Grid — force max 2 cols */
+  .grid-cols-3,
+  .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+  /* Button padding in nav footer */
+  .px-10.py-2, .px-12.py-2, .px-10.py-3 {
+    padding-left: 0.75rem  !important;
+    padding-right: 0.75rem !important;
+    padding-top: 0.5rem    !important;
+    padding-bottom: 0.5rem !important;
+  }
+  .px-6.py-3 {
+    padding-left: 0.625rem  !important;
+    padding-right: 0.625rem !important;
+    padding-top: 0.5rem     !important;
+    padding-bottom: 0.5rem  !important;
+  }
+}
+
+/* ============================================================
+   SHADOWS
+   ============================================================ */
+.shadow-2xl { box-shadow: 0 4px 24px rgba(0,0,0,0.08) !important; }
+.shadow-xl  { box-shadow: 0 2px 12px rgba(0,0,0,0.07) !important; }
+
+/* Numeric stat lines */
 .tabular-nums.text-3xl,
 .tabular-nums.text-6xl {
   line-height: 1.1 !important;
 }
 
 /* ============================================================
-   TYPOGRAPHY UNIFORMITY — normalize heading/label sizes
+   TYPOGRAPHY UNIFORMITY
    ============================================================ */
 
-/* Normalize dashboard section titles to one consistent size */
-h3.text-xl.font-black,
-h3.text-2xl.font-black {
-  font-size: 1rem !important;
-  letter-spacing: 0.04em !important;
-}
+p.text-sm, span.text-sm, div.text-sm { font-size: 0.8125rem !important; }
+p.text-xs, span.text-xs, label.text-xs { font-size: 0.75rem !important; }
 
-/* Normalize oversized stat numbers in tiles */
-.text-5xl.font-black,
-.text-6xl.font-black {
-  font-size: 2rem !important;
-  line-height: 1.1 !important;
-}
-.text-4xl.font-black {
-  font-size: 1.6rem !important;
-  line-height: 1.15 !important;
-}
-
-/* Consistent body text across dashboards */
-p.text-sm, span.text-sm, div.text-sm {
-  font-size: 0.8125rem !important;
-}
-p.text-xs, span.text-xs, label.text-xs {
-  font-size: 0.75rem !important;
-}
-
-/* Hide all sidenavs and hamburger when Settings modal is open */
+/* Hide sidebars when Settings modal is open */
 body.settings-open aside[aria-label$="sidenav"],
 body.settings-open aside[aria-label="Admin sidenav"] {
   visibility: hidden !important;
   pointer-events: none !important;
 }
 
-/* Grading matrix sliders */
+/* ============================================================
+   GRADING SLIDERS
+   ============================================================ */
 .grading-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -335,38 +366,39 @@ body.settings-open aside[aria-label="Admin sidenav"] {
   cursor: default;
 }
 
-/* Dark mode CSS variables for SVG rings and other non-Tailwind elements */
+/* ============================================================
+   DARK MODE CSS VARIABLES
+   ============================================================ */
 :root {
-  --ring-track: rgb(226 232 240);       /* slate-200 */
-  --ring-track-inner: rgb(241 245 249); /* slate-100 */
+  --ring-track: rgb(226 232 240);
+  --ring-track-inner: rgb(241 245 249);
   --card-bg: rgb(255 255 255);
   --score-text: #0f172a;
   --shadow-glow: rgba(255,255,255,0.1);
 }
 html.dark {
-  --ring-track: rgb(51 65 85);          /* slate-700 */
-  --ring-track-inner: rgb(30 41 59);    /* slate-800 */
+  --ring-track: rgb(51 65 85);
+  --ring-track-inner: rgb(30 41 59);
   --card-bg: rgb(30 41 59);
   --score-text: #f1f5f9;
   --shadow-glow: rgba(0,0,0,0);
 }
 
-/* Kill white shadow glow in dark mode */
+/* Kill white shadow in dark mode */
 html.dark .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.4), 0 8px 10px -6px rgba(0,0,0,0.4); }
 html.dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.4); }
 html.dark .shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3); }
 html.dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.3); }
 html.dark .shadow-inner { box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.4); }
 
-/* Deeper dark palette for outer containers and section wrappers */
-html.dark .bg-slate-50 { background-color: #0f172a !important; }
+/* Deep dark palette */
+html.dark .bg-slate-50  { background-color: #0f172a !important; }
 html.dark .bg-slate-100 { background-color: #0f172a !important; }
 
 /* Page-level scroll area */
 html.dark .overflow-y-auto.overscroll-contain { background-color: #0b1222; }
 
-/* Force numeric/text inputs to dark background in dark mode — CDN Tailwind arbitrary
-   dark: bg values don't always win over bg-white specificity */
+/* Force dark inputs */
 html.dark input[type="text"],
 html.dark input[type="number"],
 html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]) {
@@ -376,4 +408,42 @@ html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):no
 }
 html.dark input::placeholder {
   color: #475569 !important;
+}
+
+/* ============================================================
+   NO-SCROLLBAR UTILITY + MOBILE TAB NAV
+   ============================================================ */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Dashboard tab nav: grid layout, no scrolling, no clipping ──────── */
+/* Supervisor: 4 tabs in 1 row. Admin: 6 tabs in 2×3 grid.             */
+/* Buttons stack icon + label vertically, filling equal column widths.  */
+
+[role="navigation"][aria-label="Supervisor navigation"],
+[role="navigation"][aria-label="Admin navigation"] {
+  /* icons centered above label */
+}
+[role="navigation"][aria-label="Supervisor navigation"] button,
+[role="navigation"][aria-label="Admin navigation"] button {
+  width: 100%;
+  min-width: 0;
+}
+/* Icon sizing inside tab buttons */
+[role="navigation"][aria-label="Supervisor navigation"] button svg,
+[role="navigation"][aria-label="Admin navigation"] button svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+/* Quarter selector — full width */
+@media (max-width: 640px) {
+  .flex.items-end > .flex.w-full {
+    max-width: 100% !important;
+  }
 }

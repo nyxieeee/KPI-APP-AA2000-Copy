@@ -723,7 +723,7 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
                     onDeleteNotification={deleteNotification}
                   />
                   <RailAwareMain>
-                    <div className="px-4 sm:px-5 md:px-6 py-4 md:py-6 flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+                    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 sm:px-5 md:px-6 py-4 md:py-6">
                       <Dashboard
                         user={user}
                         pendingTransmissions={pendingTransmissions}

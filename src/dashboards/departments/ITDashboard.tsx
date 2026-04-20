@@ -6,7 +6,6 @@ import TechnicalCategoryAuditPanel, {
   scoreForCriterionContentItem,
 } from '../../components/employee/TechnicalCategoryAuditPanel';
 import { getEmployeeCategoryIcon } from '../../utils/employeeCategoryIcons';
-import { DraggableLedgerFab } from '../../components/DraggableLedgerFab';
 import { LedgerRegistryPanel } from '../../components/LedgerRegistryModal';
 import { EMPLOYEE_WORKSPACE_ID } from '../../utils/employeeWorkspaceScroll';
 import { DirectDirectiveModal } from '../../components/DirectDirectiveModal';
@@ -868,7 +867,7 @@ const ITDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissio
 
   return (
     <div
-      className={`w-full max-w-full xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col h-full gap-4`}
+      className={`w-full max-w-full xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto flex flex-col gap-4`}
     >
       <DirectDirectiveModal
         open={isBroadcastModalOpen}
@@ -895,7 +894,7 @@ const ITDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissio
 
       {activeStep === 1 && (
         <>
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-slate-50 dark:bg-[#0b1222] backdrop-blur-md border-b border-slate-200 dark:border-slate-600/60 -mt-4 sm:-mt-6 md:-mt-8 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-2 sm:py-6 md:py-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 bg-slate-50 dark:bg-[#0b1222] backdrop-blur-md border-b border-slate-200 dark:border-slate-600/60 -mx-3 sm:-mx-5 md:-mx-6 px-3 sm:px-5 md:px-6 py-4 sm:py-6">
             <div className="space-y-4">
               <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none">Welcome, {user.name}!</h1>
               <p className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-slate-100 to-blue-50 dark:from-slate-800/50 dark:to-slate-800/30 border border-slate-200 dark:border-slate-600/80 shadow-sm">
@@ -935,8 +934,8 @@ const ITDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissio
         </>
       )}
 
-      <div className="flex-1 min-h-0 flex flex-col">
-        <div className="flex flex-col flex-1 min-h-0 gap-3">
+      <div>
+        <div className="flex flex-col gap-3">
           <div className="hidden lg:block">
             <RoleSidenav
               roleLabel="Employee"
@@ -968,12 +967,12 @@ const ITDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissio
             />
           </div>
 
-          <div className="min-h-0">
+          <div>
             <div
               id={EMPLOYEE_WORKSPACE_ID}
-              className="min-w-0 flex-1 bg-white dark:bg-[#0b1222] rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-sm overflow-y-auto flex flex-col min-h-0"
+              className="w-full bg-white dark:bg-[#0b1222] rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-sm flex flex-col"
             >
-              <div className="hidden lg:hidden bg-slate-50 dark:bg-slate-900 p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-700 rounded-t-[2.5rem]">
+              <div className="flex lg:hidden bg-slate-50 dark:bg-slate-900 px-4 py-3 items-center justify-between border-b border-slate-100 dark:border-slate-700">
                 <div className="flex items-center gap-4">
                   {[{ id: 1, label: 'Core' }, { id: 2, label: 'Verify' }, { id: 3, label: 'Evidence' }, { id: 4, label: 'Submit' }].map(s => (
                     <div key={s.id} className="flex items-center gap-2">
@@ -1577,12 +1576,6 @@ const ITDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissio
         </div>
       </div>
 
-      <DraggableLedgerFab
-        storageKey="technical"
-        className="lg:hidden"
-        hidden={isRegistryOpen || selectedLog != null || isBroadcastModalOpen}
-        onOpen={() => setIsRegistryOpen(true)}
-      />
 
       <PdfToast state={pdfToast} onDismiss={() => setPdfToast(null)} />
     </div>

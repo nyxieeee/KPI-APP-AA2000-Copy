@@ -109,7 +109,7 @@ function MobileSidenavDrawer() {
                 >
                   <span
                     className={`flex h-10 w-10 items-center justify-center rounded-2xl border shadow-sm ${
-                      active ? 'border-white/15 bg-white dark:bg-slate-800/10' : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800'
+                      active ? 'border-blue-400/30 bg-blue-700' : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800'
                     }`}
                   >
                     <Icon className={`h-5 w-5 ${active ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`} aria-hidden />
@@ -120,7 +120,7 @@ function MobileSidenavDrawer() {
                     </span>
                     {badge != null && badge > 0 ? (
                       <span className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${
-                        active ? 'bg-white dark:bg-slate-800/15 text-white' : 'bg-blue-50 text-blue-700 border border-blue-100 dark:border-blue-900/50'
+                        active ? 'bg-white text-blue-900' : 'bg-blue-50 text-blue-700 border border-blue-100 dark:border-blue-900/50'
                       }`}>
                         {badge} pending
                       </span>
