@@ -185,7 +185,7 @@ const AttachmentLivePreviewPanel: React.FC<AttachmentLivePreviewPanelProps> = ({
           </div>
         </div>
 
-        <div className="h-[min(13rem,38vh)] md:h-[min(17rem,44vh)] bg-slate-100 dark:bg-[#17213a] flex items-center justify-center overflow-auto p-2">
+        <div className="h-[min(22rem,55vh)] md:h-[min(32rem,65vh)] bg-slate-100 dark:bg-[#17213a] flex items-center justify-center overflow-auto p-2">
           {renderPreview('h-full')}
         </div>
       </div>

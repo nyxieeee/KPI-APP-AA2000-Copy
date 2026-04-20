@@ -99,7 +99,10 @@ import {
   AlertOctagon,
   Info,
   AlertCircle,
-  Calendar
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Download
 } from 'lucide-react';
 
 const ACCOUNTING_LABEL_TO_KEY: Record<string, 'accountingScore' | 'purchasingScore' | 'adminScore' | 'additionalRespScore' | 'attendanceScore'> = {
@@ -1661,43 +1664,52 @@ const AccountingSupervisorDashboard: React.FC<Props> = ({
 
             {/* Attachments */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
-                  <Paperclip className="w-4 h-4 text-white" />
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="w-7 h-7 bg-slate-900 rounded-lg flex items-center justify-center shrink-0"><Paperclip className="w-3.5 h-3.5 text-white" /></div>
+                  <p className="text-[10px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Attachments</p>
                 </div>
-                <p className="text-[10px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Attachments</p>
+                {selectedItem.attachments && selectedItem.attachments.length > 0 && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => { setActiveAttachmentIndex((idx) => { const next = Math.max(0, idx - 1); void handlePreview(selectedItem.attachments[next] as HydratableAttachment); return next; }); }}
+                      disabled={activeAttachmentIndex <= 0}
+                      className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Previous attachment"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-[10px] font-black uppercase tracking-wide text-slate-500 dark:text-slate-400 min-w-[36px] text-center tabular-nums">
+                      {activeAttachmentIndex + 1}/{selectedItem.attachments.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { setActiveAttachmentIndex((idx) => { const next = Math.min(selectedItem.attachments.length - 1, idx + 1); void handlePreview(selectedItem.attachments[next] as HydratableAttachment); return next; }); }}
+                      disabled={activeAttachmentIndex >= selectedItem.attachments.length - 1}
+                      className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Next attachment"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetFile = selectedItem.attachments[activeAttachmentIndex] ?? previewFile;
+                        if (targetFile) void handleDownload(targetFile as HydratableAttachment);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-wide transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Download</span>
+                    </button>
+                  </div>
+                )}
               </div>
               {selectedItem.attachments && selectedItem.attachments.length > 0 ? (
                 <>
                   <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
                     <AttachmentLivePreviewPanel file={previewFile} />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {selectedItem.attachments.map((file, idx) => (
-                    <div
-                      key={idx}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => void handlePreview(file as HydratableAttachment)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          void handlePreview(file as HydratableAttachment);
-                        }
-                      }}
-                      className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg overflow-hidden cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
-                        <div className="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center justify-center shrink-0">
-                          {file.type.includes('image') ? <FileImage className="w-5 h-5 text-blue-500" /> : <FileIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 dark:text-slate-500" />}
-                        </div>
-                        <div className="overflow-hidden min-w-0 flex-1">
-                          <p className="text-[10px] font-black text-slate-900 dark:text-slate-100 truncate uppercase">{file.name}</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500">{file.size}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
                   </div>
                 </>
               ) : (

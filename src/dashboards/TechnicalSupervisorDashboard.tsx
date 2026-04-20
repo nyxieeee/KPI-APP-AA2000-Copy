@@ -102,7 +102,8 @@ import {
   PhoneCall,
   ListChecks,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Download
 } from 'lucide-react';
 
 interface Props {
@@ -1730,31 +1731,6 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
                 <>
                   <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
                     <AttachmentLivePreviewPanel file={previewFile} />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {selectedItem.attachments.map((file, idx) => (
-                    <div
-                      key={idx}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => void handlePreview(file as HydratableAttachment)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          void handlePreview(file as HydratableAttachment);
-                        }
-                      }}
-                      className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg overflow-hidden cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
-                        <div className="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center justify-center shrink-0">{file.type.includes('image') ? <FileImage className="w-5 h-5 text-blue-500" /> : <FileIcon className="w-5 h-5 text-slate-400 dark:text-slate-500 dark:text-slate-500" />}</div>
-                        <div className="overflow-hidden min-w-0 flex-1">
-                          <p className="text-[10px] font-black text-slate-900 dark:text-slate-100 truncate uppercase">{file.name}</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500">{file.size}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
                   </div>
                 </>
               ) : (
