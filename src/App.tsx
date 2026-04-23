@@ -35,6 +35,21 @@ const deptSlug = (d: string) => (d || 'technical').toLowerCase();
 const genId = (len = 8) => Math.random().toString(36).substr(2, len).toUpperCase();
 const SESSION_USER_STORAGE_KEY = 'aa2000-session-user';
 
+// One-time cleanup: remove any session data that was previously written to localStorage
+// (old versions stored credentials/role/email there — that was insecure).
+try { localStorage.removeItem('aa2000-session-user'); } catch { /* ignore */ }
+
+// Safe sessionStorage helpers — credentials/role/email never touch localStorage
+const sessionRead = (key: string): string | null => {
+  try { return sessionStorage.getItem(key); } catch { return null; }
+};
+const sessionWrite = (key: string, value: string) => {
+  try { sessionStorage.setItem(key, value); } catch { /* ignore */ }
+};
+const sessionRemove = (key: string) => {
+  try { sessionStorage.removeItem(key); } catch { /* ignore */ }
+};
+
 function DashboardGate({
   user,
   dashboardLayout,
@@ -286,11 +301,12 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Restore session user on refresh/reopen.
+  // Restore session user on same-tab refresh only (sessionStorage clears on tab/browser close).
+  // Credentials, role, and email are never stored in localStorage.
   useEffect(() => {
+    const raw = sessionRead(SESSION_USER_STORAGE_KEY);
+    if (!raw) return;
     try {
-      const raw = localStorage.getItem(SESSION_USER_STORAGE_KEY);
-      if (!raw) return;
       const parsed = JSON.parse(raw) as Partial<User> | null;
       if (!parsed || typeof parsed !== 'object') return;
       if (
@@ -303,7 +319,7 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
         onUserChange(parsed.id);
       }
     } catch {
-      // ignore
+      sessionRemove(SESSION_USER_STORAGE_KEY);
     }
   }, [onUserChange]);
 
@@ -389,11 +405,7 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
   const handleLogin = useCallback((loggedInUser: User) => {
     setUser(loggedInUser);
     onUserChange(loggedInUser.id);
-    try {
-      localStorage.setItem(SESSION_USER_STORAGE_KEY, JSON.stringify(loggedInUser));
-    } catch {
-      // ignore
-    }
+    sessionWrite(SESSION_USER_STORAGE_KEY, JSON.stringify(loggedInUser));
     addNotification(`Welcome, ${loggedInUser.name}.`, loggedInUser.id, 'SUCCESS');
     addAuditEntry('SESSION_INIT', `Role: ${loggedInUser.role}`, 'OK', loggedInUser.name);
     const returnPath = (location.state as { from?: string } | null)?.from || '/dashboard';
@@ -404,11 +416,7 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
     addAuditEntry('SESSION_TERM', 'Disconnected', 'INFO');
     setUser(null);
     onUserChange(null);
-    try {
-      localStorage.removeItem(SESSION_USER_STORAGE_KEY);
-    } catch {
-      // ignore
-    }
+    sessionRemove(SESSION_USER_STORAGE_KEY);
     navigate('/login');
   }, [onUserChange, addAuditEntry, navigate]);
 
@@ -808,17 +816,15 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
 };
 
 const App: React.FC = () => {
-  // Read userId from session storage so DarkModeProvider can scope the key per user,
-  // even before AppInner mounts and sets up the user state.
+  // Read userId from sessionStorage so DarkModeProvider can scope the key per user.
+  // Credentials never live in localStorage — sessionStorage only.
   const [userId, setUserId] = React.useState<string | null>(() => {
+    const raw = sessionRead(SESSION_USER_STORAGE_KEY);
+    if (!raw) return null;
     try {
-      const raw = localStorage.getItem('aa2000-session-user');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        return parsed?.id ?? null;
-      }
-    } catch {}
-    return null;
+      const parsed = JSON.parse(raw);
+      return parsed?.id ?? null;
+    } catch { return null; }
   });
 
   return (
