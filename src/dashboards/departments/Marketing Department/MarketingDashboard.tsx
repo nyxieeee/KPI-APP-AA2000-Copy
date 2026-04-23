@@ -4,7 +4,7 @@ import { User, Transmission, SystemStats, Announcement, DepartmentWeights, Categ
 import TechnicalCategoryAuditPanel, {
   buildDefaultPmChecklistForCategory,
   computeCategoryAggregateMetrics,
-} from '../../../components/employee/TechnicalCategoryAuditPanel';
+} from '../../../components/audit/TechnicalCategoryAuditPanel';
 import { getEmployeeCategoryIcon } from '../../../utils/employeeCategoryIcons';
 import { useAuditPanelCategoryHold } from '../../../utils/auditPanelHold';
 import { getMarketingWeightedKpiSum } from '../../../utils/technicalWeightedKpi';

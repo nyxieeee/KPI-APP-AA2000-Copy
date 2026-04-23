@@ -20,7 +20,7 @@ import {
   getDepartmentCategoryRawScoresForSupervisor,
   migrateLegacyTechnicalMetrics,
 } from '../../../utils/technicalWeightedKpi';
-import { computeCategoryAggregateMetrics } from '../../../components/employee/TechnicalCategoryAuditPanel';
+import { computeCategoryAggregateMetrics } from '../../../components/audit/TechnicalCategoryAuditPanel';
 import { TechnicalLogDetailAuditReview } from '../../../components/panels/TechnicalLogDetailAuditReview';
 import AttachmentLivePreviewPanel from '../../../components/panels/AttachmentLivePreviewPanel';
 import { getEmployeeCategoryIcon } from '../../../utils/employeeCategoryIcons';

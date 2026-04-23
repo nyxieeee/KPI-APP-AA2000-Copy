@@ -6,7 +6,7 @@ import TechnicalCategoryAuditPanel, {
   buildDefaultPmChecklistForCategory,
   computeCategoryAggregateMetrics,
   scoreForCriterionContentItem,
-} from '../../../components/employee/TechnicalCategoryAuditPanel';
+} from '../../../components/audit/TechnicalCategoryAuditPanel';
 import { getEmployeeCategoryIcon } from '../../../utils/employeeCategoryIcons';
 import { getAccountingWeightedKpiSum } from '../../../utils/technicalWeightedKpi';
 import { computeGradingConfigSignature, isPendingGradingConfigExpired } from '../../../utils/gradingConfigSignature';

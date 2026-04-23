@@ -4,7 +4,7 @@ import type { Transmission, DepartmentWeights, CategoryWeightItem } from '../../
 import {
   computeCategoryAggregateMetrics,
   scoreForCriterionContentItem,
-} from '../employee/TechnicalCategoryAuditPanel';
+} from '../audit/TechnicalCategoryAuditPanel';
 import { getEmployeeCategoryIcon } from '../../utils/employeeCategoryIcons';
 import { resolveSalesCategoryWeightItem, getSalesWeightedCategoryOrderDynamic } from '../../utils/technicalWeightedKpi';
 import { getGradeForScore, getGradeColorClasses } from '../../utils/gradingSystem';

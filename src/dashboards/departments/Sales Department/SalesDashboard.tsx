@@ -5,7 +5,7 @@ import TechnicalCategoryAuditPanel, {
   buildDefaultPmChecklistForCategory,
   computeCategoryAggregateMetrics,
   scoreForCriterionContentItem,
-} from '../../../components/employee/TechnicalCategoryAuditPanel';
+} from '../../../components/audit/TechnicalCategoryAuditPanel';
 import { getEmployeeCategoryIcon } from '../../../utils/employeeCategoryIcons';
 import { TechnicalLogDetailAuditReview } from '../../../components/panels/TechnicalLogDetailAuditReview';
 import {

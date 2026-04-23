@@ -1,5 +1,5 @@
 import type { Transmission, DepartmentWeights, CategoryWeightItem } from '../types';
-import { computeCategoryAggregateMetrics } from '../components/employee/TechnicalCategoryAuditPanel';
+import { computeCategoryAggregateMetrics } from '../components/audit/TechnicalCategoryAuditPanel';
 import { getGradeForScore, type GradeInfo } from './gradingSystem';
 
 type ClassificationWeightRow = { name: string; weight: string };

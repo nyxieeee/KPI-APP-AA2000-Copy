@@ -4,7 +4,7 @@ import TechnicalCategoryAuditPanel, {
   buildDefaultPmChecklistForCategory,
   computeCategoryAggregateMetrics,
   scoreForCriterionContentItem,
-} from '../../../components/employee/TechnicalCategoryAuditPanel';
+} from '../../../components/audit/TechnicalCategoryAuditPanel';
 import { getEmployeeCategoryIcon } from '../../../utils/employeeCategoryIcons';
 import { LedgerRegistryPanel } from '../../../components/modals/LedgerRegistryModal';
 import { EMPLOYEE_WORKSPACE_ID } from '../../../utils/employeeWorkspaceScroll';
