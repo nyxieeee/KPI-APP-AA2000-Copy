@@ -224,9 +224,10 @@ const AdminDashboard: React.FC<Props> = ({
   const [backendRoles, setBackendRoles] = useState<string[]>([]);
 
   const resolveBackendApiBaseUrl = (): string => {
+    const envObj = (import.meta as any).env || {};
     const raw =
-      ((import.meta as any)?.env?.VITE_BACKEND_API_URL as string | undefined) ??
-      ((import.meta as any)?.env?.BACKEND_API_URL as string | undefined) ??
+      (envObj.VITE_BACKEND_API_URL as string | undefined) ??
+      (envObj.BACKEND_API_URL as string | undefined) ??
       '';
     return String(raw || '').trim().replace(/\/+$/, '');
   };
@@ -269,7 +270,7 @@ const AdminDashboard: React.FC<Props> = ({
   const syncCriteriaAdminSnapshot = async (dept: string, categories: CategoryWeightItem[]): Promise<boolean> => {
     const baseUrl = resolveBackendApiBaseUrl();
     if (!baseUrl) {
-      triggerToast('API not configured', 'Set VITE_BACKEND_API_URL in .env to sync admin criteria.');
+      triggerToast('API not configured', 'Set BACKEND_API_URL (or VITE_BACKEND_API_URL) in .env and restart dev server.');
       return false;
     }
 
