@@ -284,14 +284,25 @@ const AdminDashboard: React.FC<Props> = ({
     }
 
     const rates = categories.slice(0, 6).map((c) => Math.max(0, Number(c.weightPct) || 0));
+    const departmentRoleFallbackMap: Record<string, string> = {
+      technical: 'TECHNICAL',
+      it: 'IT',
+      sales: 'SALE',
+      marketing: 'MARKETING',
+      accounting: 'ACCOUNTING',
+    };
+    const preferredRoleName =
+      departmentRoleFallbackMap[String(dept || '').trim().toLowerCase()] ?? String(dept || '').trim();
     const matchedRoleName =
-      backendRoles.find((name) => name.toLowerCase() === String(user.role).toLowerCase()) ??
-      backendRoles.find((name) => name.toLowerCase() === String(user.department || '').toLowerCase());
+      backendRoles.find((name) => name.toLowerCase() === preferredRoleName.toLowerCase()) ??
+      backendRoles.find((name) => name.toLowerCase() === String(dept).toLowerCase()) ??
+      backendRoles.find((name) => name.toLowerCase() === String(user.department || '').toLowerCase()) ??
+      backendRoles.find((name) => name.toLowerCase() === String(user.role).toLowerCase());
 
     const payload = {
       c_ID: dept,
-      // Backend now exposes /get/roles with r_name values; use matching role name when available.
-      r_ID: matchedRoleName || String(user.role || user.id || user.name),
+      // Backend expects role identifier/value for the department being saved.
+      r_ID: matchedRoleName || preferredRoleName || String(user.role || user.id || user.name),
       rate_1: rates[0] ?? 0,
       rate_2: rates[1] ?? 0,
       rate_3: rates[2] ?? 0,
