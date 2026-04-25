@@ -94,32 +94,41 @@ import {
   Download
 } from 'lucide-react';
 
-const SALES_LABEL_TO_KEY: Record<string, keyof { revenueScore: number; accountsScore: number; activitiesScore: number; quotationScore: number; attendanceScore: number; additionalRespScore: number }> = {
+type SalesMetricKey = 'revenueScore' | 'accountsScore' | 'activitiesScore' | 'quotationScore' | 'attendanceScore' | 'additionalRespScore' | 'administrativeExcellenceScore';
+
+const SALES_LABEL_TO_KEY: Record<string, SalesMetricKey> = {
   'Revenue Score': 'revenueScore',
   'Accounts Score': 'accountsScore',
   'Activities Score': 'activitiesScore',
   'Quotation Mgmt': 'quotationScore',
+  'Attendance & Discipline': 'attendanceScore',
+  'Additional Responsibilities': 'additionalRespScore',
+  'Administrative Excellence': 'administrativeExcellenceScore',
   'Attendance': 'attendanceScore',
   'Additional Responsibility': 'additionalRespScore',
 };
 
 /** Aligns with Department grading labels + `allSalesData` keys (same as employee Sales Core). */
-const SALES_LOG_DETAIL_NAMES: { name: string; key: keyof typeof SALES_LABEL_TO_KEY }[] = [
+const SALES_LOG_DETAIL_NAMES: { name: string; key: SalesMetricKey }[] = [
   { name: 'Revenue Score', key: 'revenueScore' },
   { name: 'Accounts Score', key: 'accountsScore' },
   { name: 'Activities Score', key: 'activitiesScore' },
-  { name: 'Quotation Mgmt', key: 'quotationScore' },
-  { name: 'Attendance', key: 'attendanceScore' },
-  { name: 'Additional Responsibility', key: 'additionalRespScore' },
+  { name: 'Attendance & Discipline', key: 'attendanceScore' },
+  { name: 'Additional Responsibilities', key: 'additionalRespScore' },
+  { name: 'Administrative Excellence', key: 'administrativeExcellenceScore' },
 ];
 
 const SALES_CHECKLIST_CONTENT_EMPTY: Record<string, string[]> = {
+  'Revenue Score': [],
+  'Accounts Score': [],
+  'Activities Score': [],
+  'Attendance & Discipline': [],
+  'Additional Responsibilities': [],
+  'Administrative Excellence': [],
   'Revenue Achievement': [],
   'End-User Accounts Closed': [],
   'Sales Activities': [],
   'Quotation Management': [],
-  'Attendance & Discipline': [],
-  'Additional Responsibilities': [],
 };
 
 interface Props {
@@ -143,12 +152,17 @@ const PesoCircleIcon = ({ className = "w-5 h-5" }) => (
 );
 
 const CATEGORY_ICONS: Record<string, any> = {
+  'Revenue Score': DollarSign,
   'Revenue Achievement': DollarSign,
   'End-User Accounts Closed': UserPlus,
+  'Accounts Score': UserPlus,
   'Sales Activities': PhoneCall,
+  'Activities Score': PhoneCall,
   'Quotation Management': ListChecks,
+  'Quotation Mgmt': ListChecks,
   'Attendance & Discipline': ShieldCheck,
-  'Additional Responsibilities': Activity
+  'Additional Responsibilities': Handshake,
+  'Administrative Excellence': FileStack,
 };
 
 type Page = 'dashboard' | 'queue' | 'validation' | 'team' | 'incentives';
@@ -173,12 +187,13 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
   const salesWeights = useMemo(() => {
     const list = departmentWeights?.Sales;
     const defaults = {
-      revenueScore: 0.4,
-      accountsScore: 0.2,
-      activitiesScore: 0.2,
-      quotationScore: 0.1,
+      revenueScore: 0.5,
+      accountsScore: 0.25,
+      activitiesScore: 0.15,
+      quotationScore: 0,
       attendanceScore: 0.05,
-      additionalRespScore: 0.05,
+      additionalRespScore: 0.03,
+      administrativeExcellenceScore: 0.02,
     };
     if (!list?.length) return defaults;
     const out = { ...defaults };
@@ -488,13 +503,14 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
       'Sales',
       SALES_CHECKLIST_CONTENT_EMPTY
     );
-    const initial = {
+    const initial: Record<SalesMetricKey, number> = {
       revenueScore: 0,
       accountsScore: 0,
       activitiesScore: 0,
       quotationScore: 0,
       attendanceScore: 0,
       additionalRespScore: 0,
+      administrativeExcellenceScore: 0,
     };
     SALES_LOG_DETAIL_NAMES.forEach(({ name, key }) => {
       initial[key] = Math.round(raw[name] ?? 0);
@@ -515,19 +531,20 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
       systemStatus: item.systemStatus
     });
     
+    const computed = calculateInitialScores(item);
     const initial = item.ratings && item.ratings.salesMetrics
-      ? { ...item.ratings.salesMetrics }
+      ? { ...computed, ...item.ratings.salesMetrics }
       : item.ratings?.logDetailSnapshot?.length
         ? (() => {
             // Bug 1 fix: use saved snapshot scores to match what the employee submitted
-            const g = calculateInitialScores(item);
+            const g = { ...computed };
             for (const s of item.ratings!.logDetailSnapshot!) {
               const key = SALES_LABEL_TO_KEY[s.name];
               if (key && typeof s.score === 'number') (g as any)[key] = s.score;
             }
             return g;
           })()
-        : calculateInitialScores(item);
+        : computed;
     setGrading(initial);
     initialGradingRef.current = { ...initial };
     setOverrideReason(item.supervisorComment || '');
@@ -565,7 +582,8 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
         grading.activitiesScore !== initial.activitiesScore ||
         grading.quotationScore !== initial.quotationScore ||
         grading.attendanceScore !== initial.attendanceScore ||
-        grading.additionalRespScore !== initial.additionalRespScore
+        grading.additionalRespScore !== initial.additionalRespScore ||
+        grading.administrativeExcellenceScore !== initial.administrativeExcellenceScore
       );
       if (gradingChanged && !reason) {
         setJustificationPopupMessage('You changed the grading matrix. Please enter supervisor justification in the field above before submitting your grading recommendation for Admin Validation.');
@@ -1434,9 +1452,9 @@ const SalesSupervisorDashboard: React.FC<Props> = ({
                       { key: 'revenueScore' as const, label: 'Revenue Score', icon: DollarSign },
                       { key: 'accountsScore' as const, label: 'Accounts Score', icon: UserPlus },
                       { key: 'activitiesScore' as const, label: 'Activities Score', icon: PhoneCall },
-                      { key: 'quotationScore' as const, label: 'Quotation Mgmt', icon: ListChecks },
-                      { key: 'attendanceScore' as const, label: 'Attendance', icon: ShieldCheck },
-                      { key: 'additionalRespScore' as const, label: 'Addt\'l Resp', icon: Handshake }
+                      { key: 'attendanceScore' as const, label: 'Attendance & Disc.', icon: ShieldCheck },
+                      { key: 'additionalRespScore' as const, label: 'Addt\'l Resp', icon: Handshake },
+                      { key: 'administrativeExcellenceScore' as const, label: 'Admin Excel.', icon: FileStack }
                     ] as const).map((cat) => {
                       const wPct = Math.round((salesWeights[cat.key] ?? 0) * 100);
                       return (

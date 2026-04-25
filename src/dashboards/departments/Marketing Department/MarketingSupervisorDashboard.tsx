@@ -71,7 +71,8 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
-  Download
+  Download,
+  FileStack
 } from 'lucide-react';
 
 interface Props {
@@ -98,24 +99,18 @@ const CATEGORY_ICONS: Record<string, any> = {
   'Campaign Execution & Quality': FileText,
   'Lead Generation & Sales Support': Activity,
   'Digital & Social Media Performance': ClipboardCheck,
+  'Attendance & Discipline': ShieldCheck,
   'Additional Responsibilities': Trophy,
-  'Attendance & Discipline': ShieldCheck
-};
-
-const CATEGORY_KEYS: Record<string, keyof MarketingGrading> = {
-  'Campaign Execution & Quality': 'campaignExecutionScore',
-  'Lead Generation & Sales Support': 'leadGenerationScore',
-  'Digital & Social Media Performance': 'digitalSocialMediaScore',
-  'Additional Responsibilities': 'additionalResponsibilitiesScore',
-  'Attendance & Discipline': 'attendanceDisciplineScore'
+  'Administrative Excellence': FileStack,
 };
 
 const DEFAULT_CATEGORY_WEIGHTS: Record<string, number> = {
-  'Campaign Execution & Quality': 0.35,
-  'Lead Generation & Sales Support': 0.30,
-  'Digital & Social Media Performance': 0.25,
-  'Additional Responsibilities': 0.05,
-  'Attendance & Discipline': 0.05
+  'Campaign Execution & Quality': 0.5,
+  'Lead Generation & Sales Support': 0.25,
+  'Digital & Social Media Performance': 0.15,
+  'Attendance & Discipline': 0.05,
+  'Additional Responsibilities': 0.03,
+  'Administrative Excellence': 0.02,
 };
 
 /** Panel config for Detailed Audit Review: label, max points, and how to get score/details per category. */
@@ -139,11 +134,12 @@ const MARKETING_DETAILED_PANELS: Record<string, Array<{ label: string; maxpoints
     { label: 'Attendance (Base 60)', maxpoints: 60, taskKey: 'task1', detailKey: 'absences' },
     { label: 'Punctuality (Base 30)', maxpoints: 30, taskKey: 'task2', detailKey: 'tardies' },
     { label: 'Discipline (Base 10)', maxpoints: 10, taskKey: 'task3', detailKey: 'violations' }
-  ]
+  ],
+  'Administrative Excellence': [
+    { label: 'Reporting & budget tracking', maxpoints: 1, breakdownKey: 'adminReportingScore', detailKeys: [{ label: 'Score', key: 'adminReportingScore' }] },
+    { label: 'Stakeholder updates', maxpoints: 1, breakdownKey: 'adminStakeholderScore', detailKeys: [{ label: 'Score', key: 'adminStakeholderScore' }] },
+  ],
 };
-
-interface MarketingGrading extends Record<string, number> {
-}
 
 type Page = 'dashboard' | 'queue' | 'validation' | 'team' | 'incentives';
 
@@ -217,7 +213,7 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
       weight: `${(DEFAULT_CATEGORY_WEIGHTS[label] * 100).toFixed(0)}%`,
       icon: CATEGORY_ICONS[label] || Cpu
     }));
-  }, [departmentWeights, categoryWeights]);
+  }, [departmentWeights]);
 
   const roleMap = useMemo(() => {
     return registry.reduce((acc: Record<string, any>, u: any) => ({
@@ -350,13 +346,12 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
     ];
   }, [deptMembers, user]);
 
-  const calculateInitialScores = (item: Transmission): MarketingGrading => {
+  const calculateInitialScores = (item: Transmission): Record<string, number> => {
     const raw = getDepartmentCategoryRawScoresForSupervisor(item, departmentWeights, 'Marketing', {});
     const labels = departmentWeights?.Marketing?.map((c) => c.label) ?? Object.keys(DEFAULT_CATEGORY_WEIGHTS);
-    const result: MarketingGrading = {};
+    const result: Record<string, number> = {};
     for (const label of labels) {
-      const key = CATEGORY_KEYS[label];
-      if (key) result[key] = Math.round(raw[label] ?? 0);
+      result[label] = Math.round(raw[label] ?? 0);
     }
     return result;
   };
@@ -504,15 +499,9 @@ const MarketingSupervisorDashboard: React.FC<Props> = ({
       // If still empty, calculate from allSalesData
       if (Object.keys(next).length === 0) {
         const initialScores = calculateInitialScores(item);
-        // Map all category labels from the configuration
-        if (labels) {
-          labels.forEach((label, idx) => {
-            const categoryKey = Object.keys(initialScores)[idx] as keyof typeof initialScores;
-            if (categoryKey && initialScores[categoryKey] != null) {
-              next[label] = initialScores[categoryKey];
-            }
-          });
-        }
+        labels.forEach((label) => {
+          next[label] = initialScores[label] ?? 0;
+        });
       }
       
       // Secondary fallback: use savedMetrics if available

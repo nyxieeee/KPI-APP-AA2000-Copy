@@ -4,28 +4,24 @@ import type { DepartmentWeights } from '../types';
 
 const TECH_CHECKLIST_CONTENT: Record<string, string[]> = {
   'Project Execution Quality': [
-    'Zero Back-Job Rate (50 points)',
-    'First-Time Fix Quality (25 points)',
-    'Technical Compliance & Standards (15 points)',
-    'Schedule Adherence (10 points)',
+    'Zero Back-Job Rate (25 points)',
+    'First-Time Fix Quality (12 points)',
+    'Technical Compliance & Standards (7 points)',
+    'Schedule Adherence (6 points)',
   ],
   'Client Satisfaction & Turnover': [
-    'Client Satisfaction Score - CSAT (50 points)',
-    'Smooth Turnover Rate (30 points)',
-    'Zero Client Complaints/Escalations (20 points)',
+    'Client Satisfaction Score - CSAT (15 points)',
+    'Smooth Turnover Rate (5 points)',
+    'Zero Client Complaints/Escalations (5 points)',
   ],
   'Team Leadership & Accountability': [
-    'Team Performance Under Supervision (40 points)',
-    'Safety Record - Zero Incidents (35 points) - CRITICAL',
-    'Accountability & Ownership (25 points)',
+    'Team Performance Under Supervision (7 points)',
+    'Safety Record - Zero Incidents (4 points) - CRITICAL',
+    'Accountability & Ownership (4 points)',
   ],
-  'Sales Support & Lead Development': [
-    'Site Visits & Technical Consultations (40 points)',
-    'Technical Feasibility Confirmations (35 points)',
-    'Sales Team Feedback (25 points)',
-  ],
-  'Administrative Excellence': ['Report Submission Timeliness (60 points)', 'Report Accuracy (40 points)'],
-  'Attendance & Discipline': ['Absence (50 points)', 'Punctuality (30 points)', 'Unpreparedness (20 points)'],
+  'Administrative Excellence': ['Report Submission Timeliness (1 point)', 'Report Accuracy (1 point)'],
+  'Additional Responsibilities': ['Additional tasks & coverage (3 points)'],
+  'Attendance & Discipline': ['Absence (3 points)', 'Punctuality (1 point)', 'Unpreparedness (1 point)'],
 };
 
 const SALES_PANEL_NAMES: Record<string, string[]> = {
@@ -41,19 +37,16 @@ const SALES_PANEL_NAMES: Record<string, string[]> = {
   'Attendance': ['Attendance', 'Punctuality', 'Discipline'],
   'Additional Responsibilities': ['Additional Responsibilities'],
   'Additional Responsibility': ['Additional Responsibilities'],
+  'Administrative Excellence': ['Process & documentation', 'Compliance'],
 };
 
 const MARKETING_PANEL_NAMES: Record<string, string[]> = {
-  'Accounting Excellence': [
-    'Financial Accuracy & Compliance',
-    'Timeliness — Reports & Entries',
-    'Accounts Receivable Management',
-    'Reconciliation & Month-End Close',
-  ],
-  'Purchasing Excellence': ['Cost Savings & Budget Compliance', 'Vendor Management & Quality', 'PO Processing & Accuracy'],
-  'Administrative Excellence': ['Task Completion & SLA', 'Accuracy & Quality', 'Internal Customer Satisfaction'],
+  'Campaign Execution & Quality': ['Campaign quality', 'Creative & delivery', 'Objectives met'],
+  'Lead Generation & Sales Support': ['Lead volume', 'Sales enablement', 'Handoff quality'],
+  'Digital & Social Media Performance': ['Engagement', 'Follower growth', 'Channel health'],
   'Additional Responsibilities': ['Additional Responsibilities'],
   'Attendance & Discipline': ['Attendance', 'Punctuality', 'Discipline'],
+  'Administrative Excellence': ['Reporting & budget admin', 'Stakeholder updates'],
 };
 
 const ACCOUNTING_PANEL_NAMES: Record<string, string[]> = {
@@ -64,6 +57,7 @@ const ACCOUNTING_PANEL_NAMES: Record<string, string[]> = {
     'Reconciliation & Month-End Close',
   ],
   'Purchasing Excellence': ['Cost Savings & Budget Compliance', 'Vendor Management & Quality', 'PO Processing & Accuracy'],
+  'Purchasing/Admin Excellence': ['PO coordination', 'Admin & documentation'],
   'Administrative Excellence': ['Task Completion & SLA', 'Accuracy & Quality', 'Internal Customer Satisfaction'],
   'Attendance & Discipline': ['Attendance', 'Punctuality', 'Discipline'],
   'Additional Responsibilities': ['Additional Responsibilities'],
@@ -155,6 +149,10 @@ function computeSalesCategoryScore(name: string, data: any): number {
   if (name === 'Attendance & Discipline' || name === 'Attendance') return getAttendanceScore(data?.attendance);
   if (name === 'Additional Responsibilities' || name === 'Additional Responsibility')
     return Number(data?.additionalRespValue) || 0;
+  if (name === 'Administrative Excellence') {
+    const v = (data as { administrativeExcellence?: number })?.administrativeExcellence;
+    return v != null && Number.isFinite(Number(v)) ? Math.min(100, Math.max(0, Number(v))) : 0;
+  }
   return 0;
 }
 

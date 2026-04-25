@@ -66,53 +66,51 @@ interface Props {
 }
 
 const DEFAULT_CLASSIFICATIONS = [
-  { name: 'Project Execution Quality', description: '40% Quality Assurance', weight: '40%', tooltip: 'Primary Performance Factor: 40% Weight', icon: Wrench },
+  { name: 'Project Execution Quality', description: '50% Quality Assurance', weight: '50%', tooltip: 'Primary Performance Factor: 50% Weight', icon: Wrench },
   { name: 'Client Satisfaction & Turnover', description: '25% Customer Experience', weight: '25%', tooltip: 'Client Retention Metric: 25% Weight', icon: Handshake },
   { name: 'Team Leadership & Accountability', description: '15% Management', weight: '15%', tooltip: 'Leadership Metric: 15% Weight', icon: Users2 },
-  { name: 'Sales Support & Lead Development', description: '10% Growth Support', weight: '10%', tooltip: 'Revenue Support: 10% Weight', icon: TrendingUp },
-  { name: 'Administrative Excellence', description: '5% Process Compliance', weight: '5%', tooltip: 'Admin Compliance: 5% Weight', icon: FileStack },
-  { name: 'Attendance & Discipline', description: '5% Reliability', weight: '5%', tooltip: 'Professionalism Standard: 5% Weight', icon: ShieldCheck }
+  { name: 'Attendance & Discipline', description: '5% Reliability', weight: '5%', tooltip: 'Professionalism Standard: 5% Weight', icon: ShieldCheck },
+  { name: 'Additional Responsibilities', description: '3% Extra assignments', weight: '3%', tooltip: 'Organizational contribution: 3% Weight', icon: TrendingUp },
+  { name: 'Administrative Excellence', description: '2% Process compliance', weight: '2%', tooltip: 'Admin compliance: 2% Weight', icon: FileStack }
 ];
 const CHECKLIST_CONTENT: Record<string, string[]> = {
   'Project Execution Quality': [
-    'Zero Back-Job Rate (50 Yield)',
-    'First-Time Fix Quality (25 Yield)',
-    'Technical Compliance & Standards (15 Yield)',
-    'Schedule Adherence (10 Yield)'
+    'Zero Back-Job Rate (25 Yield)',
+    'First-Time Fix Quality (12 Yield)',
+    'Technical Compliance & Standards (7 Yield)',
+    'Schedule Adherence (6 Yield)'
   ],
   'Client Satisfaction & Turnover': [
-    'Client Satisfaction Score - CSAT (50 Yield)',
-    'Smooth Turnover Rate (30 Yield)',
-    'Zero Client Complaints/Escalations (20 Yield)'
+    'Client Satisfaction Score - CSAT (15 Yield)',
+    'Smooth Turnover Rate (5 Yield)',
+    'Zero Client Complaints/Escalations (5 Yield)'
   ],
   'Team Leadership & Accountability': [
-    'Team Performance Under Supervision (40 Yield)',
-    'Safety Record - Zero Incidents (35 Yield) - CRITICAL',
-    'Accountability & Ownership (25 Yield)'
+    'Team Performance Under Supervision (7 Yield)',
+    'Safety Record - Zero Incidents (4 Yield) - CRITICAL',
+    'Accountability & Ownership (4 Yield)'
   ],
-  'Sales Support & Lead Development': [
-    'Site Visits & Technical Consultations (40 Yield)',
-    'Technical Feasibility Confirmations (35 Yield)',
-    'Sales Team Feedback (25 Yield)'
+  'Additional Responsibilities': [
+    'Extra assignments, coverage, and ad-hoc support (3 Yield)'
   ],
   'Administrative Excellence': [
-    'Report Submission Timeliness (60 Yield)',
-    'Report Accuracy (40 Yield)'
+    'Report Submission Timeliness (1 Yield)',
+    'Report Accuracy (1 Yield)'
   ],
   'Attendance & Discipline': [
-    'Absence (50 Yield)',
-    'Punctuality (30 Yield)',
-    'Unpreparedness (20 Yield)'
+    'Absence (3 Yield)',
+    'Punctuality (1 Yield)',
+    'Unpreparedness (1 Yield)'
   ]
 };
 
 const DEFAULT_TECHNICAL_CATEGORIES = [
-  { name: 'Project Execution Quality', label: 'PEQ', weightPct: 40, maxpoints: 100, color: 'bg-[#4CAF50]', textColor: 'text-[#4CAF50]' },
+  { name: 'Project Execution Quality', label: 'PEQ', weightPct: 50, maxpoints: 100, color: 'bg-[#4CAF50]', textColor: 'text-[#4CAF50]' },
   { name: 'Client Satisfaction & Turnover', label: 'CST', weightPct: 25, maxpoints: 100, color: 'bg-[#3F51B5]', textColor: 'text-[#3F51B5]' },
   { name: 'Team Leadership & Accountability', label: 'TLA', weightPct: 15, maxpoints: 100, color: 'bg-[#FF9800]', textColor: 'text-[#FF9800]' },
-  { name: 'Sales Support & Lead Development', label: 'SSL', weightPct: 10, maxpoints: 100, color: 'bg-[#9C27B0]', textColor: 'text-[#9C27B0]' },
-  { name: 'Administrative Excellence', label: 'AEX', weightPct: 5, maxpoints: 100, color: 'bg-[#F44336]', textColor: 'text-[#F44336]' },
-  { name: 'Attendance & Discipline', label: 'ATD', weightPct: 5, maxpoints: 100, color: 'bg-[#757575]', textColor: 'text-[#757575]' }
+  { name: 'Attendance & Discipline', label: 'ATD', weightPct: 5, maxpoints: 100, color: 'bg-[#F44336]', textColor: 'text-[#F44336]' },
+  { name: 'Additional Responsibilities', label: 'ADR', weightPct: 3, maxpoints: 100, color: 'bg-[#9C27B0]', textColor: 'text-[#9C27B0]' },
+  { name: 'Administrative Excellence', label: 'AEX', weightPct: 2, maxpoints: 100, color: 'bg-[#757575]', textColor: 'text-[#757575]' }
 ];
 
 const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights, onDeleteSubmission, onEditSubmission, onClearMyLogs, notifications = [], onDeleteNotification }) => {

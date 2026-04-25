@@ -32,6 +32,8 @@ export interface SystemStats {
       quotationScore: number;
       attendanceScore: number;
       additionalRespScore: number;
+      /** Common KPI when using 3+3 category model (optional for older records). */
+      administrativeExcellenceScore?: number;
     };
     accountingMetrics?: {
       auditScore: number;
@@ -40,6 +42,11 @@ export interface SystemStats {
       budgetScore: number;
       attendanceScore: number;
       additionalRespScore: number;
+      /** Maps to custom label keys used in Accounting grading (optional). */
+      accountingScore?: number;
+      purchasingScore?: number;
+      adminScore?: number;
+      purchasingAdminScore?: number;
     };
   };
 }

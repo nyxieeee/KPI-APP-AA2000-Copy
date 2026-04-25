@@ -283,7 +283,7 @@ const ITDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissio
   const [formData, setFormData] = useState({
     jobId: '',
     clientSite: '',
-    jobType: 'Project Execution Quality',
+    jobType: 'System Uptime & Reliability',
     startTime: '',
     endTime: '',
     systemStatus: 'Operational',
@@ -554,7 +554,7 @@ const ITDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissio
       setDraftRevision(v => v + 1);
       setPreviewFile(null);
       setFormData({
-        jobId: '', clientSite: '', jobType: 'Project Execution Quality', startTime: '', endTime: '',
+        jobId: '', clientSite: '', jobType: 'System Uptime & Reliability', startTime: '', endTime: '',
         systemStatus: 'Operational', projectReport: '', attachments: [],
         pmChecklist: { task1: false, task2: false, task3: false, task4: false, task5: false, task6: false } as Record<string, unknown>,
         additionalRespValue: 0,

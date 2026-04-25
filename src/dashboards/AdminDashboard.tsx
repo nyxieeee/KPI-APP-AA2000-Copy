@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useLayoutEffect, useState, useMemo, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { User, AuditEntry, UserRole, Transmission, DepartmentWeights, CategoryWeightItem, CategoryContentItem, SystemStats } from '../types';
 import JSZip from 'jszip';
@@ -35,24 +35,6 @@ import {
   APP_NAV_SIDENAV_HEIGHT,
   APP_NAV_SIDENAV_TOP,
 } from '../constants/navbarLayout';
-import {
-  type BasicGradingSystemElement,
-  type CheckboxGradingSystemElement,
-  type GradingCheckpoint,
-  normalizeBasicGradingSystemFromRaw,
-  normalizeCheckboxGradingSystemFromRaw,
-  scoreFromEmployeeInput,
-  snapshotBasicGradingForTextboxCount,
-  checkpointsForTextboxOrdinal,
-  maxScoreFromCheckpointList,
-  gradingCheckpointsStableJson,
-  sanitizeCheckpoint,
-} from '../lib/gradingCheckpoints';
-import {
-  AUDIT_PANEL_CRITERION_BODY_CLASS,
-  AUDIT_PANEL_INPUT_GRID_CLASS,
-  auditPanelInputColSpan,
-} from '../utils/auditPanelRule';
 
 import { 
   Settings, 
@@ -94,7 +76,6 @@ import {
   Activity,
   DollarSign,
   Target,
-  Plus,
   Trash2,
   Database,
   Menu,
@@ -108,13 +89,6 @@ import { useRoleSidenavRail } from '../contexts/RoleSidenavRailContext';
 import { ValidationTabs } from '../components/forms/ValidationTabs';
 import { GradingWeightControl } from '../components/forms/GradingWeightControl';
 import { AnnualSummaryPanel } from '../components/panels/AnnualSummaryPanel';
-
-function getCriterionGradingSystemIdx(elements: unknown[], mode: 'textbox' | 'checkbox'): number {
-  if (mode === 'checkbox') {
-    return elements.findIndex((x: any) => x?.type === 'checkboxGradingSystem');
-  }
-  return elements.findIndex((x: any) => x?.type === 'basicGradingSystem');
-}
 
 interface Props {
   user: User;
@@ -179,83 +153,6 @@ function normalizeDepartmentWeightsForUi(weights: DepartmentWeights): Department
     }));
   }
   return next;
-}
-
-/** Criterion max points follow the highest checkpoint score (Yield). */
-function maxScoreFromCriterionElementsDraft(
-  elements: Array<
-    | { type: 'logo'; iconKey: string }
-    | { type: 'checkbox'; label: string }
-    | { type: 'textboxButton'; title: string; value: number }
-    | BasicGradingSystemElement
-    | CheckboxGradingSystemElement
-  >
-): number {
-  const textboxCount = elements.filter((x: any) => x?.type === 'textboxButton').length;
-  let m = 0;
-  for (const x of elements) {
-    if (x?.type === 'basicGradingSystem') {
-      const basic = x as BasicGradingSystemElement;
-      if (textboxCount > 1) {
-        let sum = 0;
-        for (let ord = 0; ord < textboxCount; ord++) {
-          sum += maxScoreFromCheckpointList(checkpointsForTextboxOrdinal(basic, ord));
-        }
-        if (sum > m) m = sum;
-      } else {
-        const cps = basic.checkpoints;
-        if (!cps?.length) continue;
-        for (const c of cps) {
-          const s = Math.max(0, Number(c.score) || 0);
-          if (s > m) m = s;
-        }
-      }
-    } else if (x?.type === 'checkboxGradingSystem') {
-      const cps = (x as CheckboxGradingSystemElement).checkpoints;
-      if (!cps?.length) continue;
-      for (const c of cps) {
-        const s = Math.max(0, Number(c.score) || 0);
-        if (s > m) m = s;
-      }
-    }
-  }
-  return Math.min(1000, m);
-}
-
-/**
- * Index of the row that may use "no max" (∞):
- * - Exactly one checkpoint → that row (index 0) may use no max.
- * - Two or more → only the unique largest `min` may use no max (lower tiers must be bounded).
- */
-function resolveGradingNoMaxAllowedRowIndex(checkpoints: GradingCheckpoint[]): number | null {
-  const n = checkpoints.length;
-  if (n === 0) return null;
-  if (n === 1) return 0;
-  const mins = checkpoints.map((c) => (Number.isFinite(Number(c.min)) ? Number(c.min) : 0));
-  const topMin = Math.max(...mins);
-  const topIndices = mins.map((m, i) => (m === topMin ? i : -1)).filter((i) => i >= 0);
-  if (topIndices.length !== 1) return null;
-  return topIndices[0];
-}
-
-/** Clear invalid ∞ on lower tiers; default max = min when forcing finite. */
-function enforceGradingCheckpointNoMaxRule(checkpoints: GradingCheckpoint[]): GradingCheckpoint[] {
-  const allowedIdx = resolveGradingNoMaxAllowedRowIndex(checkpoints);
-  return checkpoints.map((c, i) => {
-    if (c.max !== null && c.max !== undefined) return c;
-    if (allowedIdx !== null && i === allowedIdx) return c;
-    const min = Number.isFinite(Number(c.min)) ? Number(c.min) : 0;
-    return { ...c, max: min };
-  });
-}
-
-/** Checklist count tiers always use a finite max (no open-ended ∞). */
-function enforceCheckboxGradingFiniteMax(checkpoints: GradingCheckpoint[]): GradingCheckpoint[] {
-  return checkpoints.map((c) => {
-    if (c.max !== null && c.max !== undefined) return c;
-    const min = Number.isFinite(Number(c.min)) ? Number(c.min) : 0;
-    return { ...c, max: min };
-  });
 }
 
 type AdminTab = 'registry' | 'validation' | 'grading' | 'data' | 'performance' | 'summary';
@@ -569,7 +466,6 @@ const AdminDashboard: React.FC<Props> = ({
 
   // Grading: which department's weight editor modal is open (null = closed). Not restored after full page reload.
   const [gradingEditDept, setGradingEditDept] = useState<string | null>(null);
-  const [gradingContentExpanded, setGradingContentExpanded] = useState<number | null>(null);
   const [gradingIconPickerOpen, setGradingIconPickerOpen] = useState<number | null>(null);
   const [gradingEditInitialSnapshot, setGradingEditInitialSnapshot] = useState<CategoryWeightItem[] | null>(null);
   const [gradingExitConfirmOpen, setGradingExitConfirmOpen] = useState(false);
@@ -577,45 +473,6 @@ const AdminDashboard: React.FC<Props> = ({
   const [gradingEditDraftOverride, setGradingEditDraftOverride] = useState<CategoryWeightItem[] | null>(null);
   /** Per-category raw string for weight % input so user can clear and type (key = category index when modal open). */
   const [gradingWeightRaw, setGradingWeightRaw] = useState<Record<number, string>>({});
-  /** Edit panel for a single grading criterion (category-level content item). */
-  const [gradingCriterionEditor, setGradingCriterionEditor] = useState<{ dept: string; catIdx: number; itemIdx: number } | null>(null);
-  const [gradingCriterionLabelDraft, setGradingCriterionLabelDraft] = useState<string>('');
-  /** Shown on employee hover over the panel criterion icon (saved under `ui.definition`). */
-  const [gradingCriterionDefinitionDraft, setGradingCriterionDefinitionDraft] = useState<string>('');
-  const [gradingCriterionmaxpointsDraft, setGradingCriterionmaxpointsDraft] = useState<number>(0);
-  const [gradingCriterionElementsDraft, setGradingCriterionElementsDraft] = useState<
-    Array<
-      | { type: 'logo'; iconKey: string }
-      | { type: 'checkbox'; label: string }
-      | { type: 'textboxButton'; title: string; value: number }
-      | BasicGradingSystemElement
-      | CheckboxGradingSystemElement
-    >
-  >([]);
-  const [gradingCriterionLogoPickerOpenIdx, setGradingCriterionLogoPickerOpenIdx] = useState<number | null>(null);
-  /** Snapshot when criterion editor opens — used to detect unsaved changes before close confirmation. */
-  const [gradingCriterionInitialSnapshot, setGradingCriterionInitialSnapshot] = useState<{
-    label: string;
-    maxpoints: number;
-    elementsJson: string;
-    definition: string;
-  } | null>(null);
-  const [gradingCriterionExitConfirmOpen, setGradingCriterionExitConfirmOpen] = useState(false);
-  /** Popup for checkpoint grading (textbox value or checkbox checked-count), opened from YIELD in criterion canvas. */
-  const [gradingCriterionGradingSystemPopupOpen, setGradingCriterionGradingSystemPopupOpen] = useState(false);
-  /** Which grading block the popup edits — must match panel type (textbox vs checklist). */
-  const [gradingGradingSystemPopupMode, setGradingGradingSystemPopupMode] = useState<'textbox' | 'checkbox'>('textbox');
-  /** Hover popover on canvas YIELD showing checkpoint rules. */
-  const [criterionYieldGradingHover, setCriterionYieldGradingHover] = useState(false);
-  const criterionYieldHoverTimeoutRef = useRef<number | null>(null);
-  /** Confirm discard when closing grading popup with unsaved checkpoint edits (same pattern as criterion editor X). */
-  const [gradingSystemPopupExitConfirmOpen, setGradingSystemPopupExitConfirmOpen] = useState(false);
-  const gradingCriterionmaxpointsRef = useRef(0);
-  gradingCriterionmaxpointsRef.current = gradingCriterionmaxpointsDraft;
-  const prevGradingPopupOpenRef = useRef(false);
-  const gradingSystemPopupSnapshotRef = useRef<string | null>(null);
-  /** While editing Max in the checkpoint popup, allow empty string without writing `max: null` (No max only via checkbox). */
-  const [gradingCheckpointMaxDraft, setGradingCheckpointMaxDraft] = useState<Record<string, string>>({});
   const [loadStandardConfirmOpen, setLoadStandardConfirmOpen] = useState(false);
   const [setStandardConfirmOpen, setSetStandardConfirmOpen] = useState(false);
   const [standardSnapshotExists, setStandardSnapshotExists] = useState(() => hasDepartmentWeightsStandardSnapshot());
@@ -632,185 +489,6 @@ const AdminDashboard: React.FC<Props> = ({
     return () => {
       window.removeEventListener('storage', onStorage);
       window.removeEventListener(DEPARTMENT_WEIGHTS_STANDARD_UPDATED_EVENT, sync);
-    };
-  }, []);
-
-  /** Local-only tester values on the criterion canvas (checkboxes + textbox number); never written to draft / commit. */
-  const [criterionCanvasTest, setCriterionCanvasTest] = useState<{
-    check: Record<number, boolean>;
-    text: Record<number, string>;
-  }>({ check: {}, text: {} });
-
-  const bumpCriterionCanvasTestTextbox = useCallback((idx: number, delta: number) => {
-    setCriterionCanvasTest((prev) => {
-      const curRaw = prev.text[idx];
-      const cur = curRaw === undefined || String(curRaw).trim() === '' ? 0 : parseFloat(String(curRaw));
-      const n = Number.isFinite(cur) ? cur : 0;
-      const next = Math.max(0, Math.min(1000, n + delta));
-      return { ...prev, text: { ...prev.text, [idx]: String(next) } };
-    });
-  }, []);
-
-  useEffect(() => {
-    setCriterionCanvasTest({ check: {}, text: {} });
-  }, [gradingCriterionElementsDraft.length]);
-
-  useEffect(() => {
-    if (!gradingCriterionGradingSystemPopupOpen) {
-      setGradingCheckpointMaxDraft({});
-    }
-  }, [gradingCriterionGradingSystemPopupOpen]);
-
-  const cancelCriterionYieldHoverClose = () => {
-    if (criterionYieldHoverTimeoutRef.current !== null) {
-      window.clearTimeout(criterionYieldHoverTimeoutRef.current);
-      criterionYieldHoverTimeoutRef.current = null;
-    }
-  };
-
-  const scheduleCriterionYieldHoverClose = () => {
-    cancelCriterionYieldHoverClose();
-    criterionYieldHoverTimeoutRef.current = window.setTimeout(() => {
-      setCriterionYieldGradingHover(false);
-      criterionYieldHoverTimeoutRef.current = null;
-    }, 180);
-  };
-
-  useEffect(() => {
-    const open = gradingCriterionGradingSystemPopupOpen;
-    if (open && !prevGradingPopupOpenRef.current) {
-      const idx = getCriterionGradingSystemIdx(gradingCriterionElementsDraft, gradingGradingSystemPopupMode);
-      if (idx >= 0) {
-        const el = gradingCriterionElementsDraft[idx] as BasicGradingSystemElement | CheckboxGradingSystemElement;
-        if (gradingGradingSystemPopupMode === 'textbox' && el.type === 'basicGradingSystem') {
-          const tbCount = gradingCriterionElementsDraft.filter((x: any) => x?.type === 'textboxButton').length;
-          gradingSystemPopupSnapshotRef.current = snapshotBasicGradingForTextboxCount(el, tbCount);
-        } else {
-          gradingSystemPopupSnapshotRef.current = gradingCheckpointsStableJson(el.checkpoints);
-        }
-      } else {
-        gradingSystemPopupSnapshotRef.current = null;
-      }
-    }
-    if (!open) {
-      gradingSystemPopupSnapshotRef.current = null;
-      setGradingSystemPopupExitConfirmOpen(false);
-    }
-    prevGradingPopupOpenRef.current = open;
-  }, [gradingCriterionGradingSystemPopupOpen, gradingCriterionElementsDraft, gradingGradingSystemPopupMode]);
-
-  /** Fix invalid "no max" on lower tiers when opening the grading popup (legacy / mistaken configs). */
-  useEffect(() => {
-    if (!gradingCriterionGradingSystemPopupOpen) return;
-    const mode = gradingGradingSystemPopupMode;
-    setGradingCriterionElementsDraft((prev) => {
-      const idx = getCriterionGradingSystemIdx(prev, mode);
-      if (idx < 0) return prev;
-      const row = prev[idx] as any;
-      if (row.type !== 'basicGradingSystem' && row.type !== 'checkboxGradingSystem') return prev;
-
-      if (row.type === 'checkboxGradingSystem') {
-        const cps = row.checkpoints as GradingCheckpoint[];
-        if (!cps?.length) return prev;
-        let enforced = enforceGradingCheckpointNoMaxRule(cps);
-        enforced = enforceCheckboxGradingFiniteMax(enforced);
-        if (JSON.stringify(enforced) === JSON.stringify(cps)) return prev;
-        return prev.map((x, j) => (j === idx ? { type: 'checkboxGradingSystem' as const, checkpoints: enforced } : x));
-      }
-
-      const tbCount = prev.filter((x: any) => x?.type === 'textboxButton').length;
-      const b = row as BasicGradingSystemElement;
-      if (tbCount <= 1) {
-        const cps = b.checkpoints as GradingCheckpoint[];
-        if (!cps?.length) return prev;
-        const enforced = enforceGradingCheckpointNoMaxRule(cps);
-        if (JSON.stringify(enforced) === JSON.stringify(cps)) return prev;
-        return prev.map((x, j) =>
-          j === idx && (x as any).type === 'basicGradingSystem'
-            ? { ...b, checkpoints: enforced, perTextboxCheckpoints: undefined }
-            : x
-        );
-      }
-
-      const base = (b.checkpoints?.length ? b.checkpoints : [{ min: 0, max: 0, score: 0 }]).map((c: GradingCheckpoint) => ({
-        ...c,
-      }));
-      let per = Array.from({ length: tbCount }, (_, i) =>
-        b.perTextboxCheckpoints?.[i]?.length
-          ? b.perTextboxCheckpoints[i]!.map((c: GradingCheckpoint) => ({ ...c }))
-          : base.map((c: GradingCheckpoint) => ({ ...c }))
-      );
-      let perChanged = false;
-      per = per.map((list: GradingCheckpoint[]) => {
-        const e = enforceGradingCheckpointNoMaxRule(list);
-        if (JSON.stringify(e) !== JSON.stringify(list)) perChanged = true;
-        return e;
-      });
-      const mainCps = b.checkpoints?.length ? b.checkpoints : base;
-      const enforcedMain = enforceGradingCheckpointNoMaxRule(mainCps.map((c: GradingCheckpoint) => ({ ...c })));
-      const mainChanged = JSON.stringify(enforcedMain) !== JSON.stringify(mainCps);
-      const perSame =
-        b.perTextboxCheckpoints?.length === tbCount && JSON.stringify(per) === JSON.stringify(b.perTextboxCheckpoints);
-      if (!perChanged && !mainChanged && perSame) return prev;
-
-      return prev.map((x, j) =>
-        j === idx && (x as any).type === 'basicGradingSystem'
-          ? {
-              ...b,
-              checkpoints: enforcedMain,
-              perTextboxCheckpoints: per,
-            }
-          : x
-      );
-    });
-  }, [gradingCriterionGradingSystemPopupOpen, gradingGradingSystemPopupMode]);
-
-  const requestCloseGradingSystemPopup = useCallback(() => {
-    if (!gradingCriterionGradingSystemPopupOpen) return;
-    const idx = getCriterionGradingSystemIdx(gradingCriterionElementsDraft, gradingGradingSystemPopupMode);
-    if (idx < 0) {
-      setGradingCriterionGradingSystemPopupOpen(false);
-      return;
-    }
-    const el = gradingCriterionElementsDraft[idx] as BasicGradingSystemElement | CheckboxGradingSystemElement;
-    let currentJson: string;
-    if (gradingGradingSystemPopupMode === 'textbox' && el.type === 'basicGradingSystem') {
-      const tbCount = gradingCriterionElementsDraft.filter((x: any) => x?.type === 'textboxButton').length;
-      currentJson = snapshotBasicGradingForTextboxCount(el, tbCount);
-    } else {
-      currentJson = gradingCheckpointsStableJson(el.checkpoints);
-    }
-    const snap = gradingSystemPopupSnapshotRef.current;
-    if (snap !== null && currentJson !== snap) {
-      setGradingSystemPopupExitConfirmOpen(true);
-    } else {
-      setGradingCriterionGradingSystemPopupOpen(false);
-    }
-  }, [gradingCriterionGradingSystemPopupOpen, gradingCriterionElementsDraft, gradingGradingSystemPopupMode]);
-
-  /** Criterion max points follow the highest checkpoint score (Yield). */
-  useLayoutEffect(() => {
-    setGradingCriterionmaxpointsDraft(maxScoreFromCriterionElementsDraft(gradingCriterionElementsDraft));
-  }, [gradingCriterionElementsDraft]);
-
-  /** Close checkpoint popup if the panel type no longer matches (e.g. last textbox/checkbox removed). */
-  useEffect(() => {
-    if (!gradingCriterionGradingSystemPopupOpen) return;
-    const hasTextbox = gradingCriterionElementsDraft.some((x: any) => x?.type === 'textboxButton');
-    const hasCheckbox = gradingCriterionElementsDraft.some((x: any) => x?.type === 'checkbox');
-    if (gradingGradingSystemPopupMode === 'textbox' && !hasTextbox) {
-      setGradingCriterionGradingSystemPopupOpen(false);
-      setGradingSystemPopupExitConfirmOpen(false);
-    }
-    if (gradingGradingSystemPopupMode === 'checkbox' && !hasCheckbox) {
-      setGradingCriterionGradingSystemPopupOpen(false);
-      setGradingSystemPopupExitConfirmOpen(false);
-    }
-  }, [gradingCriterionElementsDraft, gradingCriterionGradingSystemPopupOpen, gradingGradingSystemPopupMode]);
-
-  useEffect(() => {
-    return () => {
-      cancelCriterionYieldHoverClose();
     };
   }, []);
 
@@ -832,10 +510,10 @@ const AdminDashboard: React.FC<Props> = ({
   const DEFAULT_CATEGORY_CONTENT: Record<string, Record<string, { label: string; maxpoints: number }[]>> = {
     Technical: {
       'Project Execution Quality': [
-        { label: 'Zero Back-Job Rate', maxpoints: 20 },
-        { label: 'First-Time Fix Quality', maxpoints: 10 },
-        { label: 'Technical Compliance & Standards', maxpoints: 5 },
-        { label: 'Schedule Adherence', maxpoints: 5 },
+        { label: 'Zero Back-Job Rate', maxpoints: 25 },
+        { label: 'First-Time Fix Quality', maxpoints: 12 },
+        { label: 'Technical Compliance & Standards', maxpoints: 7 },
+        { label: 'Schedule Adherence', maxpoints: 6 },
       ],
       'Client Satisfaction & Turnover': [
         { label: 'Client Satisfaction Score - CSAT', maxpoints: 15 },
@@ -847,85 +525,95 @@ const AdminDashboard: React.FC<Props> = ({
         { label: 'Safety Record - Zero Incidents', maxpoints: 4 },
         { label: 'Accountability & Ownership', maxpoints: 4 },
       ],
-      'Sales Support & Lead Development': [
-        { label: 'Site Visits & Technical Consultations', maxpoints: 4 },
-        { label: 'Technical Feasibility Confirmations', maxpoints: 3 },
-        { label: 'Sales Team Feedback', maxpoints: 3 },
-      ],
-      'Administrative Excellence': [
-        { label: 'Report Submission Timeliness', maxpoints: 3 },
-        { label: 'Report Accuracy', maxpoints: 2 },
-      ],
       'Attendance & Discipline': [
         { label: 'Absence', maxpoints: 3 },
         { label: 'Punctuality', maxpoints: 1 },
         { label: 'Unpreparedness', maxpoints: 1 },
       ],
+      'Additional Responsibilities': [
+        { label: 'Extra assignments & coverage', maxpoints: 3 },
+      ],
+      'Administrative Excellence': [
+        { label: 'Report Submission Timeliness', maxpoints: 1 },
+        { label: 'Report Accuracy', maxpoints: 1 },
+      ],
     },
     Sales: {
-      'Revenue Score': [{ label: 'Revenue target achievement', maxpoints: 40 }],
-      'Accounts Score': [{ label: 'Accounts closed', maxpoints: 20 }],
-      'Activities Score': [{ label: 'Sales activities', maxpoints: 20 }],
-      'Quotation Mgmt': [{ label: 'Quotation management', maxpoints: 10 }],
-      'Attendance': [{ label: 'Attendance & discipline', maxpoints: 5 }],
-      'Additional Responsibility': [{ label: 'Additional responsibilities', maxpoints: 5 }],
+      'Revenue Score': [{ label: 'Revenue target achievement', maxpoints: 50 }],
+      'Accounts Score': [{ label: 'Accounts closed', maxpoints: 25 }],
+      'Activities Score': [{ label: 'Meetings conducted', maxpoints: 8 }, { label: 'Calls made', maxpoints: 7 }],
+      'Attendance & Discipline': [{ label: 'Attendance & discipline', maxpoints: 3 }, { label: 'Conduct & compliance', maxpoints: 2 }],
+      'Additional Responsibilities': [{ label: 'Additional responsibilities', maxpoints: 3 }],
+      'Administrative Excellence': [{ label: 'Process & documentation', maxpoints: 2 }],
     },
     Accounting: {
       'Accounting Excellence': [
-        { label: 'Financial reports submitted accurately and on time', maxpoints: 25 },
-        { label: 'Audit Compliance Score', maxpoints: 15 },
+        { label: 'Financial reports submitted accurately and on time', maxpoints: 30 },
+        { label: 'Audit Compliance Score', maxpoints: 20 },
       ],
       'Purchasing Excellence': [
         { label: 'Purchase Order Accuracy', maxpoints: 15 },
         { label: 'Vendor Management Score', maxpoints: 15 },
       ],
-      'Administrative Excellence': [
-        { label: 'Administrative Task Completion', maxpoints: 15 },
-        { label: 'Documentation Quality', maxpoints: 10 },
+      'Purchasing/Admin Excellence': [
+        { label: 'PO & administrative coordination', maxpoints: 5 },
+        { label: 'Procurement documentation', maxpoints: 5 },
       ],
-      'Additional Responsibility': [{ label: 'Special projects and flexibility', maxpoints: 3 }],
-      'Attendance': [{ label: 'Attendance and discipline', maxpoints: 2 }],
+      'Additional Responsibilities': [{ label: 'Special projects and flexibility', maxpoints: 3 }],
+      'Attendance & Discipline': [{ label: 'Attendance and discipline', maxpoints: 3 }, { label: 'Punctuality & conduct', maxpoints: 2 }],
+      'Administrative Excellence': [
+        { label: 'Office administration & filing', maxpoints: 1 },
+        { label: 'Internal compliance & SLAs', maxpoints: 1 },
+      ],
     },
     IT: {
-      'SYSTEM UPTIME & RELIABILITY': [
-        { label: 'Network and server uptime maintained above SLA', maxpoints: 20 },
-        { label: 'Zero critical system outages caused by negligence', maxpoints: 15 },
+      'System Uptime & Reliability': [
+        { label: 'Network and server uptime maintained above SLA', maxpoints: 30 },
+        { label: 'Zero critical system outages caused by negligence', maxpoints: 20 },
       ],
       'Technical Support Quality': [
         { label: 'Help desk tickets resolved within SLA', maxpoints: 15 },
         { label: 'User satisfaction score on support cases', maxpoints: 10 },
       ],
       'Security & Compliance': [
-        { label: 'Security policies and patch management followed', maxpoints: 12 },
-        { label: 'Data backup and recovery procedures executed correctly', maxpoints: 8 },
-      ],
-      'Project & Development Delivery': [
-        { label: 'IT projects delivered on time and within scope', maxpoints: 10 },
-        { label: 'Code quality and documentation standards met', maxpoints: 5 },
+        { label: 'Security policies and patch management followed', maxpoints: 9 },
+        { label: 'Data backup and recovery procedures executed correctly', maxpoints: 6 },
       ],
       'Attendance & Discipline': [
         { label: 'Attendance Rate', maxpoints: 3 },
         { label: 'Discipline & Conduct', maxpoints: 2 },
       ],
+      'Additional Responsibilities': [
+        { label: 'On-call and extra coverage', maxpoints: 3 },
+      ],
+      'Administrative Excellence': [
+        { label: 'IT documentation & change control', maxpoints: 1 },
+        { label: 'Asset & access compliance', maxpoints: 1 },
+      ],
     },
     Marketing: {
       'Campaign Execution & Quality': [
-        { label: 'Campaign Completion Rate', maxpoints: 22 },
-        { label: 'Creative Quality Score', maxpoints: 18 },
+        { label: 'Campaign Completion Rate', maxpoints: 25 },
+        { label: 'Creative Quality Score', maxpoints: 25 },
       ],
       'Lead Generation & Sales Support': [
-        { label: 'Leads Generated', maxpoints: 20 },
+        { label: 'Leads Generated', maxpoints: 15 },
         { label: 'Sales Enablement Score', maxpoints: 10 },
       ],
       'Digital & Social Media Performance': [
-        { label: 'Engagement Rate', maxpoints: 15 },
-        { label: 'Follower Growth', maxpoints: 10 },
+        { label: 'Engagement Rate', maxpoints: 9 },
+        { label: 'Follower Growth', maxpoints: 6 },
       ],
       'Additional Responsibilities': [
         { label: 'Additional Tasks Completed', maxpoints: 3 },
       ],
       'Attendance & Discipline': [
-        { label: 'Attendance Rate', maxpoints: 2 },
+        { label: 'Attendance Rate', maxpoints: 3 },
+        { label: 'Punctuality & conduct', maxpoints: 2 },
+      ],
+      'Administrative Excellence': [
+        { label: 'Campaign admin & budget tracking', maxpoints: 1 },
+        { label: 'Reporting & stakeholder updates', maxpoints: 1 },
       ],
     },
   };
@@ -985,11 +673,11 @@ const AdminDashboard: React.FC<Props> = ({
 
   /** Preset icon key per department, in category order (used when category has no icon set). */
   const DEFAULT_CATEGORY_ICONS: Record<string, string[]> = {
-    Technical: ['Wrench', 'Handshake', 'Users2', 'TrendingUp', 'FileStack', 'ShieldCheck'],
-    Sales: ['DollarSign', 'Target', 'Activity', 'FileText', 'CalendarCheck', 'Handshake'],
-    Marketing: ['FileText', 'TrendingUp', 'Activity', 'Target', 'FileStack', 'CalendarCheck'],
-    Accounting: ['Calculator', 'FileText', 'FileStack', 'Handshake', 'CalendarCheck'],
-    IT: ['Cpu', 'ShieldCheck', 'ShieldCheck', 'FileStack', 'FileText', 'CalendarCheck'],
+    Technical: ['Wrench', 'Handshake', 'Users2', 'CalendarCheck', 'Handshake', 'FileStack'],
+    Sales: ['DollarSign', 'Target', 'Activity', 'CalendarCheck', 'Handshake', 'FileStack'],
+    Marketing: ['FileText', 'TrendingUp', 'Activity', 'CalendarCheck', 'Target', 'FileStack'],
+    Accounting: ['Calculator', 'FileText', 'Scale', 'CalendarCheck', 'Handshake', 'FileStack'],
+    IT: ['Cpu', 'ClipboardCheck', 'ShieldCheck', 'CalendarCheck', 'Target', 'FileText'],
   };
 
   const [gradingEditDraft, setGradingEditDraft] = useState<CategoryWeightItem[] | null>(null);
@@ -1016,41 +704,44 @@ const AdminDashboard: React.FC<Props> = ({
 
   const DEFAULT_DEPARTMENT_WEIGHTS: DepartmentWeights = {
     Technical: [
-      { label: 'Project Execution Quality', weightPct: 40, content: [{ label: 'Zero Back-Job Rate', maxpoints: 20 }, { label: 'First-Time Fix Quality', maxpoints: 10 }, { label: 'Technical Compliance & Standards', maxpoints: 5 }, { label: 'Schedule Adherence', maxpoints: 5 }] },
+      { label: 'Project Execution Quality', weightPct: 50, content: [{ label: 'Zero Back-Job Rate', maxpoints: 25 }, { label: 'First-Time Fix Quality', maxpoints: 12 }, { label: 'Technical Compliance & Standards', maxpoints: 7 }, { label: 'Schedule Adherence', maxpoints: 6 }] },
       { label: 'Client Satisfaction & Turnover', weightPct: 25, content: [{ label: 'Client Satisfaction Score', maxpoints: 15 }, { label: 'Client Retention Rate', maxpoints: 10 }] },
       { label: 'Team Leadership & Accountability', weightPct: 15, content: [{ label: 'Team Coordination', maxpoints: 8 }, { label: 'Accountability & Ownership', maxpoints: 7 }] },
-      { label: 'Sales Support & Lead Development', weightPct: 10, content: [{ label: 'Sales Lead Contributions', maxpoints: 5 }, { label: 'Client Referrals', maxpoints: 5 }] },
-      { label: 'Administrative Excellence', weightPct: 5, content: [{ label: 'Report Accuracy & Timeliness', maxpoints: 5 }] },
       { label: 'Attendance & Discipline', weightPct: 5, content: [{ label: 'Attendance Rate', maxpoints: 3 }, { label: 'Discipline & Conduct', maxpoints: 2 }] },
+      { label: 'Additional Responsibilities', weightPct: 3, content: [{ label: 'Additional Tasks Completed', maxpoints: 3 }] },
+      { label: 'Administrative Excellence', weightPct: 2, content: [{ label: 'Report Accuracy & Timeliness', maxpoints: 2 }] },
     ],
     IT: [
-      { label: 'SYSTEM UPTIME & RELIABILITY', weightPct: 35, content: [{ label: 'Uptime Percentage', maxpoints: 20 }, { label: 'Incident Prevention', maxpoints: 15 }] },
+      { label: 'System Uptime & Reliability', weightPct: 50, content: [{ label: 'Uptime Percentage', maxpoints: 30 }, { label: 'Incident Prevention', maxpoints: 20 }] },
       { label: 'Technical Support Quality', weightPct: 25, content: [{ label: 'Ticket Resolution Rate', maxpoints: 15 }, { label: 'User Satisfaction Score', maxpoints: 10 }] },
-      { label: 'Security & Compliance', weightPct: 20, content: [{ label: 'Security Audit Score', maxpoints: 12 }, { label: 'Policy Compliance', maxpoints: 8 }] },
-      { label: 'Project & Development Delivery', weightPct: 15, content: [{ label: 'On-time Delivery Rate', maxpoints: 10 }, { label: 'Project Quality Score', maxpoints: 5 }] },
+      { label: 'Security & Compliance', weightPct: 15, content: [{ label: 'Security Audit Score', maxpoints: 9 }, { label: 'Policy Compliance', maxpoints: 6 }] },
       { label: 'Attendance & Discipline', weightPct: 5, content: [{ label: 'Attendance Rate', maxpoints: 3 }, { label: 'Discipline & Conduct', maxpoints: 2 }] },
+      { label: 'Additional Responsibilities', weightPct: 3, content: [{ label: 'Additional Tasks Completed', maxpoints: 3 }] },
+      { label: 'Administrative Excellence', weightPct: 2, content: [{ label: 'Documentation & Process Compliance', maxpoints: 2 }] },
     ],
     Sales: [
-      { label: 'Revenue Score', weightPct: 40, content: [{ label: 'Revenue vs Target', maxpoints: 40 }] },
-      { label: 'Accounts Score', weightPct: 20, content: [{ label: 'Accounts Closed', maxpoints: 20 }] },
-      { label: 'Activities Score', weightPct: 20, content: [{ label: 'Meetings Conducted', maxpoints: 10 }, { label: 'Calls Made', maxpoints: 10 }] },
-      { label: 'Quotation Mgmt', weightPct: 10, content: [{ label: 'On-time Quotations', maxpoints: 5 }, { label: 'Error-free Quotations', maxpoints: 5 }] },
-      { label: 'Attendance', weightPct: 5, content: [{ label: 'Attendance Rate', maxpoints: 5 }] },
-      { label: 'Additional Responsibility', weightPct: 5, content: [{ label: 'Additional Tasks Completed', maxpoints: 5 }] },
+      { label: 'Revenue Score', weightPct: 50, content: [{ label: 'Revenue vs Target', maxpoints: 50 }] },
+      { label: 'Accounts Score', weightPct: 25, content: [{ label: 'Accounts Closed', maxpoints: 25 }] },
+      { label: 'Activities Score', weightPct: 15, content: [{ label: 'Meetings Conducted', maxpoints: 8 }, { label: 'Calls Made', maxpoints: 7 }] },
+      { label: 'Attendance & Discipline', weightPct: 5, content: [{ label: 'Attendance Rate', maxpoints: 3 }, { label: 'Discipline & Conduct', maxpoints: 2 }] },
+      { label: 'Additional Responsibilities', weightPct: 3, content: [{ label: 'Additional Tasks Completed', maxpoints: 3 }] },
+      { label: 'Administrative Excellence', weightPct: 2, content: [{ label: 'Process & documentation compliance', maxpoints: 2 }] },
     ],
     Marketing: [
-      { label: 'Campaign Execution & Quality', weightPct: 40, content: [{ label: 'Campaign Completion Rate', maxpoints: 22 }, { label: 'Creative Quality Score', maxpoints: 18 }] },
-      { label: 'Lead Generation & Sales Support', weightPct: 30, content: [{ label: 'Leads Generated', maxpoints: 20 }, { label: 'Sales Enablement Score', maxpoints: 10 }] },
-      { label: 'Digital & Social Media Performance', weightPct: 25, content: [{ label: 'Engagement Rate', maxpoints: 15 }, { label: 'Follower Growth', maxpoints: 10 }] },
+      { label: 'Campaign Execution & Quality', weightPct: 50, content: [{ label: 'Campaign Completion Rate', maxpoints: 25 }, { label: 'Creative Quality Score', maxpoints: 25 }] },
+      { label: 'Lead Generation & Sales Support', weightPct: 25, content: [{ label: 'Leads Generated', maxpoints: 15 }, { label: 'Sales Enablement Score', maxpoints: 10 }] },
+      { label: 'Digital & Social Media Performance', weightPct: 15, content: [{ label: 'Engagement Rate', maxpoints: 9 }, { label: 'Follower Growth', maxpoints: 6 }] },
+      { label: 'Attendance & Discipline', weightPct: 5, content: [{ label: 'Attendance Rate', maxpoints: 3 }, { label: 'Punctuality & conduct', maxpoints: 2 }] },
       { label: 'Additional Responsibilities', weightPct: 3, content: [{ label: 'Additional Tasks Completed', maxpoints: 3 }] },
-      { label: 'Attendance & Discipline', weightPct: 2, content: [{ label: 'Attendance Rate', maxpoints: 2 }] },
+      { label: 'Administrative Excellence', weightPct: 2, content: [{ label: 'Process compliance', maxpoints: 2 }] },
     ],
     Accounting: [
-      { label: 'Accounting Excellence', weightPct: 40, content: [{ label: 'Financial Report Accuracy', maxpoints: 25 }, { label: 'Audit Compliance Score', maxpoints: 15 }] },
+      { label: 'Accounting Excellence', weightPct: 50, content: [{ label: 'Financial Report Accuracy', maxpoints: 30 }, { label: 'Audit Compliance Score', maxpoints: 20 }] },
       { label: 'Purchasing Excellence', weightPct: 30, content: [{ label: 'Purchase Order Accuracy', maxpoints: 15 }, { label: 'Vendor Management Score', maxpoints: 15 }] },
-      { label: 'Administrative Excellence', weightPct: 25, content: [{ label: 'Administrative Task Completion', maxpoints: 15 }, { label: 'Documentation Quality', maxpoints: 10 }] },
-      { label: 'Additional Responsibility', weightPct: 3, content: [{ label: 'Additional Tasks Completed', maxpoints: 3 }] },
-      { label: 'Attendance', weightPct: 2, content: [{ label: 'Attendance Rate', maxpoints: 2 }] },
+      { label: 'Purchasing/Admin Excellence', weightPct: 10, content: [{ label: 'PO & admin coordination', maxpoints: 5 }, { label: 'Procurement documentation', maxpoints: 5 }] },
+      { label: 'Attendance & Discipline', weightPct: 5, content: [{ label: 'Attendance Rate', maxpoints: 3 }, { label: 'Discipline & Conduct', maxpoints: 2 }] },
+      { label: 'Additional Responsibilities', weightPct: 3, content: [{ label: 'Additional Tasks Completed', maxpoints: 3 }] },
+      { label: 'Administrative Excellence', weightPct: 2, content: [{ label: 'Office administration & compliance', maxpoints: 2 }] },
     ],
   };
 
@@ -1437,330 +1128,6 @@ const AdminDashboard: React.FC<Props> = ({
     });
   };
 
-  const handleUpdateCategoryContent = (dept: string, categoryIndex: number, content: { label: string; maxpoints: number }[]) => {
-    setGradingEditDraft(prev => {
-      const list = [...(prev || [])];
-      if (!list[categoryIndex]) return prev;
-      list[categoryIndex] = { ...list[categoryIndex], content };
-      return list;
-    });
-  };
-
-  const handleUpdateContentItem = (dept: string, catIdx: number, itemIdx: number, field: 'label' | 'maxpoints', value: string | number) => {
-    setGradingEditDraft(prev => {
-      const list = [...(prev || [])];
-      const cat = list[catIdx];
-      if (!cat?.content) return prev;
-      const next = [...cat.content];
-      if (!next[itemIdx]) return prev;
-      next[itemIdx] = { ...next[itemIdx], [field]: field === 'maxpoints' ? (typeof value === 'number' ? value : parseInt(String(value), 10) || 0) : String(value) };
-      list[catIdx] = { ...cat, content: next };
-      return list;
-    });
-  };
-
-  const handleAddContentItem = (dept: string, catIdx: number) => {
-    setGradingEditDraft(prev => {
-      const list = [...(prev || [])];
-      const cat = list[catIdx];
-      if (!cat) return prev;
-      const seed = withDefaultCriterionUi({ label: 'New criterion', maxpoints: 10 });
-      const content = cat.content ? [...cat.content, seed] : [seed];
-      list[catIdx] = { ...cat, content };
-      return list;
-    });
-  };
-
-  const handleRemoveContentItem = (dept: string, catIdx: number, itemIdx: number) => {
-    setGradingEditDraft(prev => {
-      const list = [...(prev || [])];
-      const cat = list[catIdx];
-      if (!cat?.content) return prev;
-      const next = cat.content.filter((_, i) => i !== itemIdx);
-      list[catIdx] = { ...cat, content: next.length ? next : undefined };
-      return list;
-    });
-  };
-
-  const handleUpdateContentItemBulk = (
-    dept: string,
-    catIdx: number,
-    itemIdx: number,
-    next: { label?: string; maxpoints?: number; ui?: any }
-  ) => {
-    // Update label + maxpoints in one state transition to avoid index/race issues.
-    setGradingEditDraft(prev => {
-      const list = [...(prev || [])];
-      const cat = list[catIdx];
-      if (!cat?.content) return prev;
-      const item = cat.content[itemIdx];
-      if (!item) return prev;
-      const updatedItem = {
-        ...item,
-        ...(next.label !== undefined ? { label: next.label } : null),
-        ...(next.maxpoints !== undefined ? { maxpoints: next.maxpoints } : null),
-        ...(next.ui !== undefined ? { ui: next.ui } : null),
-      };
-      const updatedContent = cat.content.map((c, i) => (i === itemIdx ? updatedItem : c));
-      list[catIdx] = { ...cat, content: updatedContent };
-      return list;
-    });
-  };
-
-  const openCriterionEditor = (dept: string, catIdx: number, itemIdx: number) => {
-    setGradingCriterionEditor({ dept, catIdx, itemIdx });
-    setGradingCriterionExitConfirmOpen(false);
-    setCriterionCanvasTest({ check: {}, text: {} });
-    setCriterionYieldGradingHover(false);
-    cancelCriterionYieldHoverClose();
-    const current = gradingEditDraft ?? departmentWeights[dept] ?? [];
-    const cat = current[catIdx];
-    const item = cat?.content?.[itemIdx];
-    const label = String(item?.label ?? '');
-    const maxpoints = Number(item?.maxpoints ?? 0) || 0;
-    const definition = String((item as any)?.ui?.definition ?? '');
-    setGradingCriterionLabelDraft(label);
-    setGradingCriterionDefinitionDraft(definition);
-    const rawElements = ((item as any)?.ui?.elements ?? []) as any[];
-    const mappedElements = rawElements.map((el) => {
-      if (!el || typeof el !== 'object') return el;
-      if (el.type === 'textboxButton') {
-        return {
-          type: 'textboxButton',
-          title: String(el.title ?? 'Textbox name'),
-          value: Number(el.value ?? 0) || 0,
-        };
-      }
-      if (el.type === 'logo') {
-        return { type: 'logo', iconKey: String(el.iconKey ?? CATEGORY_ICON_KEYS[0] ?? 'FileText') };
-      }
-      if (el.type === 'basicGradingSystem') {
-        return normalizeBasicGradingSystemFromRaw(el, maxpoints);
-      }
-      if (el.type === 'checkboxGradingSystem') {
-        return normalizeCheckboxGradingSystemFromRaw(el, maxpoints);
-      }
-      if (el.type === 'checkbox') {
-        return { type: 'checkbox', label: String(el.label ?? 'checkbox') };
-      }
-      return el;
-    });
-    const hasTextbox = mappedElements.some((e: any) => e?.type === 'textboxButton');
-    const hasCheckbox = mappedElements.some((e: any) => e?.type === 'checkbox');
-    let base = mappedElements;
-    if (!hasTextbox) base = base.filter((e: any) => e?.type !== 'basicGradingSystem');
-    if (!hasCheckbox) base = base.filter((e: any) => e?.type !== 'checkboxGradingSystem');
-    const hasTextboxGrading = base.some((e: any) => e?.type === 'basicGradingSystem');
-    const hasCheckboxGrading = base.some((e: any) => e?.type === 'checkboxGradingSystem');
-    let elementsWithMandatoryGrading = base;
-    if (hasTextbox && !hasTextboxGrading) {
-      elementsWithMandatoryGrading = [
-        ...elementsWithMandatoryGrading,
-        { type: 'basicGradingSystem' as const, checkpoints: [{ min: 0, max: 0, score: 0 }] },
-      ];
-    }
-    if (hasCheckbox && !hasCheckboxGrading) {
-      elementsWithMandatoryGrading = [
-        ...elementsWithMandatoryGrading,
-        { type: 'checkboxGradingSystem' as const, checkpoints: [{ min: 0, max: 0, score: 0 }] },
-      ];
-    }
-    const derivedMax = maxScoreFromCriterionElementsDraft(elementsWithMandatoryGrading);
-    setGradingCriterionElementsDraft(elementsWithMandatoryGrading);
-    setGradingCriterionInitialSnapshot({
-      label,
-      maxpoints: derivedMax,
-      elementsJson: JSON.stringify(elementsWithMandatoryGrading),
-      definition,
-    });
-  };
-
-  const closeCriterionEditor = () => {
-    setGradingCriterionEditor(null);
-    setGradingCriterionLabelDraft('');
-    setGradingCriterionDefinitionDraft('');
-    setGradingCriterionmaxpointsDraft(0);
-    setGradingCriterionElementsDraft([]);
-    setGradingCriterionLogoPickerOpenIdx(null);
-    setGradingCriterionInitialSnapshot(null);
-    setGradingCriterionExitConfirmOpen(false);
-    setGradingCriterionGradingSystemPopupOpen(false);
-    setGradingGradingSystemPopupMode('textbox');
-    setGradingSystemPopupExitConfirmOpen(false);
-    setCriterionCanvasTest({ check: {}, text: {} });
-    setCriterionYieldGradingHover(false);
-    cancelCriterionYieldHoverClose();
-  };
-
-  // Panel-rule style arrow press-and-hold (1s delay then accelerate).
-  const holdTimeoutRef = useRef<number | null>(null);
-  const holdDelayRef = useRef(220);
-
-  const stopHold = () => {
-    if (holdTimeoutRef.current !== null) {
-      window.clearTimeout(holdTimeoutRef.current);
-      holdTimeoutRef.current = null;
-    }
-    holdDelayRef.current = 220;
-  };
-
-  const startHold = (fn: () => void) => {
-    stopHold();
-    fn(); // one step immediately on press
-    holdDelayRef.current = 220;
-
-    const runRepeat = () => {
-      fn();
-      holdDelayRef.current = Math.max(45, Math.round(holdDelayRef.current * 0.9));
-      holdTimeoutRef.current = window.setTimeout(runRepeat, holdDelayRef.current);
-    };
-
-    // Start repeating exactly after the 1s hold threshold.
-    holdTimeoutRef.current = window.setTimeout(runRepeat, 1000);
-  };
-
-  // Safety: stop hold when pointer/touch releases anywhere.
-  useEffect(() => {
-    window.addEventListener('mouseup', stopHold);
-    window.addEventListener('touchend', stopHold);
-    window.addEventListener('touchcancel', stopHold);
-    window.addEventListener('blur', stopHold);
-    return () => {
-      window.removeEventListener('mouseup', stopHold);
-      window.removeEventListener('touchend', stopHold);
-      window.removeEventListener('touchcancel', stopHold);
-      window.removeEventListener('blur', stopHold);
-    };
-  }, []);
-
-  const addCriterionElement = (type: 'logo' | 'checkbox' | 'textboxButton') => {
-    setGradingCriterionElementsDraft((prev) => {
-      const next = [...prev];
-      if (type === 'logo') {
-        next.push({ type: 'logo', iconKey: CATEGORY_ICON_KEYS[0] || 'FileText' });
-      } else if (type === 'checkbox') {
-        next.push({ type: 'checkbox', label: 'checkbox' });
-        if (
-          !next.some((x: any) => x?.type === 'textboxButton') &&
-          !next.some((x: any) => x?.type === 'checkboxGradingSystem')
-        ) {
-          next.push({ type: 'checkboxGradingSystem', checkpoints: [{ min: 0, max: 0, score: 0 }] });
-        }
-      } else if (type === 'textboxButton') {
-        next.push({ type: 'textboxButton', title: 'Textbox name', value: 0 });
-        if (!next.some((x: any) => x?.type === 'basicGradingSystem')) {
-          next.push({ type: 'basicGradingSystem', checkpoints: [{ min: 0, max: 0, score: 0 }] });
-        }
-        const tbCount = next.filter((x: any) => x?.type === 'textboxButton').length;
-        if (tbCount >= 2) {
-          const bi = next.findIndex((x: any) => x?.type === 'basicGradingSystem');
-          if (bi >= 0) {
-            const b = next[bi] as BasicGradingSystemElement;
-            const base = (b.checkpoints?.length ? b.checkpoints : [{ min: 0, max: 0, score: 0 }]).map((c) => ({ ...c }));
-            const perExisting = b.perTextboxCheckpoints;
-            const per = Array.from({ length: tbCount }, (_, i) =>
-              perExisting?.[i]?.length ? perExisting[i]!.map((c) => ({ ...c })) : base.map((c) => ({ ...c }))
-            );
-            next[bi] = {
-              ...b,
-              checkpoints: b.checkpoints?.length ? b.checkpoints : base,
-              perTextboxCheckpoints: per,
-            };
-          }
-        }
-      }
-      return next;
-    });
-  };
-
-  const removeCriterionElementAt = (idx: number) => {
-    setGradingCriterionElementsDraft((prev) => {
-      const el = prev[idx];
-      if ((el as any)?.type === 'basicGradingSystem') return prev;
-      if ((el as any)?.type === 'checkboxGradingSystem') return prev;
-
-      const textboxIndicesBefore = prev
-        .map((e, i) => ((e as any)?.type === 'textboxButton' ? i : -1))
-        .filter((i) => i >= 0);
-      const removedTextboxOrd = textboxIndicesBefore.indexOf(idx);
-
-      let out = prev.filter((_, i) => i !== idx);
-      const hasTextbox = out.some((x: any) => x?.type === 'textboxButton');
-      const hasCheckbox = out.some((x: any) => x?.type === 'checkbox');
-
-      const basicIdx = out.findIndex((x: any) => x?.type === 'basicGradingSystem');
-      if (basicIdx >= 0 && removedTextboxOrd >= 0) {
-        const basic = out[basicIdx] as BasicGradingSystemElement;
-        const oldPer = basic.perTextboxCheckpoints;
-        if (oldPer && oldPer.length > removedTextboxOrd) {
-          const newPer = oldPer.filter((_, i) => i !== removedTextboxOrd);
-          if (newPer.length <= 1) {
-            const sole = newPer[0]?.length ? newPer[0] : basic.checkpoints;
-            out = out.map((x, i) =>
-              i === basicIdx
-                ? ({
-                    ...basic,
-                    checkpoints: (sole ?? []).map((c) => ({ ...c })),
-                    perTextboxCheckpoints: undefined,
-                  } as BasicGradingSystemElement)
-                : x
-            );
-          } else {
-            out = out.map((x, i) =>
-              i === basicIdx
-                ? ({
-                    ...basic,
-                    perTextboxCheckpoints: newPer.map((r) => r.map((c) => ({ ...c }))),
-                  } as BasicGradingSystemElement)
-                : x
-            );
-          }
-        }
-      }
-
-      if (!hasTextbox) {
-        out = out.filter((x: any) => x?.type !== 'basicGradingSystem');
-      }
-      if (!hasCheckbox) {
-        out = out.filter((x: any) => x?.type !== 'checkboxGradingSystem');
-      }
-      return out;
-    });
-  };
-
-  const handleAddCategory = (dept: string) => {
-    setGradingEditDraft(prev => {
-      const list = [...(prev || [])];
-      const existingLabels = new Set(list.map((c) => String(c.label).trim()).filter(Boolean));
-
-      let n = list.length + 1;
-      let label = `New Category ${n}`;
-      while (existingLabels.has(label)) {
-        n += 1;
-        label = `New Category ${n}`;
-      }
-
-      // Keep grading content point totals valid by default (100pts),
-      // while weight starts at 0 so total weight remains controllable by admin.
-      const content = [withDefaultCriterionUi({ label: 'New criterion', maxpoints: 100 })];
-
-      const presetIcon = DEFAULT_CATEGORY_ICONS[dept]?.[list.length] ?? undefined;
-      list.push({
-        label,
-        weightPct: 0,
-        icon: presetIcon,
-        definition: '',
-        content,
-      });
-      return list;
-    });
-
-    // Clear transient raw input states since indexes changed after add.
-    setGradingWeightRaw({});
-    setGradingContentExpanded(null);
-    setGradingIconPickerOpen(null);
-  };
-
   const handleRemoveCategory = (dept: string, categoryIndex: number) => {
     setGradingEditDraft(prev => {
       const list = [...(prev || [])];
@@ -1772,13 +1139,6 @@ const AdminDashboard: React.FC<Props> = ({
 
     setGradingWeightRaw({});
     setGradingIconPickerOpen(null);
-
-    setGradingContentExpanded((idx) => {
-      if (idx == null) return idx;
-      if (idx === categoryIndex) return null;
-      if (idx > categoryIndex) return idx - 1;
-      return idx;
-    });
   };
 
   const handleResetCategory = (dept: string, categoryIndex: number) => {
@@ -1855,7 +1215,6 @@ const AdminDashboard: React.FC<Props> = ({
       setGradingEditDept(null);
       setGradingEditDraft(null);
       setGradingEditDraftOverride(null);
-      setGradingContentExpanded(null);
       setGradingIconPickerOpen(null);
       setGradingExitConfirmOpen(false);
       setGradingWeightRaw({});
@@ -4011,7 +3370,6 @@ const AdminDashboard: React.FC<Props> = ({
                         clearGradingEditSession();
                       }
                       setGradingEditDept(null);
-                      setGradingContentExpanded(null);
                       setGradingIconPickerOpen(null);
                       setGradingEditDraft(null);
                     }}
@@ -4031,7 +3389,6 @@ const AdminDashboard: React.FC<Props> = ({
                         clearGradingEditSession();
                         setGradingEditDept(null);
                         setGradingEditDraft(null);
-                        setGradingContentExpanded(null);
                         setGradingIconPickerOpen(null);
                         setGradingExitConfirmOpen(false);
                       }
@@ -4059,7 +3416,6 @@ const AdminDashboard: React.FC<Props> = ({
                               clearGradingEditSession();
                               setGradingEditDept(null);
                               setGradingEditDraft(null);
-                              setGradingContentExpanded(null);
                               setGradingIconPickerOpen(null);
                               setGradingExitConfirmOpen(false);
                             }}
@@ -4075,1375 +3431,14 @@ const AdminDashboard: React.FC<Props> = ({
                 </div>
               </div>
 
-              {gradingCriterionEditor && (
-                <>
-                  <div className="fixed inset-0 z-[5200] bg-slate-900/30 backdrop-blur-sm" aria-hidden="true" />
-                  <div className="fixed inset-0 z-[5201] flex items-center justify-center p-4">
-                    <div
-                      className="bg-gradient-to-b from-white to-slate-50/70 rounded-lg w-full max-w-5xl border border-slate-200 dark:border-slate-600/70 shadow-[0_30px_120px_rgba(2,6,23,0.22)] p-6 relative overflow-hidden flex flex-col h-[600px] max-h-[85vh]"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex items-center justify-between gap-3 mb-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-600/60">
-                        <div className="flex items-center gap-2">
-                          <Edit2 className="w-5 h-5 text-blue-600" />
-                          <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Edit grading criterion</h3>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            className="px-5 py-3 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-wide shadow-lg shadow-slate-900/25 hover:bg-slate-800 hover:shadow-sm hover:shadow-slate-900/30 active:scale-[0.98] transition-all duration-200"
-                            onClick={() => {
-                              const s = gradingCriterionEditor;
-                              if (!s) return;
-                              handleUpdateContentItemBulk(s.dept, s.catIdx, s.itemIdx, {
-                                label: gradingCriterionLabelDraft.trim() || 'New criterion',
-                                maxpoints: gradingCriterionmaxpointsDraft,
-                                ui: {
-                                  elements: gradingCriterionElementsDraft,
-                                  definition: gradingCriterionDefinitionDraft.trim(),
-                                },
-                              });
-                              closeCriterionEditor();
-                            }}
-                          >
-                            Save changes
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const snap = gradingCriterionInitialSnapshot;
-                              const currentLabel = gradingCriterionLabelDraft.trim();
-                              const defTrim = gradingCriterionDefinitionDraft.trim();
-                              const current = {
-                                label: currentLabel,
-                                maxpoints: gradingCriterionmaxpointsDraft,
-                                elementsJson: JSON.stringify(gradingCriterionElementsDraft),
-                                definition: defTrim,
-                              };
-                              const hasChanges =
-                                !snap ||
-                                snap.label !== current.label ||
-                                snap.maxpoints !== current.maxpoints ||
-                                snap.elementsJson !== current.elementsJson ||
-                                snap.definition !== current.definition;
-                              if (hasChanges) {
-                                setGradingCriterionExitConfirmOpen(true);
-                              } else {
-                                closeCriterionEditor();
-                              }
-                            }}
-                            className="p-2.5 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-200 dark:hover:border-red-700 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600/80 shadow-sm hover:shadow transition-all duration-200"
-                            aria-label="Close"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-5 flex-1 min-h-0 overflow-y-auto pb-4">
-                        <div className="flex flex-col space-y-3 min-h-0">
-                          <div className="p-4 rounded-lg border border-slate-200 dark:border-slate-600/60 bg-white dark:bg-slate-800/80 shadow-sm">
-                            <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-3">Criterion definition</p>
-                            <div className="space-y-3">
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Definition</label>
-                                <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1 leading-snug">
-                                  Shown when employees hover the panel criterion icon.
-                                </p>
-                                <div className="w-full max-w-full">
-                                  <textarea
-                                    value={gradingCriterionDefinitionDraft}
-                                    onChange={(e) => setGradingCriterionDefinitionDraft(e.target.value)}
-                                    className="box-border w-full h-40 max-h-40 min-h-40 resize-none overflow-y-auto bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 text-[13px] font-black text-slate-900 dark:text-slate-100 leading-snug outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all"
-                                    placeholder="Describe what this criterion measures…"
-                                    aria-label="Criterion definition for employee hover"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="p-4 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600/60 shadow-sm">
-                            <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mb-2">Element palette</p>
-                            <div className="space-y-2">
-                              {(() => {
-                                const hasPanelCheckbox = gradingCriterionElementsDraft.some((x: any) => x?.type === 'checkbox');
-                                const hasPanelTextbox = gradingCriterionElementsDraft.some((x: any) => x?.type === 'textboxButton');
-                                return (
-                                  <>
-                                    <button
-                                      type="button"
-                                      disabled={hasPanelTextbox}
-                                      onClick={() => addCriterionElement('checkbox')}
-                                      title={
-                                        hasPanelTextbox
-                                          ? 'This panel already uses textbox + button. Remove those elements to add checkboxes.'
-                                          : 'Add a checkbox row'
-                                      }
-                                      className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-[11px] font-black uppercase tracking-wide hover:bg-blue-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
-                                    >
-                                      <Plus className="w-4 h-4" />
-                                      Add checkbox
-                                    </button>
-                                    <button
-                                      type="button"
-                                      disabled={hasPanelCheckbox}
-                                      onClick={() => addCriterionElement('textboxButton')}
-                                      title={
-                                        hasPanelCheckbox
-                                          ? 'This panel already uses checkboxes. Remove them to add textbox + button.'
-                                          : 'Add a textbox with value controls'
-                                      }
-                                      className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-[11px] font-black uppercase tracking-wide hover:bg-blue-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
-                                    >
-                                      <Plus className="w-4 h-4" />
-                                      Add textbox + button
-                                    </button>
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Panel rule canvas</p>
-                              <p className="text-[9px] text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-0.5">
-                                Same layout as employee dashboards (<code className="text-[9px]">auditPanelRule.ts</code>): max 2 inputs
-                                per row; odd counts → first full width. Preview-only (not saved).
-                              </p>
-                            </div>
-                            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide shrink-0">
-                              {gradingCriterionElementsDraft.length} element(s)
-                            </span>
-                          </div>
-
-                          {(() => {
-                            const elements = gradingCriterionElementsDraft;
-                            const logoEntry =
-                              (elements
-                                .map((el, idx) => ({ el, idx }))
-                                .find((x) => x.el?.type === 'logo') as { el: { type: 'logo'; iconKey?: string }; idx: number } | undefined) ||
-                              null;
-                            const checkboxEntries = elements
-                              .map((el, idx) => ({ el, idx }))
-                              .filter((x) => x.el?.type === 'checkbox') as Array<{ el: any; idx: number }>;
-                            const checkboxN = checkboxEntries.length;
-                            const textboxEntries = elements
-                              .map((el, idx) => ({ el, idx }))
-                              .filter((x) => x.el?.type === 'textboxButton') as Array<{ el: any; idx: number }>;
-
-                            const n = textboxEntries.length;
-
-                            const YieldCap = Math.max(0, gradingCriterionmaxpointsDraft);
-                            const YieldGradingEl = elements.find((x: any) => x?.type === 'basicGradingSystem') as
-                              | BasicGradingSystemElement
-                              | undefined;
-                            const YieldCheckboxGradingEl = elements.find((x: any) => x?.type === 'checkboxGradingSystem') as
-                              | CheckboxGradingSystemElement
-                              | undefined;
-                            const YieldCheckpoints: GradingCheckpoint[] =
-                              YieldGradingEl?.checkpoints?.length
-                                ? YieldGradingEl.checkpoints
-                                : normalizeBasicGradingSystemFromRaw(
-                                    YieldGradingEl ?? { type: 'basicGradingSystem' },
-                                    YieldCap
-                                  ).checkpoints;
-                            const YieldCheckboxCheckpoints: GradingCheckpoint[] =
-                              YieldCheckboxGradingEl?.checkpoints?.length
-                                ? YieldCheckboxGradingEl.checkpoints
-                                : normalizeCheckboxGradingSystemFromRaw(
-                                    YieldCheckboxGradingEl ?? { type: 'checkboxGradingSystem' },
-                                    YieldCap
-                                  ).checkpoints;
-                            const firstTextboxIdx = textboxEntries[0]?.idx;
-                            const firstTextboxRaw =
-                              firstTextboxIdx !== undefined ? criterionCanvasTest.text[firstTextboxIdx] : undefined;
-                            const firstTextboxNum =
-                              firstTextboxRaw === undefined || String(firstTextboxRaw).trim() === ''
-                                ? 0
-                                : parseFloat(String(firstTextboxRaw));
-                            const employeeNumForText = Number.isFinite(firstTextboxNum) ? firstTextboxNum : 0;
-                            const checkboxCheckedCount = checkboxEntries.reduce(
-                              (acc, { idx: cidx }) => acc + (criterionCanvasTest.check[cidx] ? 1 : 0),
-                              0
-                            );
-                            const scoreGot =
-                              n > 1 && YieldGradingEl
-                                ? Math.min(
-                                    YieldCap,
-                                    textboxEntries.reduce((acc, { idx: tbIdx }, ord) => {
-                                      const raw = criterionCanvasTest.text[tbIdx];
-                                      const num =
-                                        raw === undefined || String(raw).trim() === ''
-                                          ? 0
-                                          : parseFloat(String(raw));
-                                      const nVal = Number.isFinite(num) ? num : 0;
-                                      const cps = checkpointsForTextboxOrdinal(YieldGradingEl, ord);
-                                      const subCap = maxScoreFromCheckpointList(cps);
-                                      return acc + scoreFromEmployeeInput(nVal, cps, subCap);
-                                    }, 0)
-                                  )
-                                : n > 0
-                                  ? scoreFromEmployeeInput(employeeNumForText, YieldCheckpoints, YieldCap)
-                                  : checkboxN > 0
-                                    ? scoreFromEmployeeInput(checkboxCheckedCount, YieldCheckboxCheckpoints, YieldCap)
-                                    : 0;
-
-                            return (
-                              <div className="bg-white dark:bg-slate-800/70 rounded-lg border border-slate-200 dark:border-slate-600/70 p-4 md:p-5 space-y-4 shadow-sm backdrop-blur">
-                                <div className="flex items-start justify-between gap-4">
-                                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                                    <div className="w-12 h-12 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0 relative">
-                                      {logoEntry ? (
-                      <div className="relative">
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              setGradingCriterionLogoPickerOpenIdx(
-                                                gradingCriterionLogoPickerOpenIdx === logoEntry.idx ? null : logoEntry.idx
-                                              )
-                                            }
-                                            className="w-12 h-12 rounded-lg bg-blue-500/10 border border-slate-200 dark:border-slate-600 flex items-center justify-center shadow-sm hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
-                                            title="Choose logo icon"
-                                          >
-                                            {(() => {
-                                              const Icon = CATEGORY_ICON_MAP[logoEntry.el.iconKey] as any;
-                                              return Icon ? <Icon className="w-6 h-6 text-blue-600" /> : <FileText className="w-6 h-6 text-blue-600" />;
-                                            })()}
-                                          </button>
-
-                                          {gradingCriterionLogoPickerOpenIdx === logoEntry.idx && (
-                                            <div className="absolute top-full left-0 mt-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-2 z-[5200] box-border shadow-[0_0_12px_rgba(15,23,42,0.08)] w-fit">
-                                              <div
-                                                className="grid gap-1.5 w-max"
-                                                style={{
-                                                  gridTemplateRows: 'repeat(4, 28px)',
-                                                  gridTemplateColumns: `repeat(${Math.ceil(CATEGORY_ICON_KEYS.length / 4)}, 52px)`,
-                                                }}
-                                              >
-                                                {CATEGORY_ICON_KEYS.map((key) => {
-                                                  const Icon = CATEGORY_ICON_MAP[key];
-                                                  const selected = String(logoEntry.el.iconKey ?? '') === key;
-                                                  return (
-                                                    <button
-                                                      key={key}
-                                                      type="button"
-                                                      onClick={() => {
-                                                        setGradingCriterionElementsDraft(prev =>
-                                                          prev.map((x, j) => (j === logoEntry.idx ? { type: 'logo', iconKey: key } : x))
-                                                        );
-                                                        setGradingCriterionLogoPickerOpenIdx(null);
-                                                      }}
-                                                      className={`w-9 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                                                        selected
-                                                          ? 'bg-blue-500/20 border-2 border-blue-500 text-blue-600'
-                                                          : 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500'
-                                                      }`}
-                                                      title={key}
-                                                    >
-                                                      {Icon && <Icon className="w-5 h-5" />}
-                                                    </button>
-                                                  );
-                                                })}
-                      </div>
-                    </div>
-                                          )}
-                  </div>
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const newIdx = elements.length;
-                                            addCriterionElement('logo');
-                                            setGradingCriterionLogoPickerOpenIdx(newIdx);
-                                          }}
-                                          className="w-12 h-12 rounded-lg bg-blue-500/10 border border-slate-200 dark:border-slate-600 flex items-center justify-center shadow-sm hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
-                                          title="Choose logo icon"
-                                        >
-                                          <FileText className="w-6 h-6 text-blue-600" />
-                                        </button>
-                                      )}
-                </div>
-                                    <div className="flex-1 min-w-[min(100%,24.5rem)]">
-                                      <input
-                                        type="text"
-                                        value={gradingCriterionLabelDraft}
-                                        onChange={(e) => setGradingCriterionLabelDraft(e.target.value)}
-                                        className="w-full min-w-0 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-2.5 text-[13px] font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all"
-                                        placeholder="Criterion"
-                                        aria-label="Criterion name"
-                                      />
-            </div>
-          </div>
-
-                                  {n > 0 ? (
-                                    <div
-                                      className="relative shrink-0"
-                                      onMouseEnter={() => {
-                                        cancelCriterionYieldHoverClose();
-                                        setCriterionYieldGradingHover(true);
-                                      }}
-                                      onMouseLeave={scheduleCriterionYieldHoverClose}
-                                    >
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setGradingGradingSystemPopupMode('textbox');
-                                          setGradingCriterionElementsDraft((prev) => {
-                                            if (prev.some((x: any) => x?.type === 'basicGradingSystem')) return prev;
-                                            return [
-                                              ...prev,
-                                              {
-                                                type: 'basicGradingSystem',
-                                                checkpoints: [{ min: 0, max: 0, score: 0 }],
-                                              },
-                                            ];
-                                          });
-                                          setGradingCriterionGradingSystemPopupOpen(true);
-                                        }}
-                                        className="text-right rounded-xl px-3 py-2 -mr-1 -my-1 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-blue-900/30/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-                                        title="Click to edit checkpoints for the textbox value. Hover to view rules. Yield uses local tester input (not saved)."
-                                        aria-label="Open grading system for Yield score"
-                                      >
-                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Yield</p>
-                                        <p className="text-[11px] font-black text-blue-600 tabular-nums">
-                                          {scoreGot}/{YieldCap}
-                                        </p>
-                                      </button>
-                                      {criterionYieldGradingHover && (
-                                        <div
-                                          className="absolute right-0 top-full z-[5260] mt-1.5 w-64 max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-3 text-left shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
-                                          onMouseEnter={() => {
-                                            cancelCriterionYieldHoverClose();
-                                            setCriterionYieldGradingHover(true);
-                                          }}
-                                          onMouseLeave={scheduleCriterionYieldHoverClose}
-                                          role="tooltip"
-                                        >
-                                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mb-2">
-                                            Grading checkpoints
-                                          </p>
-                                          {n > 1 && YieldGradingEl ? (
-                                            <div className="space-y-3 max-h-56 overflow-y-auto pr-0.5">
-                                              {textboxEntries.map(({ el: tbEl, idx: tbIdx }, ord) => {
-                                                const cps = checkpointsForTextboxOrdinal(YieldGradingEl, ord);
-                                                return (
-                                                  <div key={tbIdx}>
-                                                    <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 dark:text-slate-400 mb-1 truncate">
-                                                      {String(tbEl.title ?? 'Textbox')}
-                                                    </p>
-                                                    <ul className="space-y-1.5">
-                                                      {cps.map((c, i) => (
-                                                        <li
-                                                          key={i}
-                                                          className="flex items-start justify-between gap-2 text-[11px] text-slate-700 dark:text-slate-300"
-                                                        >
-                                                          <span className="text-slate-500 dark:text-slate-400 dark:text-slate-400 shrink min-w-0">
-                                                            {c.max === null ? `≥ ${c.min}` : `${c.min} – ${c.max}`}
-                                                          </span>
-                                                          <span className="font-black text-blue-600 tabular-nums shrink-0">
-                                                            {c.score} pts
-                                                          </span>
-                                                        </li>
-                                                      ))}
-                                                    </ul>
-            </div>
-                                                );
-                                              })}
-          </div>
-                                          ) : (
-                                            <ul className="space-y-1.5">
-                                              {YieldCheckpoints.map((c, i) => (
-                                                <li
-                                                  key={i}
-                                                  className="flex items-start justify-between gap-2 text-[11px] text-slate-700 dark:text-slate-300"
-                                                >
-                                                  <span className="text-slate-500 dark:text-slate-400 dark:text-slate-400 shrink min-w-0">
-                                                    {c.max === null ? `≥ ${c.min}` : `${c.min} – ${c.max}`}
-                                                  </span>
-                                                  <span className="font-black text-blue-600 tabular-nums shrink-0">{c.score} pts</span>
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          )}
-        </div>
-                                      )}
-      </div>
-                                  ) : checkboxN > 0 ? (
-                                    <div
-                                      className="relative shrink-0"
-                                      onMouseEnter={() => {
-                                        cancelCriterionYieldHoverClose();
-                                        setCriterionYieldGradingHover(true);
-                                      }}
-                                      onMouseLeave={scheduleCriterionYieldHoverClose}
-                                    >
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setGradingGradingSystemPopupMode('checkbox');
-                                          setGradingCriterionElementsDraft((prev) => {
-                                            if (prev.some((x: any) => x?.type === 'checkboxGradingSystem')) return prev;
-                                            return [
-                                              ...prev,
-                                              {
-                                                type: 'checkboxGradingSystem',
-                                                checkpoints: [{ min: 0, max: 0, score: 0 }],
-                                              },
-                                            ];
-                                          });
-                                          setGradingCriterionGradingSystemPopupOpen(true);
-                                        }}
-                                        className="text-right rounded-xl px-3 py-2 -mr-1 -my-1 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-blue-900/30/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-                                        title="Click to edit checkpoints by how many boxes are checked (0–N). Hover to view rules. Yield uses local tester state (not saved)."
-                                        aria-label="Open checklist count grading for Yield score"
-                                      >
-                                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Yield</p>
-                                        <p className="text-[11px] font-black text-blue-600 tabular-nums">
-                                          {scoreGot}/{YieldCap}
-                                        </p>
-                                      </button>
-                                      {criterionYieldGradingHover && (
-                                        <div
-                                          className="absolute right-0 top-full z-[5260] mt-1.5 w-64 max-w-[min(18rem,calc(100vw-2rem))] rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-3 text-left shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
-                                          onMouseEnter={() => {
-                                            cancelCriterionYieldHoverClose();
-                                            setCriterionYieldGradingHover(true);
-                                          }}
-                                          onMouseLeave={scheduleCriterionYieldHoverClose}
-                                          role="tooltip"
-                                        >
-                                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mb-2">
-                                            Checklist count → points
-                                          </p>
-                                          <p className="text-[9px] font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-400 mb-2 leading-snug">
-                                            Min / Max = number of checkboxes selected (this panel has {checkboxN}).
-                                          </p>
-                                          <ul className="space-y-1.5">
-                                            {YieldCheckboxCheckpoints.map((c, i) => (
-                                              <li
-                                                key={i}
-                                                className="flex items-start justify-between gap-2 text-[11px] text-slate-700 dark:text-slate-300"
-                                              >
-                                                <span className="text-slate-500 dark:text-slate-400 dark:text-slate-400 shrink min-w-0">
-                                                  {c.max === null ? `≥ ${c.min} checked` : `${c.min} – ${c.max} checked`}
-                                                </span>
-                                                <span className="font-black text-blue-600 tabular-nums shrink-0">{c.score} pts</span>
-                                              </li>
-                                            ))}
-                                          </ul>
-    </div>
-                                      )}
-                                    </div>
-                                  ) : null}
-        </div>
-
-                              <div className={AUDIT_PANEL_CRITERION_BODY_CLASS}>
-                              {checkboxN > 0 ? (
-                                <div className={AUDIT_PANEL_INPUT_GRID_CLASS}>
-                                  {checkboxEntries.map(({ el, idx }, pos) => {
-                                    const colSpan = auditPanelInputColSpan(pos, checkboxN);
-                                    return (
-                                      <div
-                                        key={idx}
-                                        className={`bg-white dark:bg-slate-800 rounded-[1.75rem] border border-slate-200 dark:border-slate-600/80 p-4 space-y-3 ${colSpan} shadow-sm hover:shadow-md transition-shadow`}
-                                      >
-                                        <div className="flex items-center justify-between gap-3">
-                                          <div className="flex items-center gap-3 min-w-0">
-                                            <input
-                                              type="checkbox"
-                                              checked={!!criterionCanvasTest.check[idx]}
-                                              onChange={(e) => {
-                                                const checked = e.target.checked;
-                                                setCriterionCanvasTest((prev) => ({
-                                                  ...prev,
-                                                  check: { ...prev.check, [idx]: checked },
-                                                }));
-                                              }}
-                                              className="w-5 h-5 accent-blue-600"
-                                              aria-label="Checkbox (local tester — not saved)"
-                                            />
-                                            <input
-                                              type="text"
-                                              value={String(el.label ?? 'checkbox')}
-                                              onChange={(e) => {
-                                                const label = e.target.value;
-                                                setGradingCriterionElementsDraft(prev =>
-                                                  prev.map((x, j) => (j === idx ? { ...(x as any), type: 'checkbox', label } : x))
-                                                );
-                                              }}
-                                              className="min-w-0 flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-[12px] font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                                            />
-                                          </div>
-
-                                          <button
-                                            type="button"
-                                            onClick={() => removeCriterionElementAt(idx)}
-                                            className="p-2 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                                            aria-label="Remove checkbox element"
-                                          >
-                                            <Trash2 className="w-4 h-4" />
-                                          </button>
-      </div>
-    </div>
-  );
-                                  })}
-                                </div>
-                              ) : null}
-
-                                <div className={AUDIT_PANEL_INPUT_GRID_CLASS}>
-                                  {textboxEntries.length === 0 ? null : (
-                                    textboxEntries.map(({ el, idx }, pos) => {
-                                      const colSpan = auditPanelInputColSpan(pos, n);
-  return (
-                                        <div key={idx} className={`bg-white dark:bg-slate-800 rounded-[1.75rem] border border-slate-200 dark:border-slate-600/80 p-4 space-y-3 ${colSpan} shadow-sm hover:shadow-md transition-shadow`}>
-                                          <div className="flex items-center justify-between gap-3">
-                                            <input
-                                              type="text"
-                                              value={String(el.title ?? 'Textbox name')}
-                                              onChange={(e) => {
-                                                const title = e.target.value;
-                                                setGradingCriterionElementsDraft(prev =>
-                                                  prev.map((x, j) => (j === idx ? { ...(x as any), type: 'textboxButton', title } : x))
-                                                );
-                                              }}
-                                              className="min-w-0 flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-left text-[12px] font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                                            />
-
-                                            <button
-                                              type="button"
-                                              onClick={() => removeCriterionElementAt(idx)}
-                                              className="p-2 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                                              aria-label="Remove textbox element"
-                                            >
-                                              <Trash2 className="w-4 h-4" />
-                                            </button>
-                                          </div>
-
-                                          {/* Panel rule: [textbox][←][→] */}
-                                          <div className="flex w-full items-center gap-2">
-                                            <input
-                                              type="text"
-                                              inputMode="numeric"
-                                              value={criterionCanvasTest.text[idx] ?? ''}
-                                              placeholder="0"
-                                              onChange={(e) => {
-                                                const digits = e.target.value.replace(/[^\d]/g, '');
-                                                setCriterionCanvasTest((prev) => ({
-                                                  ...prev,
-                                                  text: { ...prev.text, [idx]: digits },
-                                                }));
-                                              }}
-                                              className={`min-w-0 flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-3 text-center text-[12px] font-black outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400 dark:text-slate-500 dark:text-slate-500 ${
-                                                (criterionCanvasTest.text[idx] ?? '').trim() === ''
-                                                  ? 'text-slate-400 dark:text-slate-500 dark:text-slate-500'
-                                                  : 'text-slate-900 dark:text-slate-100'
-                                              }`}
-                                              title="Local tester value — not saved with the criterion"
-                                            />
-
-                                            <div className="flex items-center gap-1 shrink-0">
-                                              <button
-                                                type="button"
-                                                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-[#0d1526] flex items-center justify-center text-slate-500 dark:text-slate-400 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 transition-colors select-none"
-                                                onMouseDown={() => startHold(() => bumpCriterionCanvasTestTextbox(idx, -1))}
-                                                onMouseUp={stopHold}
-                                                onMouseLeave={stopHold}
-                                                onTouchStart={() => startHold(() => bumpCriterionCanvasTestTextbox(idx, -1))}
-                                                onTouchEnd={stopHold}
-                                                onTouchCancel={stopHold}
-                                                onBlur={stopHold}
-                                                aria-label="Previous"
-                                                title="Hold to decrement (accelerates)"
-                                              >
-                                                <ChevronLeft className="w-4 h-4" />
-                                              </button>
-
-                                              <button
-                                                type="button"
-                                                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-[#0d1526] flex items-center justify-center text-slate-500 dark:text-slate-400 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 transition-colors select-none"
-                                                onMouseDown={() => startHold(() => bumpCriterionCanvasTestTextbox(idx, +1))}
-                                                onMouseUp={stopHold}
-                                                onMouseLeave={stopHold}
-                                                onTouchStart={() => startHold(() => bumpCriterionCanvasTestTextbox(idx, +1))}
-                                                onTouchEnd={stopHold}
-                                                onTouchCancel={stopHold}
-                                                onBlur={stopHold}
-                                                aria-label="Continue"
-                                                title="Hold to increment (accelerates)"
-                                              >
-                                                <ChevronRight className="w-4 h-4" />
-                                              </button>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      );
-                                    })
-                                  )}
-                                </div>
-                              </div>
-
-                                {/* Basic grading system: edit via Yield popup (see portal below). */}
-
-                                {/* Logo icon selection moved to the panel header (top-left). */}
-                              </div>
-                            );
-                          })()}
-
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  {gradingCriterionExitConfirmOpen &&
-                    createPortal(
-                      <div
-                        className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-slate-900/20"
-                        onClick={() => setGradingCriterionExitConfirmOpen(false)}
-                      >
-                        <div
-                          className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-5 shadow-sm shadow-slate-900/10"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
-                            Exit without saving? Your changes will not be saved.
-                          </p>
-                          <div className="flex gap-2 justify-end">
-                            <button
-                              type="button"
-                              onClick={() => setGradingCriterionExitConfirmOpen(false)}
-                              className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wide hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                closeCriterionEditor();
-                              }}
-                              className="px-3 py-2 rounded-lg bg-red-600 text-white text-[11px] font-bold uppercase tracking-wide hover:bg-red-700 transition-colors"
-                            >
-                              Exit
-                            </button>
-                          </div>
-                        </div>
-                      </div>,
-                      document.body
-                    )}
-                  {gradingCriterionGradingSystemPopupOpen &&
-                    ((gradingGradingSystemPopupMode === 'textbox' &&
-                      gradingCriterionElementsDraft.some((x: any) => x?.type === 'textboxButton')) ||
-                      (gradingGradingSystemPopupMode === 'checkbox' &&
-                        gradingCriterionElementsDraft.some((x: any) => x?.type === 'checkbox'))) &&
-                    createPortal(
-                      <div
-                        className="fixed inset-0 z-[5300] flex items-center justify-center p-4 bg-slate-900/25 backdrop-blur-[2px]"
-                        role="presentation"
-                        aria-modal="true"
-                      >
-                        <div
-                          className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[1.75rem] border border-slate-200 dark:border-slate-600/80 bg-white dark:bg-slate-800 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.18)]"
-                          onClick={(e) => e.stopPropagation()}
-                          role="dialog"
-                          aria-labelledby="grading-system-popup-title"
-                        >
-                          {(() => {
-                            const mode = gradingGradingSystemPopupMode;
-                            const gradingIdx = getCriterionGradingSystemIdx(gradingCriterionElementsDraft, mode);
-                            if (gradingIdx < 0) {
-                              return (
-                                <p className="text-sm text-slate-600 dark:text-slate-400 dark:text-slate-400">
-                                  {mode === 'checkbox'
-                                    ? 'Add checklist rows to this panel to configure count-based checkpoints, or close and try again.'
-                                    : 'Add a textbox + button to this panel to configure range checkpoints, or close and try again.'}
-                                </p>
-                              );
-                            }
-                            const el = gradingCriterionElementsDraft[gradingIdx] as
-                              | BasicGradingSystemElement
-                              | CheckboxGradingSystemElement;
-                            const capForNormalize = Math.max(
-                              0,
-                              maxScoreFromCriterionElementsDraft(gradingCriterionElementsDraft)
-                            );
-                            const textboxCountForPopup = gradingCriterionElementsDraft.filter((x: any) => x?.type === 'textboxButton').length;
-                            const multiTextboxGrading =
-                              mode === 'textbox' && el.type === 'basicGradingSystem' && textboxCountForPopup > 1;
-                            const textboxSectionTitles = gradingCriterionElementsDraft
-                              .filter((x: any) => x?.type === 'textboxButton')
-                              .map((x: any) => String(x.title ?? 'Textbox'));
-                            const checkpoints: GradingCheckpoint[] = multiTextboxGrading
-                              ? []
-                              : el.checkpoints?.length > 0
-                                ? el.checkpoints
-                                : mode === 'checkbox'
-                                  ? normalizeCheckboxGradingSystemFromRaw(el, capForNormalize).checkpoints
-                                  : normalizeBasicGradingSystemFromRaw(el as BasicGradingSystemElement, capForNormalize).checkpoints;
-                            const patchCheckpoints = (nextCps: GradingCheckpoint[]) => {
-                              let enforced = enforceGradingCheckpointNoMaxRule(nextCps);
-                              if (mode === 'checkbox') {
-                                enforced = enforceCheckboxGradingFiniteMax(enforced);
-                              }
-                              setGradingCriterionElementsDraft((prev) =>
-                                prev.map((x, j) => {
-                                  if (j !== gradingIdx) return x;
-                                  if (mode === 'checkbox' && (x as any).type === 'checkboxGradingSystem') {
-                                    return { type: 'checkboxGradingSystem' as const, checkpoints: enforced };
-                                  }
-                                  if (mode === 'textbox' && (x as any).type === 'basicGradingSystem') {
-                                    const bx = x as BasicGradingSystemElement;
-                                    return {
-                                      ...bx,
-                                      checkpoints: enforced,
-                                      perTextboxCheckpoints: undefined,
-                                    };
-                                  }
-                                  return x;
-                                })
-                              );
-                            };
-                            const patchOrdinalCheckpoints = (ord: number, nextCps: GradingCheckpoint[]) => {
-                              const enforced = enforceGradingCheckpointNoMaxRule(nextCps);
-                              setGradingCriterionElementsDraft((prev) => {
-                                const gi = getCriterionGradingSystemIdx(prev, mode);
-                                if (gi < 0) return prev;
-                                const b = prev[gi] as BasicGradingSystemElement;
-                                const tbCount = prev.filter((x: any) => x?.type === 'textboxButton').length;
-                                const base = (b.checkpoints?.length ? b.checkpoints : [{ min: 0, max: 0, score: 0 }]).map((c) => ({
-                                  ...c,
-                                }));
-                                const per = Array.from({ length: tbCount }, (_, t) =>
-                                  b.perTextboxCheckpoints?.[t]?.length
-                                    ? b.perTextboxCheckpoints[t]!.map((c) => ({ ...c }))
-                                    : base.map((c) => ({ ...c }))
-                                );
-                                per[ord] = enforced;
-                                return prev.map((x, j) =>
-                                  j === gi && (x as any).type === 'basicGradingSystem'
-                                    ? {
-                                        ...b,
-                                        perTextboxCheckpoints: per,
-                                        checkpoints: per[0] ?? enforced,
-                                      }
-                                    : x
-                                );
-                              });
-                            };
-                            const sanitizeCheckpointRows = (rows: GradingCheckpoint[]) =>
-                              rows.map((c) => {
-                                let min = Number.isFinite(Number(c.min)) ? Number(c.min) : 0;
-                                const score = Math.max(0, Math.min(1000, Number(c.score) || 0));
-                                let max: number | null = c.max;
-                                if (max !== null && max !== undefined && String(max).trim() !== '') {
-                                  max = Number(max);
-                                  if (!Number.isFinite(max)) max = min;
-                                  if (max < min) max = min;
-                                } else {
-                                  max = mode === 'checkbox' ? min : null;
-                                }
-                                return { min, max, score };
-                              });
-                            const checkboxCountForPreview = gradingCriterionElementsDraft.filter((x: any) => x?.type === 'checkbox').length;
-                            const allowedNoMaxRowIdx =
-                              mode === 'checkbox' || multiTextboxGrading
-                                ? null
-                                : resolveGradingNoMaxAllowedRowIndex(checkpoints);
-                            const updateRow = (rowIdx: number, patch: Partial<GradingCheckpoint>) => {
-                              const next = checkpoints.map((c, i) => (i === rowIdx ? { ...c, ...patch } : c));
-                              const fixed = sanitizeCheckpointRows(next);
-                              patchCheckpoints(enforceGradingCheckpointNoMaxRule(fixed));
-                            };
-                            return (
-                              <>
-                                <div className="flex items-start justify-between gap-3 mb-3">
-                                  <div>
-                                    <p
-                                      id="grading-system-popup-title"
-                                      className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide"
-                                    >
-                                      Basic grading system
-                                    </p>
-                                    <p className="text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Scoring checkpoints</p>
-                                    {mode === 'checkbox' && (
-                                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1 max-w-md leading-relaxed">
-                                        Min / Max = inclusive count of checkboxes selected (this criterion has {checkboxCountForPreview}{' '}
-                                        checklist row{checkboxCountForPreview === 1 ? '' : 's'}).
-                                      </p>
-                                    )}
-                                    {mode === 'textbox' && multiTextboxGrading && (
-                                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 mt-1 max-w-md leading-relaxed">
-                                        Each section matches one textbox (canvas order). Points per section add together, capped at the criterion total (
-                                        {capForNormalize} pts).
-                                      </p>
-                                    )}
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => requestCloseGradingSystemPopup()}
-                                    className="p-2.5 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-200 dark:hover:border-red-700 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600/80 shadow-sm hover:shadow transition-all duration-200 shrink-0"
-                                    aria-label="Close"
-                                  >
-                                    <X className="w-5 h-5" />
-                                  </button>
-                                </div>
-
-                                {multiTextboxGrading ? (
-                                  <div className="space-y-8 mb-4">
-                                    {Array.from({ length: textboxCountForPopup }, (_, ord) => {
-                                      const sectionCps = checkpointsForTextboxOrdinal(el as BasicGradingSystemElement, ord);
-                                      const cps =
-                                        sectionCps.length > 0
-                                          ? sectionCps
-                                          : [{ min: 0, max: 0, score: 0 }];
-                                      const dk = (row: number) => `${ord}-${row}`;
-                                      const allowedOrd = resolveGradingNoMaxAllowedRowIndex(cps);
-                                      const updateRowOrd = (rowIdx: number, patch: Partial<GradingCheckpoint>) => {
-                                        const next = cps.map((c, i) => (i === rowIdx ? { ...c, ...patch } : c));
-                                        const fixed = sanitizeCheckpointRows(next);
-                                        patchOrdinalCheckpoints(ord, enforceGradingCheckpointNoMaxRule(fixed));
-                                      };
-                                      return (
-                                        <div key={ord} className="rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4 space-y-3">
-                                          <p className="text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-                                            {textboxSectionTitles[ord] ?? `Textbox ${ord + 1}`}
-                                          </p>
-                                          <div className="hidden sm:grid gap-2 text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide px-1 mb-1 sm:grid-cols-12">
-                                            <span className="sm:col-span-2">Min</span>
-                                            <span className="sm:col-span-3">Max</span>
-                                            <span className="sm:col-span-2">Score (Yield)</span>
-                                            <span className="sm:col-span-3 text-center">No max</span>
-                                            <span className="sm:col-span-2">Remove</span>
-                                          </div>
-                                          <div className="space-y-3">
-                                            {cps.map((cp, rowIdx) => (
-                                              <div
-                                                key={rowIdx}
-                                                className="grid grid-cols-1 gap-2 items-end rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-[#0b1222]/50 p-3 sm:grid-cols-12"
-                                              >
-                                                <div className="space-y-1 sm:col-span-2">
-                                                  <label className="sm:hidden text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
-                                                    Min value
-                                                  </label>
-                                                  <input
-                                                    type="number"
-                                                    inputMode="decimal"
-                                                    value={cp.min}
-                                                    onChange={(e) => {
-                                                      const raw = parseFloat(e.target.value);
-                                                      updateRowOrd(rowIdx, { min: Number.isFinite(raw) ? raw : 0 });
-                                                      setGradingCheckpointMaxDraft((prev) => {
-                                                        const next = { ...prev };
-                                                        delete next[dk(rowIdx)];
-                                                        return next;
-                                                      });
-                                                    }}
-                                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                                                  />
-                                                </div>
-                                                <div className="sm:col-span-3 space-y-1">
-                                                  <label className="sm:hidden text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
-                                                    Max value
-                                                  </label>
-                                                  <input
-                                                    type="text"
-                                                    inputMode="decimal"
-                                                    disabled={cp.max === null}
-                                                    value={
-                                                      cp.max === null
-                                                        ? ''
-                                                        : gradingCheckpointMaxDraft[dk(rowIdx)] !== undefined
-                                                          ? gradingCheckpointMaxDraft[dk(rowIdx)]
-                                                          : String(cp.max ?? cp.min)
-                                                    }
-                                                    onChange={(e) => {
-                                                      const s = e.target.value;
-                                                      setGradingCheckpointMaxDraft((prev) => ({ ...prev, [dk(rowIdx)]: s }));
-                                                      const v = s.trim();
-                                                      if (v === '') return;
-                                                      const raw = parseFloat(v);
-                                                      if (Number.isFinite(raw)) {
-                                                        updateRowOrd(rowIdx, { max: raw });
-                                                      }
-                                                    }}
-                                                    onBlur={(e) => {
-                                                      if (cp.max === null) return;
-                                                      const v = e.target.value.trim();
-                                                      if (v === '') {
-                                                        updateRowOrd(rowIdx, { max: cp.min });
-                                                      } else {
-                                                        const raw = parseFloat(v);
-                                                        updateRowOrd(rowIdx, {
-                                                          max: Number.isFinite(raw) ? raw : cp.min,
-                                                        });
-                                                      }
-                                                      setGradingCheckpointMaxDraft((prev) => {
-                                                        const next = { ...prev };
-                                                        delete next[dk(rowIdx)];
-                                                        return next;
-                                                      });
-                                                    }}
-                                                    placeholder={cp.max === null ? '∞' : '0'}
-                                                    className={`w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-black outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 disabled:opacity-50 disabled:bg-slate-100 dark:bg-[#0d1526] ${
-                                                      cp.max === null
-                                                        ? 'text-slate-900 dark:text-slate-100'
-                                                        : 'text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:text-slate-500 dark:text-slate-500'
-                                                    }`}
-                                                  />
-                                                </div>
-                                                <div className="sm:col-span-2 space-y-1">
-                                                  <label className="sm:hidden text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
-                                                    Score
-                                                  </label>
-                                                  <input
-                                                    type="number"
-                                                    inputMode="numeric"
-                                                    min={0}
-                                                    max={1000}
-                                                    value={cp.score}
-                                                    onChange={(e) => {
-                                                      const raw = parseInt(e.target.value || '0', 10) || 0;
-                                                      const clamped = Math.min(1000, Math.max(0, raw));
-                                                      updateRowOrd(rowIdx, { score: clamped });
-                                                    }}
-                                                    title="Max points from this textbox’s tiers (sums with other textboxes, capped at criterion total)."
-                                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                                                  />
-                                                </div>
-                                                <div className="sm:col-span-3 flex items-center justify-center sm:justify-start gap-2 pb-1 sm:pb-2">
-                                                  <input
-                                                    id={`grading-no-max-${ord}-${rowIdx}`}
-                                                    type="checkbox"
-                                                    checked={cp.max === null}
-                                                    disabled={allowedOrd !== rowIdx}
-                                                    onChange={(e) => {
-                                                      if (allowedOrd !== rowIdx) return;
-                                                      const noMax = e.target.checked;
-                                                      setGradingCheckpointMaxDraft((prev) => {
-                                                        const next = { ...prev };
-                                                        delete next[dk(rowIdx)];
-                                                        return next;
-                                                      });
-                                                      updateRowOrd(rowIdx, {
-                                                        max: noMax ? null : cp.min,
-                                                      });
-                                                    }}
-                                                    className="w-4 h-4 accent-blue-600 rounded disabled:opacity-40 disabled:cursor-not-allowed"
-                                                  />
-                                                  <label
-                                                    htmlFor={`grading-no-max-${ord}-${rowIdx}`}
-                                                    className={`text-[10px] font-black uppercase tracking-wide ${
-                                                      allowedOrd === rowIdx
-                                                        ? 'text-slate-500 dark:text-slate-400 dark:text-slate-400 cursor-pointer'
-                                                        : 'text-slate-300 cursor-not-allowed'
-                                                    }`}
-                                                    title={
-                                                      allowedOrd === rowIdx
-                                                        ? cps.length <= 1
-                                                          ? 'Open-ended range for this single tier'
-                                                          : 'Open-ended range for the top tier only'
-                                                        : 'Only this tier may have no upper limit (unique highest min when multiple tiers exist)'
-                                                    }
-                                                  >
-                                                    No max (∞)
-                                                  </label>
-                                                </div>
-                                                <div className="sm:col-span-2 flex justify-end">
-                                                  <button
-                                                    type="button"
-                                                    disabled={cps.length <= 1}
-                                                    onClick={() => {
-                                                      setGradingCheckpointMaxDraft({});
-                                                      patchOrdinalCheckpoints(
-                                                        ord,
-                                                        cps.filter((_, i) => i !== rowIdx)
-                                                      );
-                                                    }}
-                                                    className="p-2 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                                                    aria-label="Remove checkpoint"
-                                                  >
-                                                    <Trash2 className="w-4 h-4" />
-                                                  </button>
-                                                </div>
-                                              </div>
-                                            ))}
-                                          </div>
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              setGradingCheckpointMaxDraft({});
-                                              const last = cps[cps.length - 1];
-                                              const nextMin =
-                                                last && last.max != null && Number.isFinite(last.max)
-                                                  ? last.max + 1
-                                                  : last
-                                                    ? last.min + 1
-                                                    : 0;
-                                              patchOrdinalCheckpoints(ord, [
-                                                ...cps,
-                                                {
-                                                  min: nextMin,
-                                                  max: null,
-                                                  score: 0,
-                                                },
-                                              ]);
-                                            }}
-                                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl border-2 border-dashed border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400 text-[10px] font-black uppercase tracking-wide hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                                          >
-                                            <Plus className="w-4 h-4" />
-                                            Add checkpoint
-                                          </button>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                ) : (
-                                  <>
-                                    <div
-                                      className={`hidden sm:grid gap-2 text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide px-1 mb-1 ${
-                                        mode === 'checkbox' ? 'sm:grid-cols-10' : 'sm:grid-cols-12'
-                                      }`}
-                                    >
-                                      <span className={mode === 'checkbox' ? 'sm:col-span-3' : 'sm:col-span-2'}>
-                                        {mode === 'checkbox' ? 'Min (checked)' : 'Min'}
-                                      </span>
-                                      <span className="sm:col-span-3">{mode === 'checkbox' ? 'Max (checked)' : 'Max'}</span>
-                                      <span className={mode === 'checkbox' ? 'sm:col-span-2' : 'sm:col-span-2'}>Score (Yield)</span>
-                                      {mode !== 'checkbox' && (
-                                        <span className="sm:col-span-3 text-center">No max</span>
-                                      )}
-                                      <span className={mode === 'checkbox' ? 'sm:col-span-2' : 'sm:col-span-2'}>Remove</span>
-                                    </div>
-
-                                    <div className="space-y-3 mb-4">
-                                      {checkpoints.map((cp, rowIdx) => {
-                                        const rowKey = String(rowIdx);
-                                        return (
-                                          <div
-                                            key={rowIdx}
-                                            className={`grid grid-cols-1 gap-2 items-end rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-[#0b1222]/50 p-3 ${
-                                              mode === 'checkbox' ? 'sm:grid-cols-10' : 'sm:grid-cols-12'
-                                            }`}
-                                          >
-                                            <div className={`space-y-1 ${mode === 'checkbox' ? 'sm:col-span-3' : 'sm:col-span-2'}`}>
-                                              <label className="sm:hidden text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
-                                                {mode === 'checkbox' ? 'Min checked' : 'Min value'}
-                                              </label>
-                                              <input
-                                                type="number"
-                                                inputMode={mode === 'checkbox' ? 'numeric' : 'decimal'}
-                                                value={cp.min}
-                                                onChange={(e) => {
-                                                  const raw = parseFloat(e.target.value);
-                                                  updateRow(rowIdx, { min: Number.isFinite(raw) ? raw : 0 });
-                                                  setGradingCheckpointMaxDraft((prev) => {
-                                                    const next = { ...prev };
-                                                    delete next[rowKey];
-                                                    return next;
-                                                  });
-                                                }}
-                                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                                              />
-                                            </div>
-                                            <div className="sm:col-span-3 space-y-1">
-                                              <label className="sm:hidden text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
-                                                {mode === 'checkbox' ? 'Max checked' : 'Max value'}
-                                              </label>
-                                              <input
-                                                type="text"
-                                                inputMode={mode === 'checkbox' ? 'numeric' : 'decimal'}
-                                                disabled={mode !== 'checkbox' && cp.max === null}
-                                                value={
-                                                  cp.max === null && mode !== 'checkbox'
-                                                    ? ''
-                                                    : gradingCheckpointMaxDraft[rowKey] !== undefined
-                                                      ? gradingCheckpointMaxDraft[rowKey]
-                                                      : String(cp.max ?? cp.min)
-                                                }
-                                                onChange={(e) => {
-                                                  const s = e.target.value;
-                                                  setGradingCheckpointMaxDraft((prev) => ({ ...prev, [rowKey]: s }));
-                                                  const v = s.trim();
-                                                  if (v === '') return;
-                                                  const raw = parseFloat(v);
-                                                  if (Number.isFinite(raw)) {
-                                                    updateRow(rowIdx, { max: raw });
-                                                  }
-                                                }}
-                                                onBlur={(e) => {
-                                                  if (mode !== 'checkbox' && cp.max === null) return;
-                                                  const v = e.target.value.trim();
-                                                  if (v === '') {
-                                                    updateRow(rowIdx, { max: cp.min });
-                                                  } else {
-                                                    const raw = parseFloat(v);
-                                                    updateRow(rowIdx, {
-                                                      max: Number.isFinite(raw) ? raw : cp.min,
-                                                    });
-                                                  }
-                                                  setGradingCheckpointMaxDraft((prev) => {
-                                                    const next = { ...prev };
-                                                    delete next[rowKey];
-                                                    return next;
-                                                  });
-                                                }}
-                                                placeholder={mode !== 'checkbox' && cp.max === null ? '∞' : '0'}
-                                                className={`w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-black outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 disabled:opacity-50 disabled:bg-slate-100 dark:bg-[#0d1526] ${
-                                                  mode !== 'checkbox' && cp.max === null
-                                                    ? 'text-slate-900 dark:text-slate-100'
-                                                    : 'text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:text-slate-500 dark:text-slate-500'
-                                                }`}
-                                              />
-                                            </div>
-                                            <div className="sm:col-span-2 space-y-1">
-                                              <label className="sm:hidden text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
-                                                Score
-                                              </label>
-                                              <input
-                                                type="number"
-                                                inputMode="numeric"
-                                                min={0}
-                                                max={1000}
-                                                value={cp.score}
-                                                onChange={(e) => {
-                                                  const raw = parseInt(e.target.value || '0', 10) || 0;
-                                                  const clamped = Math.min(1000, Math.max(0, raw));
-                                                  updateRow(rowIdx, { score: clamped });
-                                                }}
-                                                title="Highest score among all rows becomes the criterion max yield (Yield)."
-                                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                                              />
-                                            </div>
-                                            {mode !== 'checkbox' && (
-                                              <div className="sm:col-span-3 flex items-center justify-center sm:justify-start gap-2 pb-1 sm:pb-2">
-                                                <input
-                                                  id={`grading-no-max-${rowIdx}`}
-                                                  type="checkbox"
-                                                  checked={cp.max === null}
-                                                  disabled={allowedNoMaxRowIdx !== rowIdx}
-                                                  onChange={(e) => {
-                                                    if (allowedNoMaxRowIdx !== rowIdx) return;
-                                                    const noMax = e.target.checked;
-                                                    setGradingCheckpointMaxDraft((prev) => {
-                                                      const next = { ...prev };
-                                                      delete next[rowKey];
-                                                      return next;
-                                                    });
-                                                    updateRow(rowIdx, {
-                                                      max: noMax ? null : cp.min,
-                                                    });
-                                                  }}
-                                                  className="w-4 h-4 accent-blue-600 rounded disabled:opacity-40 disabled:cursor-not-allowed"
-                                                />
-                                                <label
-                                                  htmlFor={`grading-no-max-${rowIdx}`}
-                                                  className={`text-[10px] font-black uppercase tracking-wide ${
-                                                    allowedNoMaxRowIdx === rowIdx
-                                                      ? 'text-slate-500 dark:text-slate-400 dark:text-slate-400 cursor-pointer'
-                                                      : 'text-slate-300 cursor-not-allowed'
-                                                  }`}
-                                                  title={
-                                                    allowedNoMaxRowIdx === rowIdx
-                                                      ? checkpoints.length <= 1
-                                                        ? 'Open-ended range for this single tier'
-                                                        : 'Open-ended range for the top tier only'
-                                                      : 'Only this tier may have no upper limit (unique highest min when multiple tiers exist)'
-                                                  }
-                                                >
-                                                  No max (∞)
-                                                </label>
-                                              </div>
-                                            )}
-                                            <div className="sm:col-span-2 flex justify-end">
-                                              <button
-                                                type="button"
-                                                disabled={checkpoints.length <= 1}
-                                                onClick={() => {
-                                                  setGradingCheckpointMaxDraft({});
-                                                  patchCheckpoints(checkpoints.filter((_, i) => i !== rowIdx));
-                                                }}
-                                                className="p-2 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                                                aria-label="Remove checkpoint"
-                                              >
-                                                <Trash2 className="w-4 h-4" />
-                                              </button>
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setGradingCheckpointMaxDraft({});
-                                        const last = checkpoints[checkpoints.length - 1];
-                                        const nextMin =
-                                          last && last.max != null && Number.isFinite(last.max)
-                                            ? last.max + 1
-                                            : last
-                                              ? last.min + 1
-                                              : 0;
-                                        patchCheckpoints([
-                                          ...checkpoints,
-                                          {
-                                            min: nextMin,
-                                            max: mode === 'checkbox' ? nextMin : null,
-                                            score: 0,
-                                          },
-                                        ]);
-                                      }}
-                                      className="mb-4 w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl border-2 border-dashed border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400 text-[10px] font-black uppercase tracking-wide hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                                    >
-                                      <Plus className="w-4 h-4" />
-                                      Add checkpoint
-                                    </button>
-                                  </>
-                                )}
-
-                                <div className="flex justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => setGradingCriterionGradingSystemPopupOpen(false)}
-                                    className="px-5 py-3 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-wide shadow-lg shadow-slate-900/25 hover:bg-slate-800 hover:shadow-sm hover:shadow-slate-900/30 transition-all"
-                                  >
-                                    Save changes
-                                  </button>
-                                </div>
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </div>,
-                      document.body
-                    )}
-                  {gradingSystemPopupExitConfirmOpen &&
-                    createPortal(
-                      <div
-                        className="fixed inset-0 z-[5400] flex items-center justify-center p-4 bg-slate-900/30"
-                        onClick={() => setGradingSystemPopupExitConfirmOpen(false)}
-                      >
-                        <div
-                          className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-5 shadow-sm shadow-slate-900/10"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
-                            Close without saving? Your checkpoint changes will be discarded.
-                          </p>
-                          <div className="flex gap-2 justify-end">
-                            <button
-                              type="button"
-                              onClick={() => setGradingSystemPopupExitConfirmOpen(false)}
-                              className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wide hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const snap = gradingSystemPopupSnapshotRef.current;
-                                const idx = getCriterionGradingSystemIdx(gradingCriterionElementsDraft, gradingGradingSystemPopupMode);
-                                if (snap && idx >= 0) {
-                                  try {
-                                    const parsed = JSON.parse(snap) as unknown;
-                                    const kind =
-                                      gradingGradingSystemPopupMode === 'checkbox' ? 'checkboxGradingSystem' : 'basicGradingSystem';
-                                    if (kind === 'checkboxGradingSystem' && Array.isArray(parsed)) {
-                                      setGradingCriterionElementsDraft((prev) =>
-                                        prev.map((x, j) =>
-                                          j === idx && (x as any).type === kind
-                                            ? {
-                                                type: 'checkboxGradingSystem' as const,
-                                                checkpoints: parsed.map((c: any) => sanitizeCheckpoint(c)),
-                                              }
-                                            : x
-                                        )
-                                      );
-                                    } else if (kind === 'basicGradingSystem') {
-                                      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-                                        const o = parsed as { v?: number; checkpoints?: unknown[]; per?: unknown };
-                                        if (o.v === 2 && Array.isArray(o.per)) {
-                                          setGradingCriterionElementsDraft((prev) =>
-                                            prev.map((x, j) => {
-                                              if (j !== idx || (x as any).type !== 'basicGradingSystem') return x;
-                                              const cur = x as BasicGradingSystemElement;
-                                              const per = (o.per as unknown[][]).map((row) =>
-                                                Array.isArray(row) ? row.map((c: any) => sanitizeCheckpoint(c)) : []
-                                              );
-                                              const first = per[0]?.length ? per[0] : cur.checkpoints;
-                                              return {
-                                                ...cur,
-                                                checkpoints: first.map((c) => ({ ...c })),
-                                                perTextboxCheckpoints: per,
-                                              };
-                                            })
-                                          );
-                                        } else if (o.v === 1 && Array.isArray(o.checkpoints)) {
-                                          setGradingCriterionElementsDraft((prev) =>
-                                            prev.map((x, j) => {
-                                              if (j !== idx || (x as any).type !== 'basicGradingSystem') return x;
-                                              const cur = x as BasicGradingSystemElement;
-                                              return {
-                                                ...cur,
-                                                checkpoints: o.checkpoints!.map((c: any) => sanitizeCheckpoint(c)),
-                                                perTextboxCheckpoints: undefined,
-                                              };
-                                            })
-                                          );
-                                        }
-                                      } else if (Array.isArray(parsed)) {
-                                        setGradingCriterionElementsDraft((prev) =>
-                                          prev.map((x, j) => {
-                                            if (j !== idx || (x as any).type !== 'basicGradingSystem') return x;
-                                            const cur = x as BasicGradingSystemElement;
-                                            return {
-                                              ...cur,
-                                              checkpoints: parsed.map((c: any) => sanitizeCheckpoint(c)),
-                                              perTextboxCheckpoints: undefined,
-                                            };
-                                          })
-                                        );
-                                      }
-                                    }
-                                  } catch {
-                                    /* ignore */
-                                  }
-                                }
-                                setGradingCriterionGradingSystemPopupOpen(false);
-                                setGradingSystemPopupExitConfirmOpen(false);
-                              }}
-                              className="px-3 py-2 rounded-lg bg-red-600 text-white text-[11px] font-bold uppercase tracking-wide hover:bg-red-700 transition-colors"
-                            >
-                              Exit
-                            </button>
-                          </div>
-                        </div>
-                      </div>,
-                      document.body
-                    )}
-                </>
-              )}
 
               <div className="p-6 overflow-y-auto flex-1 min-h-0">
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mb-4">Edit category name, icon, weight (%), and grading content criteria.</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mb-4">Edit category name, icon, and weight (%).</p>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">KPI categories</p>
-                    <button
-                      type="button"
-                      onClick={() => handleAddCategory(dept)}
-                      className="px-4 py-2 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-wide shadow-sm hover:bg-blue-700 active:scale-[0.99] transition-all flex items-center gap-2"
-                      title="Add a new KPI category"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add category
-                    </button>
-                  </div>
+                  <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">KPI categories</p>
                   {categories.map((cat, idx) => {
                     const effectiveIcon = cat.icon ?? presetIcons[idx] ?? 'FileText';
                     const IconComponent = CATEGORY_ICON_MAP[effectiveIcon] || FileText;
-                    const isContentExpanded = gradingContentExpanded === idx;
                     const content = cat.content ?? [];
                     const contentPointSum = categoryContentPointSums[idx] ?? 0;
                     const isContentPointSumValid = contentPointSum === cat.weightPct;
@@ -5505,7 +3500,7 @@ const AdminDashboard: React.FC<Props> = ({
                                 }}
                                 className={`w-28 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-sm font-black tabular-nums outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-sm ${weightClases}`}
                               >
-                                {[5,10,15,20,25,30,35,40,45,50].map(w => {
+                                {[1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map(w => {
                                   const otherTotal = totalWeight - cat.weightPct;
                                   const wouldExceed = otherTotal + w > 100;
                                   return (
@@ -5541,54 +3536,6 @@ const AdminDashboard: React.FC<Props> = ({
                                 Remove
                               </button>
                             </div>
-                          </div>
-                          <div>
-                            <button type="button" onClick={() => setGradingContentExpanded(isContentExpanded ? null : idx)} className="flex items-center gap-2 text-[10px] font-black text-slate-600 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide hover:text-blue-600 transition-colors">
-                              <ChevronDown className={`w-4 h-4 transition-transform ${isContentExpanded ? 'rotate-180' : ''}`} />
-                              <span>Grading content (audit criteria) — {content.length} item(s)</span>
-                              <span className={`ml-2 px-2 py-1 rounded-lg border text-[10px] font-black tabular-nums ${isContentPointSumValid ? 'border-emerald-200 bg-emerald-500/10 text-emerald-700' : 'border-amber-200 dark:border-amber-700 bg-amber-500/10 text-amber-700'}`}>
-                                {contentPointSum}/{cat.weightPct} Yield
-                              </span>
-                            </button>
-                            {isContentExpanded && (
-                              <div className="mt-3 pl-4 border-l-2 border-slate-200 dark:border-slate-600 space-y-2">
-                                {content.map((item, itemIdx) => (
-                                  <div
-                                    key={itemIdx}
-                                    className="w-full flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-900/80 transition-colors"
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() => openCriterionEditor(dept, idx, itemIdx)}
-                                      className="flex-1 min-w-0 flex items-center justify-between gap-3 px-1 py-0.5 text-left rounded-md hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
-                                      title="Edit grading criterion"
-                                    >
-                                      <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide truncate">
-                                        {String(item.label || 'New criterion')}
-                                      </span>
-                                      <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 tabular-nums shrink-0">
-                                        {Number(item.maxpoints ?? 0) || 0} Yield
-                                      </span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleRemoveContentItem(dept, idx, itemIdx);
-                                      }}
-                                      className="p-2 rounded-lg text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors shrink-0"
-                                      title="Remove criterion"
-                                      aria-label="Remove criterion"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                ))}
-                                <button type="button" onClick={() => handleAddContentItem(dept, idx)} className="flex items-center gap-1.5 text-[10px] font-black text-blue-600 uppercase tracking-wide hover:text-blue-700 dark:hover:text-blue-400">
-                                  <Plus className="w-3.5 h-3.5" /> Add criterion
-                                </button>
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>

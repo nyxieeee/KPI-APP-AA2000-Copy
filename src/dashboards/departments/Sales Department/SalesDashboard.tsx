@@ -70,31 +70,31 @@ interface Props {
 
 /** Performance matrix / scorecard (short codes) — names match Department grading labels when admin config exists. */
 const SALES_DEFAULT_CATEGORIES = [
-  { key: 'revenueScore' as const, label: 'REV', name: 'Revenue Score', weightPct: 40, color: 'bg-[#4CAF50]', textColor: 'text-[#4CAF50]' },
-  { key: 'accountsScore' as const, label: 'ACC', name: 'Accounts Score', weightPct: 20, color: 'bg-[#3F51B5]', textColor: 'text-[#3F51B5]' },
-  { key: 'activitiesScore' as const, label: 'ACT', name: 'Activities Score', weightPct: 20, color: 'bg-[#FF9800]', textColor: 'text-[#FF9800]' },
-  { key: 'quotationScore' as const, label: 'QTE', name: 'Quotation Mgmt', weightPct: 10, color: 'bg-[#9C27B0]', textColor: 'text-[#9C27B0]' },
-  { key: 'attendanceScore' as const, label: 'ATT', name: 'Attendance', weightPct: 5, color: 'bg-[#F44336]', textColor: 'text-[#F44336]' },
-  { key: 'additionalRespScore' as const, label: 'ADD', name: 'Additional Responsibility', weightPct: 5, color: 'bg-[#757575]', textColor: 'text-[#757575]' },
+  { key: 'revenueScore' as const, label: 'REV', name: 'Revenue Score', weightPct: 50, color: 'bg-[#4CAF50]', textColor: 'text-[#4CAF50]' },
+  { key: 'accountsScore' as const, label: 'ACC', name: 'Accounts Score', weightPct: 25, color: 'bg-[#3F51B5]', textColor: 'text-[#3F51B5]' },
+  { key: 'activitiesScore' as const, label: 'ACT', name: 'Activities Score', weightPct: 15, color: 'bg-[#FF9800]', textColor: 'text-[#FF9800]' },
+  { key: 'attendanceScore' as const, label: 'ATT', name: 'Attendance & Discipline', weightPct: 5, color: 'bg-[#F44336]', textColor: 'text-[#F44336]' },
+  { key: 'additionalRespScore' as const, label: 'ADD', name: 'Additional Responsibilities', weightPct: 3, color: 'bg-[#9C27B0]', textColor: 'text-[#9C27B0]' },
+  { key: 'administrativeExcellenceScore' as const, label: 'ADM', name: 'Administrative Excellence', weightPct: 2, color: 'bg-[#757575]', textColor: 'text-[#757575]' },
 ];
 
 const SALES_CHECKLIST_CONTENT: Record<string, string[]> = {
   'Revenue Score': [],
   'Accounts Score': [],
   'Activities Score': [],
-  'Quotation Mgmt': [],
-  'Attendance': [],
-  'Additional Responsibility': [],
+  'Attendance & Discipline': [],
+  'Additional Responsibilities': [],
+  'Administrative Excellence': [],
 };
 
 /** KPI tiles when admin has not saved Department grading (same labels as Admin → Department grading → Sales defaults). */
 const DEFAULT_SALES_CLASSIFICATIONS = [
-  { name: 'Revenue Score', description: '40% Weight', weight: '40%', tooltip: 'Weighted impact: 40%', icon: DollarSign },
-  { name: 'Accounts Score', description: '20% Weight', weight: '20%', tooltip: 'Weighted impact: 20%', icon: UserPlus },
-  { name: 'Activities Score', description: '20% Weight', weight: '20%', tooltip: 'Weighted impact: 20%', icon: PhoneCall },
-  { name: 'Quotation Mgmt', description: '10% Weight', weight: '10%', tooltip: 'Weighted impact: 10%', icon: ListChecks },
-  { name: 'Attendance', description: '5% Weight', weight: '5%', tooltip: 'Weighted impact: 5%', icon: ShieldCheck },
-  { name: 'Additional Responsibility', description: '5% Weight', weight: '5%', tooltip: 'Weighted impact: 5%', icon: Handshake },
+  { name: 'Revenue Score', description: '50% Weight', weight: '50%', tooltip: 'Weighted impact: 50%', icon: DollarSign },
+  { name: 'Accounts Score', description: '25% Weight', weight: '25%', tooltip: 'Weighted impact: 25%', icon: UserPlus },
+  { name: 'Activities Score', description: '15% Weight', weight: '15%', tooltip: 'Weighted impact: 15%', icon: PhoneCall },
+  { name: 'Attendance & Discipline', description: '5% Weight', weight: '5%', tooltip: 'Weighted impact: 5%', icon: ShieldCheck },
+  { name: 'Additional Responsibilities', description: '3% Weight', weight: '3%', tooltip: 'Weighted impact: 3%', icon: Handshake },
+  { name: 'Administrative Excellence', description: '2% Weight', weight: '2%', tooltip: 'Weighted impact: 2%', icon: FileStack },
 ];
 
 const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights, onDeleteSubmission, onEditSubmission, onClearMyLogs, notifications = [], onDeleteNotification }) => {
@@ -439,6 +439,7 @@ const SalesDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmis
       'Attendance': 4.0,
       'Additional Responsibilities': 4.0,
       'Additional Responsibility': 4.0,
+      'Administrative Excellence': 4.0,
     };
     let perf = complexityScores[formData.jobType] || 4.0;
     if (formData.systemStatus === 'Closed Won') perf = 5.0;

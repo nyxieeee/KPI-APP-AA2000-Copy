@@ -59,50 +59,32 @@ interface Props {
 // DEPRECATED: Use departmentWeights instead
 // These are kept for backward compatibility only
 const MARKETING_DEFAULT_CATEGORIES = [
-  { name: 'Campaign Execution & Quality', label: 'CAM', weightPct: 40, color: 'bg-[#4CAF50]', textColor: 'text-[#4CAF50]' },
-  { name: 'Lead Generation & Sales Support', label: 'LEA', weightPct: 30, color: 'bg-[#3F51B5]', textColor: 'text-[#3F51B5]' },
-  { name: 'Digital & Social Media Performance', label: 'DIG', weightPct: 25, color: 'bg-[#FF9800]', textColor: 'text-[#FF9800]' },
+  { name: 'Campaign Execution & Quality', label: 'CAM', weightPct: 50, color: 'bg-[#4CAF50]', textColor: 'text-[#4CAF50]' },
+  { name: 'Lead Generation & Sales Support', label: 'LEA', weightPct: 25, color: 'bg-[#3F51B5]', textColor: 'text-[#3F51B5]' },
+  { name: 'Digital & Social Media Performance', label: 'DIG', weightPct: 15, color: 'bg-[#FF9800]', textColor: 'text-[#FF9800]' },
+  { name: 'Attendance & Discipline', label: 'ATD', weightPct: 5, color: 'bg-[#F44336]', textColor: 'text-[#F44336]' },
   { name: 'Additional Responsibilities', label: 'ADR', weightPct: 3, color: 'bg-[#9C27B0]', textColor: 'text-[#9C27B0]' },
-  { name: 'Attendance & Discipline', label: 'ATD', weightPct: 2, color: 'bg-[#757575]', textColor: 'text-[#757575]' }
+  { name: 'Administrative Excellence', label: 'AEX', weightPct: 2, color: 'bg-[#757575]', textColor: 'text-[#757575]' }
 ];
 
 // DEPRECATED: Use departmentWeights instead
 const DEFAULT_MARKETING_CLASSIFICATIONS = [
-  { name: 'Campaign Execution & Quality', description: '40% Weight', weight: '40%', tooltip: 'Weighted impact: 40%', icon: Landmark },
-  { name: 'Lead Generation & Sales Support', description: '30% Weight', weight: '30%', tooltip: 'Weighted impact: 30%', icon: ShoppingCart },
-  { name: 'Digital & Social Media Performance', description: '25% Weight', weight: '25%', tooltip: 'Weighted impact: 25%', icon: FileStack },
+  { name: 'Campaign Execution & Quality', description: '50% Weight', weight: '50%', tooltip: 'Weighted impact: 50%', icon: Landmark },
+  { name: 'Lead Generation & Sales Support', description: '25% Weight', weight: '25%', tooltip: 'Weighted impact: 25%', icon: ShoppingCart },
+  { name: 'Digital & Social Media Performance', description: '15% Weight', weight: '15%', tooltip: 'Weighted impact: 15%', icon: FileStack },
+  { name: 'Attendance & Discipline', description: '5% Weight', weight: '5%', tooltip: 'Weighted impact: 5%', icon: CalendarCheck },
   { name: 'Additional Responsibilities', description: '3% Weight', weight: '3%', tooltip: 'Weighted impact: 3%', icon: PenTool },
-  { name: 'Attendance & Discipline', description: '2% Weight', weight: '2%', tooltip: 'Weighted impact: 2%', icon: CalendarCheck },
+  { name: 'Administrative Excellence', description: '2% Weight', weight: '2%', tooltip: 'Weighted impact: 2%', icon: FileStack },
 ];
 
 /** Legacy task labels for Marketing log detail (default category names; admin uses criterion `content`). */
 const MARKETING_LOG_CHECKLIST_CONTENT: Record<string, string[]> = {
-  'Accounting Excellence': [
-    'Financial reports submitted accurately and on time',
-    'Accounts Receivable aging within acceptable limits',
-    'Bank reconciliations completed without discrepancies',
-    'Ledger entries verified for accuracy',
-    'Month-end closing procedures completed on schedule',
-    'Compliance with internal accounting standards',
-  ],
-  'Purchasing Excellence': [
-    'Cost savings targets met or exceeded',
-    'Vendor performance and quality evaluated',
-    'Purchase Orders processed within SLA',
-    'Alternative suppliers sourced for better rates',
-    'Inventory levels optimized to reduce holding costs',
-    'Procurement policies strictly followed',
-  ],
-  'Administrative Excellence': [
-    'Assigned administrative tasks completed on time',
-    'Documentation and filing systems maintained',
-    'Service Level Agreements (SLAs) met consistently',
-    'Data entry accuracy verified',
-    'Internal communications handled promptly',
-    'Office supplies and resources managed efficiently',
-  ],
+  'Campaign Execution & Quality': [],
+  'Lead Generation & Sales Support': [],
+  'Digital & Social Media Performance': [],
   'Additional Responsibilities': [],
   'Attendance & Discipline': [],
+  'Administrative Excellence': [],
 };
 
 const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights, onDeleteSubmission, onEditSubmission, onClearMyLogs, notifications = [], onDeleteNotification }) => {

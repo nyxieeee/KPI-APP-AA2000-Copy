@@ -15,15 +15,7 @@ export const SALES_WEIGHTED_CATEGORY_ORDER = [
   'Quotation Management',
   'Attendance & Discipline',
   'Additional Responsibilities',
-] as const;
-
-const SALES_ADMIN_LABELS = [
-  'Revenue Score',
-  'Accounts Score',
-  'Activities Score',
-  'Quotation Mgmt',
-  'Attendance',
-  'Additional Responsibility',
+  'Administrative Excellence',
 ] as const;
 
 /** Default category labels when admin has not saved Department grading (matches Admin defaults). */
@@ -31,19 +23,26 @@ export const DEFAULT_SALES_CATEGORY_LABELS = [
   'Revenue Score',
   'Accounts Score',
   'Activities Score',
-  'Quotation Mgmt',
-  'Attendance',
-  'Additional Responsibility',
+  'Attendance & Discipline',
+  'Additional Responsibilities',
+  'Administrative Excellence',
 ] as const;
 
-const DEFAULT_SALES_WEIGHT_PCTS = [40, 20, 20, 10, 5, 5] as const;
+const DEFAULT_SALES_WEIGHT_PCTS = [50, 25, 15, 5, 3, 2] as const;
 
 /** Map Department grading label (or legacy canonical name) to legacy scoring slot. */
-function legacySalesSlot(label: string): (typeof SALES_WEIGHTED_CATEGORY_ORDER)[number] | string {
+function legacySalesSlot(label: string): string {
   const t = String(label ?? '').trim();
-  if ((SALES_WEIGHTED_CATEGORY_ORDER as readonly string[]).includes(t)) return t as (typeof SALES_WEIGHTED_CATEGORY_ORDER)[number];
-  const idx = (SALES_ADMIN_LABELS as readonly string[]).indexOf(t as (typeof SALES_ADMIN_LABELS)[number]);
-  if (idx >= 0) return SALES_WEIGHTED_CATEGORY_ORDER[idx];
+  if ((SALES_WEIGHTED_CATEGORY_ORDER as readonly string[]).includes(t)) return t;
+  const map: Record<string, (typeof SALES_WEIGHTED_CATEGORY_ORDER)[number]> = {
+    'Revenue Score': 'Revenue Achievement',
+    'Accounts Score': 'End-User Accounts Closed',
+    'Activities Score': 'Sales Activities',
+    'Quotation Mgmt': 'Quotation Management',
+    'Attendance': 'Attendance & Discipline',
+    'Additional Responsibility': 'Additional Responsibilities',
+  };
+  if (map[t]) return map[t];
   return t;
 }
 
@@ -132,6 +131,11 @@ export function computeSalesLegacyCategoryScore(
     }
     case 'Additional Responsibilities': {
       return Number((catData as { additionalRespValue?: number }).additionalRespValue) || 0;
+    }
+    case 'Administrative Excellence': {
+      const v = (catData as { administrativeExcellence?: number }).administrativeExcellence;
+      if (v != null && Number.isFinite(Number(v))) return Math.min(100, Math.max(0, Number(v)));
+      return 0;
     }
     default:
       return 0;
@@ -248,6 +252,7 @@ const LEGACY_TECHNICAL_METRIC_KEYS: Array<{ key: string; label: string }> = [
   { key: 'clientSatisfactionScore', label: 'Client Satisfaction & Turnover' },
   { key: 'teamLeadershipScore', label: 'Team Leadership & Accountability' },
   { key: 'salesSupportScore', label: 'Sales Support & Lead Development' },
+  { key: 'additionalResponsibilitiesScore', label: 'Additional Responsibilities' },
   { key: 'adminExcellenceScore', label: 'Administrative Excellence' },
   { key: 'attendanceScore', label: 'Attendance & Discipline' },
 ];

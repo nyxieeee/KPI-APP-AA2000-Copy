@@ -125,38 +125,42 @@ const PesoCircleIcon = ({ className = "w-5 h-5" }) => (
 );
 
 const CATEGORY_ICONS: Record<string, any> = {
-  'Project Execution Quality': Wrench,
-  'Client Satisfaction & Turnover': Handshake,
-  'Team Leadership & Accountability': Users2,
-  'Sales Support & Lead Development': TrendingUp,
+  'System Uptime & Reliability': Wrench,
+  'Technical Support Quality': Handshake,
+  'Security & Compliance': Users2,
+  'Additional Responsibilities': TrendingUp,
   'Administrative Excellence': FileStack,
   'Attendance & Discipline': ShieldCheck
 };
 
 const DEFAULT_CATEGORY_WEIGHTS: Record<string, number> = {
-  'SYSTEM UPTIME & RELIABILITY': 0.35,
+  'System Uptime & Reliability': 0.50,
   'Technical Support Quality': 0.25,
-  'Security & Compliance': 0.20,
-  'Project & Development Delivery': 0.15,
+  'Security & Compliance': 0.15,
   'Attendance & Discipline': 0.05,
+  'Additional Responsibilities': 0.03,
+  'Administrative Excellence': 0.02,
 };
 
 const CHECKLIST_CONTENT: Record<string, string[]> = {
-  'SYSTEM UPTIME & RELIABILITY': [
-    'Uptime Percentage (20 points)',
-    'Incident Prevention (15 points)',
+  'System Uptime & Reliability': [
+    'Uptime Percentage (30 points)',
+    'Incident Prevention (20 points)',
   ],
   'Technical Support Quality': [
     'Ticket Resolution Rate (15 points)',
     'User Satisfaction Score (10 points)',
   ],
   'Security & Compliance': [
-    'Security Audit Score (12 points)',
-    'Policy Compliance (8 points)',
+    'Security Audit Score (9 points)',
+    'Policy Compliance (6 points)',
   ],
-  'Project & Development Delivery': [
-    'On-time Delivery Rate (10 points)',
-    'Project Quality Score (5 points)',
+  'Additional Responsibilities': [
+    'On-call and project coverage (3 points)',
+  ],
+  'Administrative Excellence': [
+    'Documentation and change control (1 point)',
+    'Asset and access compliance (1 point)',
   ],
   'Attendance & Discipline': [
     'Attendance Rate (3 points)',
@@ -165,11 +169,12 @@ const CHECKLIST_CONTENT: Record<string, string[]> = {
 };
 
 const DEFAULT_IT_CATEGORY_LABELS = [
-  'SYSTEM UPTIME & RELIABILITY',
+  'System Uptime & Reliability',
   'Technical Support Quality',
   'Security & Compliance',
-  'Project & Development Delivery',
   'Attendance & Discipline',
+  'Additional Responsibilities',
+  'Administrative Excellence',
 ];
 
 type Page = 'dashboard' | 'queue' | 'validation' | 'team' | 'incentives';
@@ -204,12 +209,12 @@ const ITSupervisorDashboard: React.FC<Props> = ({
     const list = departmentWeights?.IT;
     if (!list?.length) {
       return [
-        { name: 'Project Execution Quality', weight: '40%' },
-        { name: 'Client Satisfaction & Turnover', weight: '25%' },
-        { name: 'Team Leadership & Accountability', weight: '15%' },
-        { name: 'Sales Support & Lead Development', weight: '10%' },
-        { name: 'Administrative Excellence', weight: '5%' },
+        { name: 'System Uptime & Reliability', weight: '50%' },
+        { name: 'Technical Support Quality', weight: '25%' },
+        { name: 'Security & Compliance', weight: '15%' },
         { name: 'Attendance & Discipline', weight: '5%' },
+        { name: 'Additional Responsibilities', weight: '3%' },
+        { name: 'Administrative Excellence', weight: '2%' },
       ];
     }
     return list.map((c) => ({ name: c.label, weight: `${c.weightPct}%` }));
@@ -601,7 +606,7 @@ const ITSupervisorDashboard: React.FC<Props> = ({
 
   const getCompletedTasks = (log: Transmission) => {
     if (!log.pmChecklist) return [];
-    const labels = CHECKLIST_CONTENT[log.jobType] || CHECKLIST_CONTENT['SYSTEM UPTIME & RELIABILITY'];
+    const labels = CHECKLIST_CONTENT[log.jobType] || CHECKLIST_CONTENT['System Uptime & Reliability'];
     return Object.entries(log.pmChecklist)
       .filter(([_, checked]) => checked)
       .map(([key, _]) => {

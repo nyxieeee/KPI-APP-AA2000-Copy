@@ -105,26 +105,33 @@ import {
   Download
 } from 'lucide-react';
 
-const ACCOUNTING_LABEL_TO_KEY: Record<string, 'accountingScore' | 'purchasingScore' | 'adminScore' | 'additionalRespScore' | 'attendanceScore'> = {
+type AccountingWeightMetricKey =
+  | 'accountingScore'
+  | 'purchasingScore'
+  | 'purchasingAdminScore'
+  | 'adminScore'
+  | 'additionalRespScore'
+  | 'attendanceScore';
+
+const ACCOUNTING_LABEL_TO_KEY: Record<string, AccountingWeightMetricKey> = {
   'Accounting Excellence': 'accountingScore',
   'Purchasing Excellence': 'purchasingScore',
+  'Purchasing/Admin Excellence': 'purchasingAdminScore',
   'Administrative Excellence': 'adminScore',
+  'Additional Responsibilities': 'additionalRespScore',
   'Additional Responsibility': 'additionalRespScore',
+  'Attendance & Discipline': 'attendanceScore',
   'Attendance': 'attendanceScore',
 };
 
-const ACCOUNTING_LOG_DETAIL_NAMES: { name: string; key: keyof typeof ACCOUNTING_LABEL_TO_KEY }[] = [
-  { name: 'Accounting Excellence', key: 'accountingScore' },
-  { name: 'Purchasing Excellence', key: 'purchasingScore' },
-  { name: 'Administrative Excellence', key: 'adminScore' },
-];
-
+/** Fallback weights when admin has not saved Department grading (3 unique + 3 common). */
 const ACCOUNTING_DEFAULT_WEIGHTS: Record<string, number> = {
-  'Accounting Excellence': 0.40,
-  'Purchasing Excellence': 0.30,
-  'Administrative Excellence': 0.25,
-  'Additional Responsibility': 0.03,
-  'Attendance': 0.02
+  'Accounting Excellence': 0.5,
+  'Purchasing Excellence': 0.3,
+  'Purchasing/Admin Excellence': 0.1,
+  'Attendance & Discipline': 0.05,
+  'Additional Responsibilities': 0.03,
+  'Administrative Excellence': 0.02,
 };
 
 /** Legacy task labels for KPI when admin has not defined criteria (same as Accounting employee Core). */
@@ -145,13 +152,13 @@ const ACCOUNTING_CHECKLIST_CONTENT: Record<string, string[]> = {
     'Inventory levels optimized to reduce holding costs',
     'Procurement policies strictly followed',
   ],
+  'Purchasing/Admin Excellence': [
+    'Procurement and administrative coordination',
+    'PO documentation and filing accuracy',
+  ],
   'Administrative Excellence': [
-    'Assigned administrative tasks completed on time',
-    'Documentation and filing systems maintained',
-    'Service Level Agreements (SLAs) met consistently',
-    'Data entry accuracy verified',
-    'Internal communications handled promptly',
-    'Office supplies and resources managed efficiently',
+    'Front-office and filing tasks completed on time',
+    'Internal policy and SLA adherence',
   ],
   'Additional Responsibilities': [],
   'Attendance & Discipline': [],
@@ -180,9 +187,10 @@ const PesoCircleIcon = ({ className = "w-5 h-5" }) => (
 const CATEGORY_ICONS: Record<string, any> = {
   'Accounting Excellence': Calculator,
   'Purchasing Excellence': PhilippinePeso,
+  'Purchasing/Admin Excellence': FileSearch,
   'Administrative Excellence': FileCheck,
   'Additional Responsibilities': Handshake,
-  'Attendance & Discipline': CalendarCheck
+  'Attendance & Discipline': CalendarCheck,
 };
 
 type Page = 'dashboard' | 'queue' | 'validation' | 'team' | 'incentives';
@@ -206,13 +214,21 @@ const AccountingSupervisorDashboard: React.FC<Props> = ({
   const transmissionHistory = deptBucket.history || [];
   const accountingWeights = useMemo(() => {
     const list = departmentWeights?.Accounting;
-    if (!list?.length) return { accountingScore: 0.40, purchasingScore: 0.30, adminScore: 0.25, additionalRespScore: 0.03, attendanceScore: 0.02 };
-    const out: Record<string, number> = {};
+    const empty: Record<AccountingWeightMetricKey, number> = {
+      accountingScore: 0.5,
+      purchasingScore: 0.3,
+      purchasingAdminScore: 0.1,
+      attendanceScore: 0.05,
+      additionalRespScore: 0.03,
+      adminScore: 0.02,
+    };
+    if (!list?.length) return empty;
+    const out: Partial<Record<AccountingWeightMetricKey, number>> = {};
     list.forEach((c) => {
       const key = ACCOUNTING_LABEL_TO_KEY[c.label];
       if (key) out[key] = c.weightPct / 100;
     });
-    return out;
+    return { ...empty, ...out } as Record<AccountingWeightMetricKey, number>;
   }, [departmentWeights]);
 
   const accountingClassificationRows = useMemo(() => {
@@ -382,23 +398,6 @@ const AccountingSupervisorDashboard: React.FC<Props> = ({
     ];
   }, [deptMembers, user]);
 
-  /** Same per-category 0–100 scores as Accounting employee KPI + admin Department grading (`allSalesData` keys = category labels). */
-  const calculateInitialScores = (item: Transmission) => {
-    const raw = getDepartmentCategoryRawScoresForSupervisor(
-      item,
-      departmentWeights,
-      'Accounting',
-      ACCOUNTING_CHECKLIST_CONTENT
-    );
-    return {
-      accountingScore: Math.round(raw['Accounting Excellence'] ?? 0),
-      purchasingScore: Math.round(raw['Purchasing Excellence'] ?? 0),
-      adminScore: Math.round(raw['Administrative Excellence'] ?? 0),
-      additionalRespScore: Math.round(raw['Additional Responsibilities'] ?? 0),
-      attendanceScore: Math.round(raw['Attendance & Discipline'] ?? 0),
-    };
-  };
-
   const handleOpenValidation = (item: Transmission, readOnly: boolean = false) => {
     setSelectedLog(item);
     setIsReadOnly(readOnly);
@@ -412,7 +411,7 @@ const AccountingSupervisorDashboard: React.FC<Props> = ({
       systemStatus: item.systemStatus
     });
     
-    const labels = departmentWeights?.Accounting?.map((c) => c.label) ?? Object.keys(ACCOUNTING_LABEL_TO_KEY);
+    const labels = departmentWeights?.Accounting?.map((c) => c.label) ?? Object.keys(ACCOUNTING_DEFAULT_WEIGHTS);
     let next: Record<string, number> = {};
     const snapshot = item.ratings?.logDetailSnapshot;
     if (snapshot?.length) {
@@ -425,20 +424,19 @@ const AccountingSupervisorDashboard: React.FC<Props> = ({
     if (!snapshot?.length) {
       const am = (item.ratings as { accountingMetrics?: Record<string, any> } | undefined)?.accountingMetrics;
       if (am && labels.length > 0) {
-        // Map to configured labels dynamically
-        const scores = [
-          am.accountingScore ?? am.auditScore ?? 0,
-          am.purchasingScore ?? (am.taxScore != null && am.apArScore != null && am.budgetScore != null ? Math.round((am.taxScore + am.apArScore + am.budgetScore) / 3) : 0),
-          am.adminScore ?? 0,
-          am.additionalRespScore ?? 0,
-          am.attendanceScore ?? 0
-        ];
-        
-        labels.forEach((label, idx) => {
-          next[label] = scores[idx] ?? 0;
+        labels.forEach((label) => {
+          if (typeof am[label] === 'number') {
+            next[label] = am[label];
+            return;
+          }
+          const metricKey = ACCOUNTING_LABEL_TO_KEY[label];
+          if (metricKey != null && am[metricKey] != null) {
+            next[label] = Number(am[metricKey]) || 0;
+            return;
+          }
+          next[label] = 0;
         });
       } else if (!am) {
-        // If no metrics, try to extract from logDetailSnapshot or use getDepartmentCategoryRawScoresForSupervisor
         const raw = getDepartmentCategoryRawScoresForSupervisor(item, departmentWeights, 'Accounting', ACCOUNTING_CHECKLIST_CONTENT);
         labels.forEach((label) => {
           next[label] = raw[label] ?? 0;
@@ -465,13 +463,9 @@ const AccountingSupervisorDashboard: React.FC<Props> = ({
         total += score * (c.weightPct / 100);
       });
     } else {
-      // Fallback to legacy structure matching accountingWeights
-      total = 
-        (grading['Accounting Excellence'] ?? 0) * (accountingWeights.accountingScore ?? 0.40) +
-        (grading['Purchasing Excellence'] ?? 0) * (accountingWeights.purchasingScore ?? 0.30) +
-        (grading['Administrative Excellence'] ?? 0) * (accountingWeights.adminScore ?? 0.25) +
-        (grading['Additional Responsibilities'] ?? 0) * (accountingWeights.additionalRespScore ?? 0.03) +
-        (grading['Attendance & Discipline'] ?? 0) * (accountingWeights.attendanceScore ?? 0.02);
+      for (const [label, frac] of Object.entries(ACCOUNTING_DEFAULT_WEIGHTS)) {
+        total += (grading[label] ?? 0) * frac;
+      }
     }
     
     const final = Math.round(total * 100) / 100;
@@ -500,7 +494,7 @@ const AccountingSupervisorDashboard: React.FC<Props> = ({
       return;
     }
 
-    const labels = departmentWeights?.Accounting?.map((c) => c.label) ?? Object.keys(ACCOUNTING_LABEL_TO_KEY);
+    const labels = departmentWeights?.Accounting?.map((c) => c.label) ?? Object.keys(ACCOUNTING_DEFAULT_WEIGHTS);
     const logDetailSnapshot = labels.map((name) => {
       let weightPct = 0;
       if (departmentWeights?.Accounting?.length) {
@@ -1458,20 +1452,11 @@ const AccountingSupervisorDashboard: React.FC<Props> = ({
     const budgetData = accData['Budgeting & Forecasting'] || {};
     const attendanceData = accData['Attendance & Discipline'] || {};
 
-    const CATEGORY_KEYS: Record<string, keyof typeof grading> = {
-      'Accounting Excellence': 'accountingScore',
-      'Purchasing Excellence': 'purchasingScore',
-      'Administrative Excellence': 'adminScore',
-      'Additional Responsibilities': 'additionalRespScore',
-      'Attendance & Discipline': 'attendanceScore'
-    };
-
-    const CATEGORY_WEIGHTS: Record<string, number> = {
-      'Accounting Excellence': accountingWeights.accountingScore ?? 0.40,
-      'Purchasing Excellence': accountingWeights.purchasingScore ?? 0.30,
-      'Administrative Excellence': accountingWeights.adminScore ?? 0.25,
-      'Additional Responsibilities': accountingWeights.additionalRespScore ?? 0.03,
-      'Attendance & Discipline': accountingWeights.attendanceScore ?? 0.02
+    const weightForLabel = (label: string): number => {
+      if (departmentWeights?.Accounting?.length) {
+        return (departmentWeights.Accounting.find((c) => c.label === label)?.weightPct ?? 0) / 100;
+      }
+      return ACCOUNTING_DEFAULT_WEIGHTS[label] ?? 0;
     };
 
     return (
@@ -1512,10 +1497,11 @@ const AccountingSupervisorDashboard: React.FC<Props> = ({
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 relative z-10">
-                    {(departmentWeights?.Accounting?.length ? departmentWeights.Accounting.map(c => c.label) : Object.keys(CATEGORY_ICONS)).map((category) => {
-                      const weight = departmentWeights?.Accounting?.length 
-                        ? (departmentWeights.Accounting.find(c => c.label === category)?.weightPct ?? 0) / 100
-                        : (category === 'Accounting Excellence' ? 0.4 : category === 'Purchasing Excellence' ? 0.3 : category === 'Administrative Excellence' ? 0.25 : category === 'Additional Responsibilities' ? 0.03 : 0.02);
+                    {(departmentWeights?.Accounting?.length
+                      ? departmentWeights.Accounting.map((c) => c.label)
+                      : Object.keys(ACCOUNTING_DEFAULT_WEIGHTS)
+                    ).map((category) => {
+                      const weight = weightForLabel(category);
                       
                       const catCfg = departmentWeights?.Accounting?.find((c) => c.label === category);
                       const Icon = catCfg?.icon ? getEmployeeCategoryIcon(catCfg.icon) : CATEGORY_ICONS[category] || Calculator;

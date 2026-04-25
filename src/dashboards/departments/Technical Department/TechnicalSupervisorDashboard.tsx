@@ -130,50 +130,48 @@ const CATEGORY_ICONS: Record<string, any> = {
   'Project Execution Quality': Wrench,
   'Client Satisfaction & Turnover': Handshake,
   'Team Leadership & Accountability': Users2,
-  'Sales Support & Lead Development': TrendingUp,
+  'Additional Responsibilities': TrendingUp,
   'Administrative Excellence': FileStack,
   'Attendance & Discipline': ShieldCheck
 };
 
 const DEFAULT_CATEGORY_WEIGHTS: Record<string, number> = {
-  'Project Execution Quality': 0.40,
+  'Project Execution Quality': 0.50,
   'Client Satisfaction & Turnover': 0.25,
   'Team Leadership & Accountability': 0.15,
-  'Sales Support & Lead Development': 0.10,
-  'Administrative Excellence': 0.05,
-  'Attendance & Discipline': 0.05
+  'Attendance & Discipline': 0.05,
+  'Additional Responsibilities': 0.03,
+  'Administrative Excellence': 0.02,
 };
 
 const CHECKLIST_CONTENT: Record<string, string[]> = {
   'Project Execution Quality': [
-    'Zero Back-Job Rate (50 points)',
-    'First-Time Fix Quality (25 points)',
-    'Technical Compliance & Standards (15 points)',
-    'Schedule Adherence (10 points)'
+    'Zero Back-Job Rate (25 points)',
+    'First-Time Fix Quality (12 points)',
+    'Technical Compliance & Standards (7 points)',
+    'Schedule Adherence (6 points)'
   ],
   'Client Satisfaction & Turnover': [
-    'Client Satisfaction Score - CSAT (50 points)',
-    'Smooth Turnover Rate (30 points)',
-    'Zero Client Complaints/Escalations (20 points)'
+    'Client Satisfaction Score - CSAT (15 points)',
+    'Smooth Turnover Rate (5 points)',
+    'Zero Client Complaints/Escalations (5 points)'
   ],
   'Team Leadership & Accountability': [
-    'Team Performance Under Supervision (40 points)',
-    'Safety Record - Zero Incidents (35 points) - CRITICAL',
-    'Accountability & Ownership (25 points)'
+    'Team Performance Under Supervision (7 points)',
+    'Safety Record - Zero Incidents (4 points) - CRITICAL',
+    'Accountability & Ownership (4 points)'
   ],
-  'Sales Support & Lead Development': [
-    'Site Visits & Technical Consultations (40 points)',
-    'Technical Feasibility Confirmations (35 points)',
-    'Sales Team Feedback (25 points)'
+  'Additional Responsibilities': [
+    'Extra assignments and coverage (3 points)',
   ],
   'Administrative Excellence': [
-    'Report Submission Timeliness (60 points)',
-    'Report Accuracy (40 points)'
+    'Report Submission Timeliness (1 point)',
+    'Report Accuracy (1 point)'
   ],
   'Attendance & Discipline': [
-    'Attendance Reliability (50 points)',
-    'Punctuality & Timekeeping (30 points)',
-    'Operational Preparedness (20 points)'
+    'Attendance Reliability (3 points)',
+    'Punctuality & Timekeeping (1 point)',
+    'Operational Preparedness (1 point)'
   ]
 };
 
@@ -181,9 +179,9 @@ const DEFAULT_TECH_CATEGORY_LABELS = [
   'Project Execution Quality',
   'Client Satisfaction & Turnover',
   'Team Leadership & Accountability',
-  'Sales Support & Lead Development',
-  'Administrative Excellence',
   'Attendance & Discipline',
+  'Additional Responsibilities',
+  'Administrative Excellence',
 ];
 
 type Page = 'dashboard' | 'queue' | 'validation' | 'team' | 'incentives';
@@ -218,12 +216,12 @@ const TechnicalSupervisorDashboard: React.FC<Props> = ({
     const list = departmentWeights?.Technical;
     if (!list?.length) {
       return [
-        { name: 'Project Execution Quality', weight: '40%' },
+        { name: 'Project Execution Quality', weight: '50%' },
         { name: 'Client Satisfaction & Turnover', weight: '25%' },
         { name: 'Team Leadership & Accountability', weight: '15%' },
-        { name: 'Sales Support & Lead Development', weight: '10%' },
-        { name: 'Administrative Excellence', weight: '5%' },
         { name: 'Attendance & Discipline', weight: '5%' },
+        { name: 'Additional Responsibilities', weight: '3%' },
+        { name: 'Administrative Excellence', weight: '2%' },
       ];
     }
     return list.map((c) => ({ name: c.label, weight: `${c.weightPct}%` }));

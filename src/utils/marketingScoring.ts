@@ -262,6 +262,7 @@ export interface MarketingCategoryTotals {
   digitalSocialMedia: number;
   additionalResponsibilities: number;
   attendanceDiscipline: number;
+  administrativeExcellence: number;
 }
 
 export function getCategoryTotalsFromAllSalesData(
@@ -272,6 +273,7 @@ export function getCategoryTotalsFromAllSalesData(
   const digitalChecklist = allData['Digital & Social Media Performance']?.checklist ?? {};
   const addChecklist = allData['Additional Responsibilities']?.checklist ?? {};
   const attChecklist = allData['Attendance & Discipline']?.checklist ?? {};
+  const adminExChecklist = allData['Administrative Excellence']?.checklist ?? {};
 
   return {
     campaignExecution: getAccountingAggregate(campaignChecklist as Record<string, unknown>),
@@ -279,15 +281,17 @@ export function getCategoryTotalsFromAllSalesData(
     digitalSocialMedia: getAdministrativeAggregate(digitalChecklist as Record<string, unknown>),
     additionalResponsibilities: Math.min(100, Math.max(0, Number(addChecklist.additionalRespValue) || 0)),
     attendanceDiscipline: getAttendanceDisciplineAggregate(attChecklist as Record<string, unknown>),
+    administrativeExcellence: getAdministrativeAggregate(adminExChecklist as Record<string, unknown>),
   };
 }
 
 const MARKETING_WEIGHTS = {
-  campaignExecution: 0.35,
-  leadGeneration: 0.30,
-  digitalSocialMedia: 0.25,
-  additionalResponsibilities: 0.05,
+  campaignExecution: 0.5,
+  leadGeneration: 0.25,
+  digitalSocialMedia: 0.15,
   attendanceDiscipline: 0.05,
+  additionalResponsibilities: 0.03,
+  administrativeExcellence: 0.02,
 } as const;
 
 export function getWeightedScoreFromTotals(totals: MarketingCategoryTotals): number {
@@ -296,7 +300,8 @@ export function getWeightedScoreFromTotals(totals: MarketingCategoryTotals): num
     totals.leadGeneration * MARKETING_WEIGHTS.leadGeneration +
     totals.digitalSocialMedia * MARKETING_WEIGHTS.digitalSocialMedia +
     totals.additionalResponsibilities * MARKETING_WEIGHTS.additionalResponsibilities +
-    totals.attendanceDiscipline * MARKETING_WEIGHTS.attendanceDiscipline;
+    totals.attendanceDiscipline * MARKETING_WEIGHTS.attendanceDiscipline +
+    totals.administrativeExcellence * MARKETING_WEIGHTS.administrativeExcellence;
   return Math.min(100, Math.max(0, Math.round(sum * 100) / 100));
 }
 
@@ -311,6 +316,7 @@ export function getWeightedScoreFromCategoryWeights(
     totals.leadGeneration * (w['Lead Generation & Sales Support'] ?? MARKETING_WEIGHTS.leadGeneration) +
     totals.digitalSocialMedia * (w['Digital & Social Media Performance'] ?? MARKETING_WEIGHTS.digitalSocialMedia) +
     totals.additionalResponsibilities * (w['Additional Responsibilities'] ?? MARKETING_WEIGHTS.additionalResponsibilities) +
-    totals.attendanceDiscipline * (w['Attendance & Discipline'] ?? MARKETING_WEIGHTS.attendanceDiscipline);
+    totals.attendanceDiscipline * (w['Attendance & Discipline'] ?? MARKETING_WEIGHTS.attendanceDiscipline) +
+    totals.administrativeExcellence * (w['Administrative Excellence'] ?? MARKETING_WEIGHTS.administrativeExcellence);
   return Math.min(100, Math.max(0, Math.round(sum * 100) / 100));
 }

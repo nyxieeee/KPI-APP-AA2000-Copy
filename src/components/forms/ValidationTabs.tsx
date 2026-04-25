@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Transmission } from '../types';
+import { Transmission } from '../../types';
 
 interface ValidationTabsProps {
   pendingTransmissions: Transmission[];

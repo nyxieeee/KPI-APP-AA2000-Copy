@@ -67,13 +67,21 @@ interface Props {
   onDeleteNotification?: (id: string) => void;
 }
 
-const ACCOUNTING_KEYS = ['accountingScore', 'purchasingScore', 'adminScore', 'additionalRespScore', 'attendanceScore'] as const;
+const ACCOUNTING_KEYS = [
+  'accountingScore',
+  'purchasingScore',
+  'purchasingAdminScore',
+  'attendanceScore',
+  'additionalRespScore',
+  'adminScore',
+] as const;
 
 /** Map category label (allSalesData keys / panel `name`) to `ratings.accountingMetrics` field names. */
 function accountingLabelToMetricKey(label: string): (typeof ACCOUNTING_KEYS)[number] {
   const k = label.trim().toLowerCase();
   if (k === 'accounting excellence') return 'accountingScore';
   if (k === 'purchasing excellence') return 'purchasingScore';
+  if (k === 'purchasing/admin excellence' || k === 'purchasing & admin excellence') return 'purchasingAdminScore';
   if (k === 'administrative excellence') return 'adminScore';
   if (k === 'additional responsibility' || k === 'additional responsibilities') return 'additionalRespScore';
   if (k === 'attendance' || k === 'attendance & discipline' || k === 'attendance and discipline') return 'attendanceScore';
@@ -88,19 +96,21 @@ function toCanonicalCategoryDisplayName(rawLabel: string): string {
   return rawLabel;
 }
 const ACCOUNTING_DEFAULT_CATEGORIES = [
-  { key: 'accountingScore' as const, label: 'ACC', name: 'Accounting Excellence', weightPct: 40, color: 'bg-[#4CAF50]', textColor: 'text-[#4CAF50]' },
+  { key: 'accountingScore' as const, label: 'ACC', name: 'Accounting Excellence', weightPct: 50, color: 'bg-[#4CAF50]', textColor: 'text-[#4CAF50]' },
   { key: 'purchasingScore' as const, label: 'PUR', name: 'Purchasing Excellence', weightPct: 30, color: 'bg-[#3F51B5]', textColor: 'text-[#3F51B5]' },
-  { key: 'adminScore' as const, label: 'ADM', name: 'Administrative Excellence', weightPct: 25, color: 'bg-[#FF9800]', textColor: 'text-[#FF9800]' },
+  { key: 'purchasingAdminScore' as const, label: 'PAE', name: 'Purchasing/Admin Excellence', weightPct: 10, color: 'bg-[#FF9800]', textColor: 'text-[#FF9800]' },
+  { key: 'attendanceScore' as const, label: 'ATT', name: 'Attendance & Discipline', weightPct: 5, color: 'bg-[#F44336]', textColor: 'text-[#F44336]' },
   { key: 'additionalRespScore' as const, label: 'ADD', name: 'Additional Responsibilities', weightPct: 3, color: 'bg-[#9C27B0]', textColor: 'text-[#9C27B0]' },
-  { key: 'attendanceScore' as const, label: 'ATT', name: 'Attendance & Discipline', weightPct: 2, color: 'bg-[#757575]', textColor: 'text-[#757575]' }
+  { key: 'adminScore' as const, label: 'ADM', name: 'Administrative Excellence', weightPct: 2, color: 'bg-[#757575]', textColor: 'text-[#757575]' }
 ];
 
 const DEFAULT_ACCOUNTING_CLASSIFICATIONS = [
-  { name: 'Accounting Excellence', description: 'Accuracy, Timeliness, AR Management', weight: '40%', tooltip: 'Primary Performance Factor: 40% Weight', icon: Calculator, color: 'blue' as const },
-  { name: 'Purchasing Excellence', description: 'Cost Savings, Vendor Quality, PO Speed', weight: '30%', tooltip: 'Cost Management: 30% Weight', icon: PhilippinePeso, color: 'blue' as const },
-  { name: 'Administrative Excellence', description: 'Task Completion, SLA, Accuracy', weight: '25%', tooltip: 'Operational Efficiency: 25% Weight', icon: FileCheck, color: 'amber' as const },
-  { name: 'Additional Responsibilities', description: 'Special Projects, Flexibility', weight: '3%', tooltip: 'Organizational Contribution: 3% Weight', icon: Handshake, color: 'purple' as const },
-  { name: 'Attendance & Discipline', description: 'Reliability and Compliance', weight: '2%', tooltip: 'Professionalism Standard: 2% Weight', icon: CalendarCheck, color: 'red' as const }
+  { name: 'Accounting Excellence', description: 'Accuracy, AR, and compliance', weight: '50%', tooltip: 'Primary Performance Factor: 50% Weight', icon: Calculator, color: 'blue' as const },
+  { name: 'Purchasing Excellence', description: 'Cost, vendors, and POs', weight: '30%', tooltip: 'Cost Management: 30% Weight', icon: PhilippinePeso, color: 'blue' as const },
+  { name: 'Purchasing/Admin Excellence', description: 'Procurement and admin handoffs', weight: '10%', tooltip: '10% Weight', icon: FileCheck, color: 'amber' as const },
+  { name: 'Attendance & Discipline', description: 'Reliability and conduct', weight: '5%', tooltip: '5% Weight', icon: CalendarCheck, color: 'red' as const },
+  { name: 'Additional Responsibilities', description: 'Special projects and coverage', weight: '3%', tooltip: '3% Weight', icon: Handshake, color: 'purple' as const },
+  { name: 'Administrative Excellence', description: 'Office admin and support tasks', weight: '2%', tooltip: '2% Weight', icon: FileStack, color: 'emerald' as const }
 ];
 
 const ACCOUNTING_CHECKLIST_CONTENT: Record<string, string[]> = {
@@ -120,16 +130,17 @@ const ACCOUNTING_CHECKLIST_CONTENT: Record<string, string[]> = {
     'Inventory levels optimized to reduce holding costs',
     'Procurement policies strictly followed'
   ],
-  'Administrative Excellence': [
-    'Assigned administrative tasks completed on time',
-    'Documentation and filing systems maintained',
-    'Service Level Agreements (SLAs) met consistently',
-    'Data entry accuracy verified',
-    'Internal communications handled promptly',
-    'Office supplies and resources managed efficiently'
+  'Purchasing/Admin Excellence': [
+    'Procurement and administrative coordination',
+    'PO documentation and filing accuracy',
+    'Vendor communication and follow-through',
   ],
   'Additional Responsibilities': [],
-  'Attendance & Discipline': []
+  'Attendance & Discipline': [],
+  'Administrative Excellence': [
+    'Front-office and filing tasks completed on time',
+    'Internal policy and SLA adherence',
+  ],
 };
 
 const AccountingDashboard: React.FC<Props> = ({ user, validatedStats, announcements, pendingTransmissions, transmissionHistory, onTransmit, departmentWeights, onDeleteSubmission, onEditSubmission, onClearMyLogs, notifications = [], onDeleteNotification }) => {
@@ -600,6 +611,7 @@ const AccountingDashboard: React.FC<Props> = ({ user, validatedStats, announceme
       const k = normalize(rawLabel);
       if (k === 'accounting excellence') return 'accountingScore';
       if (k === 'purchasing excellence') return 'purchasingScore';
+      if (k === 'purchasing/admin excellence' || k === 'purchasing & admin excellence') return 'purchasingAdminScore';
       if (k === 'administrative excellence') return 'adminScore';
       if (k === 'additional responsibility' || k === 'additional responsibilities') return 'additionalRespScore';
       if (k === 'attendance' || k === 'attendance & discipline' || k === 'attendance and discipline') return 'attendanceScore';
