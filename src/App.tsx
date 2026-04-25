@@ -267,6 +267,46 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Debug utility: log every button-like click so non-firing actions are easy to trace in browser console.
+  useEffect(() => {
+    const isLocalDevHost =
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (!isLocalDevHost) return;
+
+    const resolveButtonLike = (target: EventTarget | null): HTMLElement | null => {
+      const el = target instanceof Element ? target : null;
+      if (!el) return null;
+      return el.closest('button, [role="button"], input[type="button"], input[type="submit"]') as HTMLElement | null;
+    };
+
+    const readLabel = (el: HTMLElement): string => {
+      const aria = el.getAttribute('aria-label');
+      if (aria && aria.trim()) return aria.trim();
+      const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+      if (text) return text;
+      return el.getAttribute('name') || el.getAttribute('id') || '(unlabeled control)';
+    };
+
+    const onClickCapture = (e: MouseEvent) => {
+      const control = resolveButtonLike(e.target);
+      if (!control) return;
+      const disabled = control.hasAttribute('disabled') || control.getAttribute('aria-disabled') === 'true';
+      const kind = control.tagName.toLowerCase();
+      console.info('[UI CLICK]', {
+        label: readLabel(control),
+        kind,
+        disabled,
+        id: control.id || null,
+        className: control.className || null,
+        path: location.pathname,
+      });
+    };
+
+    document.addEventListener('click', onClickCapture, true);
+    return () => document.removeEventListener('click', onClickCapture, true);
+  }, [location.pathname]);
+
   // Restore session user on same-tab refresh only (sessionStorage clears on tab/browser close).
   // Credentials, role, and email are never stored in localStorage.
   useEffect(() => {
@@ -519,34 +559,6 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
     }
   }, [pendingTransmissions, user, addAuditEntry, addNotification]);
 
-  const handleDeleteSubmission = useCallback((transmission: Transmission) => {
-    if (!user) return;
-    const dept = transmission.department || user.department || 'Unknown';
-    setAuditBuckets((prev) => {
-      const next = { ...prev };
-      const b = next[dept] ?? { pending: [], history: [] };
-      next[dept] = {
-        pending: (b.pending || []).filter((t: Transmission) => t.id !== transmission.id),
-        history: (b.history || []).filter((t: Transmission) => t.id !== transmission.id),
-      };
-      return next;
-    });
-    addAuditEntry('DATA_DELETE', `Submission ${transmission.id} deleted by ${user.name}`, 'WARN', user.name);
-
-    // Notify supervisor(s) of this department
-    const deptSupervisors = registry.filter((u: any) => u.department === dept && u.role === UserRole.SUPERVISOR && u.isActive);
-    deptSupervisors.forEach((sup: any) => {
-      const supId = btoa(sup.name);
-      addNotification(`${user.name} deleted submission ${transmission.id}.`, supId, 'ALERT');
-    });
-    // Notify admin
-    const admins = adminUsers['Admin'] || [];
-    admins.forEach((adminName: string) => {
-      const adminId = btoa(adminName);
-      addNotification(`${user.name} (${dept}) deleted submission ${transmission.id}.`, adminId, 'ALERT');
-    });
-  }, [user, registry, adminUsers, addAuditEntry, addNotification]);
-
   const handleClearMyLogs = useCallback(() => {
     if (!user) return;
     const dept = user.department || 'Unknown';
@@ -727,7 +739,6 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
                         departmentWeights={departmentWeights}
                         onUpdateDepartmentWeights={setDepartmentWeights}
                         onTransmit={handleTransmit}
-                        onDeleteSubmission={handleDeleteSubmission}
                         onEditSubmission={handleEditSubmission}
                         onClearMyLogs={handleClearMyLogs}
                         onValidate={handleValidate}

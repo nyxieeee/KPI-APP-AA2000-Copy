@@ -13,7 +13,6 @@ interface Props {
   transmissionHistory: Transmission[];
   announcements: Announcement[];
   onTransmit: (t: Transmission) => void;
-  onDeleteSubmission?: (t: Transmission) => void;
   onEditSubmission?: (t: Transmission) => void;
   onClearMyLogs?: () => void;
   departmentWeights: DepartmentWeights;

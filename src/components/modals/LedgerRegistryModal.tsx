@@ -17,8 +17,6 @@ export type LedgerRegistrySharedProps = {
   getInitialScore?: (t: Transmission) => number | undefined | null;
   getValidatedScore?: (t: Transmission) => number | undefined | null;
   isGradingExpired?: (t: Transmission) => boolean;
-  /** Called when employee deletes a pending submission */
-  onDelete?: (t: Transmission) => void;
   /** Called when employee edits a pending submission (opens re-submission flow) */
   onEdit?: (t: Transmission) => void;
   /** Called when employee clears all their submission logs */
@@ -41,11 +39,9 @@ function RegistryRecordList({
   getInitialScore,
   getValidatedScore,
   isGradingExpired,
-  onDelete,
   onEdit,
   theme,
 }: RegistryListProps) {
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const showScores = typeof getInitialScore === 'function' || typeof getValidatedScore === 'function';
   const d = theme === 'dark';
 
@@ -185,62 +181,24 @@ function RegistryRecordList({
                   </div>
                 )}
 
-                {/* Edit / Delete — only for pending submissions (not yet validated or rejected) */}
-                {!t.status && (onEdit || onDelete) && (
+                {/* Edit action — only for pending submissions (not yet validated or rejected) */}
+                {!t.status && onEdit && (
                   <div
                     className={`pt-3 border-t flex items-center gap-2 ${d ? 'border-white/5' : 'border-slate-100 dark:border-slate-700'}`}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {onEdit && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onEdit(t); }}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-colors ${
-                          d
-                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20'
-                            : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 border border-blue-200 dark:border-blue-700 hover:bg-blue-100'
-                        }`}
-                      >
-                        <Pencil className="w-3 h-3" />
-                        Edit
-                      </button>
-                    )}
-                    {onDelete && (
-                      confirmDeleteId === t.id ? (
-                        <div className="flex items-center gap-2 ml-auto">
-                          <span className={`text-[10px] font-bold ${d ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>Delete?</span>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); onDelete(t); setConfirmDeleteId(null); }}
-                            className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide bg-rose-500 text-white hover:bg-rose-600 transition-colors"
-                          >
-                            Confirm
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-colors ${
-                              d ? 'bg-white dark:bg-slate-800/10 text-slate-300 hover:bg-white dark:hover:bg-slate-800/20' : 'bg-slate-100 dark:bg-[#0d1526] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                            }`}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(t.id); }}
-                          className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-colors ${
-                            d
-                              ? 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20'
-                              : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
-                          }`}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Delete
-                        </button>
-                      )
-                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onEdit(t); }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-colors ${
+                        d
+                          ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20'
+                          : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 border border-blue-200 dark:border-blue-700 hover:bg-blue-100'
+                      }`}
+                    >
+                      <Pencil className="w-3 h-3" />
+                      Edit
+                    </button>
                   </div>
                 )}
               </div>
@@ -265,7 +223,6 @@ export const LedgerRegistryPanel: React.FC<LedgerRegistrySharedProps & { classNa
   getInitialScore,
   getValidatedScore,
   isGradingExpired,
-  onDelete,
   onEdit,
   onClearLogs,
 }) => {
@@ -324,7 +281,6 @@ export const LedgerRegistryPanel: React.FC<LedgerRegistrySharedProps & { classNa
         getInitialScore={getInitialScore}
         getValidatedScore={getValidatedScore}
         isGradingExpired={isGradingExpired}
-        onDelete={onDelete}
         onEdit={onEdit}
         theme="light"
       />
@@ -345,7 +301,6 @@ export const LedgerRegistryModal: React.FC<ModalProps> = ({
   getInitialScore,
   getValidatedScore,
   isGradingExpired,
-  onDelete,
   onEdit,
 }) => {
   if (!open || typeof document === 'undefined') return null;
@@ -388,8 +343,7 @@ export const LedgerRegistryModal: React.FC<ModalProps> = ({
             getInitialScore={getInitialScore}
             getValidatedScore={getValidatedScore}
             isGradingExpired={isGradingExpired}
-            onDelete={onDelete}
-            onEdit={onEdit}
+                onEdit={onEdit}
             theme="dark"
           />
         </div>

@@ -14,7 +14,6 @@ interface DashboardProps {
   auditLogs: AuditEntry[];
   announcements: Announcement[];
   onTransmit: (t: Transmission) => void;
-  onDeleteSubmission?: (t: Transmission) => void;
   onEditSubmission?: (t: Transmission) => void;
   onClearMyLogs?: () => void;
   onValidate: (id: string, overrides?: SystemStats, status?: 'validated' | 'rejected') => void;
@@ -62,7 +61,6 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
             transmissionHistory={deptHistory}
             announcements={props.announcements}
             onTransmit={props.onTransmit}
-            onDeleteSubmission={props.onDeleteSubmission}
             onEditSubmission={props.onEditSubmission}
             onClearMyLogs={props.onClearMyLogs}
             validatedStats={props.validatedStats[user.id]}

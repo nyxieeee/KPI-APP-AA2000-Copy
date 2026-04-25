@@ -57,7 +57,6 @@ interface Props {
   transmissionHistory: Transmission[];
   announcements: Announcement[];
   onTransmit: (t: Transmission) => void;
-  onDeleteSubmission?: (t: Transmission) => void;
   onEditSubmission?: (t: Transmission) => void;
   onClearMyLogs?: () => void;
   departmentWeights?: DepartmentWeights;
@@ -113,7 +112,7 @@ const DEFAULT_TECHNICAL_CATEGORIES = [
   { name: 'Administrative Excellence', label: 'AEX', weightPct: 2, maxpoints: 100, color: 'bg-[#757575]', textColor: 'text-[#757575]' }
 ];
 
-const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights, onDeleteSubmission, onEditSubmission, onClearMyLogs, notifications = [], onDeleteNotification }) => {
+const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights, onEditSubmission, onClearMyLogs, notifications = [], onDeleteNotification }) => {
   const [activeStep, setActiveStep] = useState(1);
   const { railOpen } = useRoleSidenavRail();
   const { setConfig: setMobileNavConfig } = useMobileSidenav();
@@ -1316,7 +1315,6 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
                       t.status === 'validated' && t.ratings?.finalScore != null ? t.ratings.finalScore : undefined
                     }
                     isGradingExpired={(t) => isPendingGradingConfigExpired(t, 'Technical', departmentWeights)}
-                    onDelete={onDeleteSubmission}
                     onEdit={onEditSubmission}
                     onClearLogs={onClearMyLogs}
                   />
@@ -1596,7 +1594,7 @@ const TechnicalDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
                   {activeStep < 4 ? (
                     <button onClick={handleNext} disabled={(activeStep === 3 && !isStep3Complete)} className={`flex items-center gap-2 px-10 py-2 rounded-xl text-[10px] font-black uppercase tracking-wide shadow-sm transition-all ${((activeStep === 1) || (activeStep === 2) || (activeStep === 3 && isStep3Complete)) ? 'bg-slate-900 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 dark:text-slate-500 cursor-not-allowed'}`}>Continue <ChevronRight className="w-4 h-4" /></button>
                   ) : (
-                    <button onClick={handleTransmit} disabled={isTransmitting} className="bg-blue-600 text-white px-12 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide shadow-sm active:scale-95 flex items-center gap-3">{isTransmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />} {isTransmitting ? 'Submitting…' : 'Submit KPI log'}</button>
+                    <button onClick={handleTransmit} disabled={!isStep3Complete || isTransmitting} title={!isStep3Complete ? 'Add at least one attachment before submitting.' : undefined} className="bg-blue-600 text-white px-12 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide shadow-sm active:scale-95 flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">{isTransmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />} {isTransmitting ? 'Submitting…' : 'Submit KPI log'}</button>
                   )}
                 </div>
               )}

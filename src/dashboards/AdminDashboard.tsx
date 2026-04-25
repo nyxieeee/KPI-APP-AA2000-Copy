@@ -1113,7 +1113,7 @@ const AdminDashboard: React.FC<Props> = ({
     setGradingEditDraft(prev => {
       const list = [...(prev || [])];
       if (!list[categoryIndex]) return prev;
-      list[categoryIndex] = { ...list[categoryIndex], label: label.trim() || list[categoryIndex].label };
+      list[categoryIndex] = { ...list[categoryIndex], label };
       return list;
     });
   };
@@ -3375,6 +3375,13 @@ const AdminDashboard: React.FC<Props> = ({
                   >
                     Save changes
                   </button>
+                  {!canCommitGrading ? (
+                    <span className="text-[10px] font-black uppercase tracking-wide text-amber-700">
+                      {!isTotalWeightValid
+                        ? 'Save is disabled: total weight must be exactly 100%.'
+                        : 'Save is disabled: each category criteria total must match its weight (%).'}
+                    </span>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => {

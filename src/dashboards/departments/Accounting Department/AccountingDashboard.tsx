@@ -59,7 +59,6 @@ interface Props {
   pendingTransmissions: Transmission[];
   transmissionHistory: Transmission[];
   onTransmit: (t: Transmission) => void;
-  onDeleteSubmission?: (t: Transmission) => void;
   onEditSubmission?: (t: Transmission) => void;
   onClearMyLogs?: () => void;
   departmentWeights?: DepartmentWeights;
@@ -143,7 +142,7 @@ const ACCOUNTING_CHECKLIST_CONTENT: Record<string, string[]> = {
   ],
 };
 
-const AccountingDashboard: React.FC<Props> = ({ user, validatedStats, announcements, pendingTransmissions, transmissionHistory, onTransmit, departmentWeights, onDeleteSubmission, onEditSubmission, onClearMyLogs, notifications = [], onDeleteNotification }) => {
+const AccountingDashboard: React.FC<Props> = ({ user, validatedStats, announcements, pendingTransmissions, transmissionHistory, onTransmit, departmentWeights, onEditSubmission, onClearMyLogs, notifications = [], onDeleteNotification }) => {
   const [activeStep, setActiveStep] = useState(1);
   const { railOpen } = useRoleSidenavRail();
   const { setConfig: setMobileNavConfig } = useMobileSidenav();
@@ -1507,7 +1506,6 @@ const AccountingDashboard: React.FC<Props> = ({ user, validatedStats, announceme
                       t.status === 'validated' && t.ratings?.finalScore != null ? t.ratings.finalScore : undefined
                     }
                     isGradingExpired={(t) => isPendingGradingConfigExpired(t, 'Accounting', departmentWeights)}
-                    onDelete={onDeleteSubmission}
                     onEdit={onEditSubmission}
                     onClearLogs={onClearMyLogs}
                   />
@@ -1585,8 +1583,9 @@ const AccountingDashboard: React.FC<Props> = ({ user, validatedStats, announceme
                     <button
                       type="button"
                       onClick={handleTransmit}
-                      disabled={isTransmitting}
-                      className="bg-blue-600 text-white px-12 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide shadow-sm active:scale-95 flex items-center gap-3"
+                      disabled={!isStep3Complete || isTransmitting}
+                      title={!isStep3Complete ? 'Add at least one attachment before submitting.' : undefined}
+                      className="bg-blue-600 text-white px-12 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide shadow-sm active:scale-95 flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isTransmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                       {isTransmitting ? 'Submitting…' : 'Submit KPI log'}

@@ -48,7 +48,6 @@ interface Props {
   pendingTransmissions: Transmission[];
   transmissionHistory: Transmission[];
   onTransmit: (t: Transmission) => void;
-  onDeleteSubmission?: (t: Transmission) => void;
   onEditSubmission?: (t: Transmission) => void;
   onClearMyLogs?: () => void;
   departmentWeights?: DepartmentWeights;
@@ -87,7 +86,7 @@ const MARKETING_LOG_CHECKLIST_CONTENT: Record<string, string[]> = {
   'Administrative Excellence': [],
 };
 
-const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights, onDeleteSubmission, onEditSubmission, onClearMyLogs, notifications = [], onDeleteNotification }) => {
+const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTransmissions, transmissionHistory, announcements, onTransmit, departmentWeights, onEditSubmission, onClearMyLogs, notifications = [], onDeleteNotification }) => {
   const { startHoldPanel, stopHold } = useAuditPanelCategoryHold();
   const [isDragging, setIsDragging] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
@@ -586,7 +585,10 @@ const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
   const isStep3Complete = formData.attachments.length > 0;
 
   const handleTransmit = () => {
-    if (!isStep3Complete) return;
+    if (!isStep3Complete) {
+      alert("Please add at least one attachment before submitting.");
+      return;
+    }
     setIsTransmitting(true);
     saveCurrentCategoryData();
     const allData = { ...categoryInputsRef.current };
@@ -1263,7 +1265,6 @@ const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
                       t.status === 'validated' && t.ratings?.finalScore != null ? t.ratings.finalScore : undefined
                     }
                     isGradingExpired={(t) => isPendingGradingConfigExpired(t, 'Marketing', departmentWeights)}
-                    onDelete={onDeleteSubmission}
                     onEdit={onEditSubmission}
                     onClearLogs={onClearMyLogs}
                   />
@@ -1574,7 +1575,7 @@ const MarketingDashboard: React.FC<Props> = ({ user, validatedStats, pendingTran
                   {activeStep < 4 ? (
                     <button type="button" onClick={handleNext} disabled={activeStep === 3 && !isStep3Complete} className={`flex items-center gap-2 px-10 py-2 rounded-xl text-[10px] font-black uppercase tracking-wide shadow-sm transition-all ${(activeStep === 1 || activeStep === 2 || (activeStep === 3 && isStep3Complete)) ? 'bg-slate-900 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 dark:text-slate-500 cursor-not-allowed'}`}>Continue <ChevronRight className="w-4 h-4" /></button>
                   ) : (
-                    <button type="button" onClick={handleTransmit} disabled={isTransmitting} className="bg-blue-600 text-white px-12 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide shadow-sm active:scale-95 flex items-center gap-3">{isTransmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />} {isTransmitting ? 'Submitting…' : 'Submit KPI log'}</button>
+                    <button type="button" onClick={handleTransmit} disabled={!isStep3Complete || isTransmitting} title={!isStep3Complete ? 'Add at least one attachment before submitting.' : undefined} className="bg-blue-600 text-white px-12 py-2 rounded-xl text-[11px] font-black uppercase tracking-wide shadow-sm active:scale-95 flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">{isTransmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />} {isTransmitting ? 'Submitting…' : 'Submit KPI log'}</button>
                   )}
                 </div>
               )}
