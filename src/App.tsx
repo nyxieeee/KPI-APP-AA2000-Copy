@@ -303,28 +303,6 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
     return () => document.removeEventListener('click', onClickCapture, true);
   }, [location.pathname]);
 
-  // Restore session user on same-tab refresh only (sessionStorage clears on tab/browser close).
-  // Credentials, role, and email are never stored in localStorage.
-  useEffect(() => {
-    const raw = sessionRead(SESSION_USER_STORAGE_KEY);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw) as Partial<User> | null;
-      if (!parsed || typeof parsed !== 'object') return;
-      if (
-        typeof parsed.id === 'string' &&
-        typeof parsed.name === 'string' &&
-        typeof parsed.department === 'string' &&
-        typeof parsed.role === 'string'
-      ) {
-        setUser(parsed as User);
-        onUserChange(parsed.id);
-      }
-    } catch {
-      sessionRemove(SESSION_USER_STORAGE_KEY);
-    }
-  }, [onUserChange]);
-
   // Demo audits removed — submission history starts clean for all employees.
 
   // Persist bucketed audit store so other tabs see updates (live sync)
@@ -410,6 +388,28 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
       ...prev
     ].slice(0, 500));
   }, [user]);
+
+  // Restore session user on same-tab refresh only (sessionStorage clears on tab/browser close).
+  // Credentials, role, and email are never stored in localStorage.
+  useEffect(() => {
+    const raw = sessionRead(SESSION_USER_STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw) as Partial<User> | null;
+      if (!parsed || typeof parsed !== 'object') return;
+      if (
+        typeof parsed.id === 'string' &&
+        typeof parsed.name === 'string' &&
+        typeof parsed.department === 'string' &&
+        typeof parsed.role === 'string'
+      ) {
+        setUser(parsed as User);
+        onUserChange(parsed.id);
+      }
+    } catch {
+      sessionRemove(SESSION_USER_STORAGE_KEY);
+    }
+  }, [onUserChange]);
 
   const handleLogin = useCallback((loggedInUser: User) => {
     const stored = loadDepartmentWeightsFromStorage();
@@ -770,7 +770,9 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
               <div className="pointer-events-none absolute -top-24 -right-24 h-[28rem] w-[28rem] rounded-full bg-blue-500/10 blur-3xl" aria-hidden />
               <div className="pointer-events-none absolute -bottom-28 -left-28 h-[34rem] w-[34rem] rounded-full bg-cyan-400/10 blur-3xl" aria-hidden />
               <div className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 h-40 w-[32rem] rounded-full bg-indigo-500/5 blur-3xl" aria-hidden />
-              <LoginCard onLogin={handleLogin} onAddAuditEntry={addAuditEntry} registry={registry} />
+              <div className="w-full max-w-md space-y-6 relative z-10">
+                <LoginCard onLogin={handleLogin} onAddAuditEntry={addAuditEntry} registry={registry} />
+              </div>
             </div>
           )
         }
