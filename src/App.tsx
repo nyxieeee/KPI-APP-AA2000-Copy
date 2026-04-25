@@ -269,11 +269,6 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
 
   // Debug utility: log every button-like click so non-firing actions are easy to trace in browser console.
   useEffect(() => {
-    const isLocalDevHost =
-      typeof window !== 'undefined' &&
-      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-    if (!isLocalDevHost) return;
-
     const resolveButtonLike = (target: EventTarget | null): HTMLElement | null => {
       const el = target instanceof Element ? target : null;
       if (!el) return null;
@@ -303,6 +298,7 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
       });
     };
 
+    console.info('[UI CLICK LOGGER READY]', { path: location.pathname });
     document.addEventListener('click', onClickCapture, true);
     return () => document.removeEventListener('click', onClickCapture, true);
   }, [location.pathname]);
