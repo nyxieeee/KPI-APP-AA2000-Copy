@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { User, AuditEntry, UserRole, Transmission, DepartmentWeights, CategoryWeightItem, CategoryContentItem, SystemStats } from '../types';
 import JSZip from 'jszip';
@@ -3452,7 +3452,16 @@ const AdminDashboard: React.FC<Props> = ({
         const presetIcons = DEFAULT_CATEGORY_ICONS[dept] || [];
         return (
           <>
-            <div className="fixed inset-0 z-[5000] bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300" aria-hidden="true" role="presentation" />
+            <button
+              type="button"
+              className="fixed inset-0 z-[5000] bg-slate-900/30 backdrop-blur-md animate-in fade-in duration-300"
+              aria-label="Close weighted scores editor"
+              onClick={() => {
+                setGradingEditDept(null);
+                setGradingIconPickerOpen(null);
+                setGradingEditDraft(null);
+              }}
+            />
             <div className="fixed inset-0 z-[5001] flex items-center justify-center p-4 pointer-events-none" aria-hidden="true">
               <div className="bg-white dark:bg-slate-800 rounded-[1.75rem] w-full max-w-5xl max-h-[90vh] flex flex-col shadow-sm shadow-slate-900/10 border border-slate-200 dark:border-slate-600/90 overflow-hidden animate-in zoom-in-95 duration-200 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
               <div className="px-6 py-2 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between gap-4 flex-wrap bg-slate-50 dark:bg-slate-900/60 shrink-0 overflow-visible">

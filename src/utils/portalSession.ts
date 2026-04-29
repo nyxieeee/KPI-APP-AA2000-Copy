@@ -82,9 +82,12 @@ async function getLaunchCryptoKey(): Promise<CryptoKey | null> {
     return null;
   }
   try {
+    // Normalize to an ArrayBuffer-backed view for stricter TS DOM lib signatures.
+    const normalizedMaterial = new Uint8Array(material.byteLength);
+    normalizedMaterial.set(material);
     cachedKey = await crypto.subtle.importKey(
       'raw',
-      material,
+      normalizedMaterial,
       { name: 'AES-GCM', length: 256 },
       false,
       ['encrypt', 'decrypt']
@@ -289,7 +292,8 @@ const DEFAULT_ROLE_ID_MAP: Record<number, RoleMapEntry> = {
 };
 
 function readRoleIdMapFromEnv(): Record<number, RoleMapEntry> {
-  const raw = String(import.meta.env.VITE_KPI_ROLE_ID_MAP ?? '').trim();
+  const envObj = (import.meta as any).env || {};
+  const raw = String(envObj.VITE_KPI_ROLE_ID_MAP ?? '').trim();
   if (!raw) return DEFAULT_ROLE_ID_MAP;
   try {
     const parsed = JSON.parse(raw) as Record<string, { appRole?: string; department?: string }>;

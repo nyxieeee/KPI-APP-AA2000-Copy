@@ -1,17 +1,6 @@
-declare module '*.svg' {
-  const src: string;
-  export default src;
-}
-
-declare module '*.png' {
-  const src: string;
-  export default src;
-}
+/// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly DEV: boolean;
-  readonly PROD: boolean;
-  readonly MODE: string;
   readonly VITE_LAUNCH_AES_KEY?: string;
   readonly VITE_API_BASE_URL?: string;
   readonly VITE_API_BASE_URLS?: string;
@@ -21,9 +10,9 @@ interface ImportMetaEnv {
   readonly VITE_KPI_ROLE_ID_MAP?: string;
   readonly VITE_BACKEND_API_URL?: string;
   readonly BACKEND_API_URL?: string;
+  readonly VITE_DEV_FALLBACK_USER?: string;
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
-

@@ -46,6 +46,11 @@ const VALID_DEPARTMENTS = ['technical', 'sales', 'marketing', 'accounting', 'adm
 const deptSlug = (d: string) => (d || 'technical').toLowerCase();
 const genId = (len = 8) => Math.random().toString(36).substr(2, len).toUpperCase();
 const SESSION_USER_STORAGE_KEY = 'aa2000-session-user';
+const DEV_FALLBACK_ROLE_FINANCIALS: Record<UserRole, { base: number; target: number }> = {
+  [UserRole.EMPLOYEE]: { base: 62000, target: 12000 },
+  [UserRole.SUPERVISOR]: { base: 88000, target: 18000 },
+  [UserRole.ADMIN]: { base: 105000, target: 25000 },
+};
 
 // One-time cleanup: remove any session data that was previously written to localStorage
 // (old versions stored credentials/role/email there — that was insecure).
@@ -433,8 +438,10 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
   // sessionStorage clears on tab/browser close — credentials never touch localStorage.
   useEffect(() => {
     let cancelled = false;
+    let hydrationFinished = false;
     const finishHydration = () => {
-      if (cancelled) return;
+      if (cancelled || hydrationFinished) return;
+      hydrationFinished = true;
       setSessionHydrating(false);
     };
 
@@ -482,6 +489,44 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
       return false;
     };
 
+    const adoptDevFallbackUser = (): boolean => {
+      if (!import.meta.env.DEV) return false;
+      const envObj = (import.meta as any).env || {};
+      const fallbackNameRaw = String(envObj.VITE_DEV_FALLBACK_USER || 'admin').trim();
+      if (!fallbackNameRaw) return false;
+      const fallbackName = fallbackNameRaw.toLowerCase();
+      const match = INITIAL_REGISTRY.find((u) => String(u.name).toLowerCase() === fallbackName);
+      if (!match) return false;
+      const financials = DEV_FALLBACK_ROLE_FINANCIALS[match.role];
+      adoptUser(
+        {
+          id: `dev-${btoa(match.name)}`,
+          name: match.name,
+          email: `${match.name.replace(/\s+/g, '')}@aa2000.com`,
+          role: match.role,
+          department: match.department,
+          baseSalary: financials.base,
+          incentiveTarget: financials.target,
+        },
+        'restore'
+      );
+      addAuditEntry('SESSION_DEV_FALLBACK', `Auto-authenticated local dev user: ${match.name}`, 'INFO', match.name);
+      return true;
+    };
+
+    const watchdogId = window.setTimeout(() => {
+      if (cancelled || hydrationFinished) return;
+      if (restoreFromSession()) {
+        finishHydration();
+        return;
+      }
+      if (adoptDevFallbackUser()) {
+        finishHydration();
+        return;
+      }
+      finishHydration();
+    }, 3000);
+
     (async () => {
       const launch = await readPortalLaunchFromUrl();
       if (cancelled) return;
@@ -517,12 +562,20 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
         }
       }
 
-      restoreFromSession();
+      if (restoreFromSession()) {
+        finishHydration();
+        return;
+      }
+      if (adoptDevFallbackUser()) {
+        finishHydration();
+        return;
+      }
       finishHydration();
     })();
 
     return () => {
       cancelled = true;
+      window.clearTimeout(watchdogId);
     };
   }, [onUserChange, addNotification, addAuditEntry]);
 

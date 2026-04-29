@@ -20,6 +20,8 @@ const DEFAULT_SESSION_PATH_PREFIXES = [
   '/api/security/session',
 ];
 
+const DEFAULT_SESSION_LOOKUP_TIMEOUT_MS = 1800;
+
 function getApiBaseUrls(): string[] {
   const multi = import.meta.env.VITE_API_BASE_URLS;
   if (typeof multi === 'string' && multi.trim()) {
@@ -58,6 +60,12 @@ function getSessionLookupPrefixes(): string[] {
   return Array.from(new Set([...fromEnv, ...DEFAULT_SESSION_PATH_PREFIXES.map(normalizePrefix)]));
 }
 
+function getSessionLookupTimeoutMs(): number {
+  const raw = Number((import.meta as any).env?.VITE_SESSION_LOOKUP_TIMEOUT_MS);
+  if (Number.isFinite(raw) && raw > 0) return raw;
+  return DEFAULT_SESSION_LOOKUP_TIMEOUT_MS;
+}
+
 export function hasPortalApiConfigured(): boolean {
   return getApiBaseUrls().length > 0;
 }
@@ -89,14 +97,18 @@ export async function fetchPortalSessionByToken(sessionToken: string): Promise<P
     : allPrefixes;
 
   const encodedToken = encodeURIComponent(token);
+  const timeoutMs = getSessionLookupTimeoutMs();
 
   for (const base of bases) {
     for (const sessionPrefix of orderedPrefixes) {
       const url = `${base}${prefix}${sessionPrefix}/${encodedToken}`;
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
       try {
         const res = await fetch(url, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
         });
         if (!res.ok) continue;
         const ct = res.headers.get('content-type') || '';
@@ -108,6 +120,8 @@ export async function fetchPortalSessionByToken(sessionToken: string): Promise<P
         }
       } catch {
         // try next combination
+      } finally {
+        window.clearTimeout(timeoutId);
       }
     }
   }
