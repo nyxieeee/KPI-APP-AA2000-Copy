@@ -108,7 +108,8 @@ export async function fetchPortalSessionByToken(sessionToken: string): Promise<P
       try {
         const res = await fetch(url, {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+          // Keep this a simple CORS GET (no custom headers) so deployed
+          // cross-origin session lookups avoid unnecessary preflight failures.
           cache: 'no-store',
           signal: controller.signal,
         });
