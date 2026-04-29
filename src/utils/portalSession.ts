@@ -1,4 +1,15 @@
 import { User, UserRole } from '../types';
+import {
+  accountDisplayName,
+  accountEmail,
+  accountRoleLabel,
+  accountUsername,
+  employeeDepartmentFromRow,
+  employeeEmailFromRow,
+  employeeFullNameFromRow,
+  employeeRoleLabelFromRow,
+  type SessionLookupAccount,
+} from './sessionLookupFields';
 
 /**
  * Session handoff from the parent portal.
@@ -284,16 +295,13 @@ const KPI_DEPARTMENTS: Record<string, string[]> = {
   Admin: ['admin', 'administrator', 'hr', 'human resource', 'director', 'owner', 'executive'],
 };
 
+/** Same account shape as portal `SessionLookupResponse` — see `sessionLookupFields.ts`. */
+export type PortalSessionAccount = SessionLookupAccount;
+
 export type PortalSessionResponse = {
   message?: string;
   session?: { s_ID: number; s_name: string; createdAt?: string };
-  account?: {
-    acc_ID: number;
-    username: string;
-    role_ID?: number;
-    role_name?: string | null;
-    status?: string;
-  };
+  account?: PortalSessionAccount;
   employee?: Record<string, unknown> | null;
 };
 
@@ -349,17 +357,31 @@ export function mapPortalSessionToUser(data: PortalSessionResponse): User | null
   const acc_ID = account.acc_ID;
   if (acc_ID == null) return null;
 
-  const roleName = String(account.role_name ?? '').trim();
-  const roleId = Number(account.role_ID);
-  const roleFromId = Number.isFinite(roleId) ? ROLE_ID_MAP[roleId]?.appRole : undefined;
-  const deptFromId = Number.isFinite(roleId) ? ROLE_ID_MAP[roleId]?.department : undefined;
-  const role = roleFromId ?? inferKpiRole(roleName, account.username);
-  const department = deptFromId ?? inferKpiDepartment(roleName, data.employee);
+  const acc = account as Record<string, unknown>;
+  const emp = data.employee ?? undefined;
 
-  const fullName = employeeFullName(data.employee) || String(account.username ?? '').trim();
+  const roleId = Number(account.role_ID);
+  const hasMappedRoleId = Number.isFinite(roleId) && roleId > 0 && ROLE_ID_MAP[roleId] != null;
+  const roleFromId = hasMappedRoleId ? ROLE_ID_MAP[roleId]!.appRole : undefined;
+  const deptFromId = hasMappedRoleId ? ROLE_ID_MAP[roleId]!.department : undefined;
+
+  const labelFromEmployee = employeeRoleLabelFromRow(emp);
+  const labelFromAccount = accountRoleLabel(acc);
+  const labelForInference = labelFromEmployee || labelFromAccount;
+  const usernameForInference = accountUsername(acc);
+
+  const role = roleFromId ?? inferKpiRole(labelForInference, usernameForInference);
+  const department =
+    deptFromId ?? inferKpiDepartment(`${labelForInference} ${labelFromAccount}`.trim(), emp);
+
+  const fullName =
+    employeeFullNameFromRow(emp) || accountDisplayName(acc) || accountUsername(acc);
   if (!fullName) return null;
 
-  const email = employeeEmail(data.employee) || `${fullName.replace(/\s+/g, '')}@aa2000.com`;
+  const email =
+    employeeEmailFromRow(emp) ||
+    accountEmail(acc) ||
+    `${fullName.replace(/\s+/g, '')}@aa2000.com`;
   const financials = ROLE_FINANCIALS[role];
 
   return {
@@ -373,37 +395,23 @@ export function mapPortalSessionToUser(data: PortalSessionResponse): User | null
   };
 }
 
-function employeeFullName(e: Record<string, unknown> | null | undefined): string {
-  if (!e) return '';
-  const full = String(e.fullName ?? e.full_name ?? e.name ?? '').trim();
-  if (full) return full;
-  const fn = String(e.Emp_fname ?? e.emp_fname ?? e.Emp_firstName ?? e.firstName ?? e.first_name ?? '').trim();
-  const mn = String(e.Emp_mname ?? e.emp_mname ?? e.middleName ?? e.middle_name ?? '').trim();
-  const ln = String(e.Emp_lname ?? e.emp_lname ?? e.Emp_lastName ?? e.lastName ?? e.last_name ?? '').trim();
-  return [fn, mn, ln].filter(Boolean).join(' ');
-}
-
-function employeeEmail(e: Record<string, unknown> | null | undefined): string {
-  if (!e) return '';
-  return String(e.Emp_email ?? e.emp_email ?? e.email ?? e.acc_email ?? '').trim();
-}
-
-function employeeDepartment(e: Record<string, unknown> | null | undefined): string {
-  if (!e) return '';
-  return String(
-    e.Emp_dept ?? e.emp_dept ?? e.department ?? e.Department ?? e.dep_name ?? e.dept_name ?? ''
-  ).trim();
-}
-
 function inferKpiRole(roleName: string, username: string | undefined): UserRole {
-  const lower = roleName.toLowerCase();
-  if (lower.includes('admin') || lower.includes('hr') || lower.includes('owner') || lower.includes('director')) {
+  const lower = (roleName || '').toLowerCase();
+  // Executive / org titles → admin tier in KPI (no separate CEO route in-app).
+  if (
+    /\bceo\b|\bcfo\b|\bcto\b|\bcio\b|\bchief\b|\bexecutive officer\b|\bchief executive\b|\bmanaging director\b|\bgeneral manager\b|\bchair(man|person)?\b|\bvp\b|\bvice president\b|\bpresident\b|\bc[- ]?suite\b|\bowner\b/i.test(
+      roleName
+    )
+  ) {
     return UserRole.ADMIN;
   }
-  if (lower.includes('supervisor') || lower.includes('manager') || lower.includes('lead')) {
+  if (lower.includes('admin') || lower.includes('hr') || lower.includes('human resource') || lower.includes('director')) {
+    return UserRole.ADMIN;
+  }
+  if (lower.includes('supervisor') || lower.includes('manager') || lower.includes('lead') || lower.includes('head of')) {
     return UserRole.SUPERVISOR;
   }
-  if (lower.includes('employee') || lower.includes('staff')) {
+  if (lower.includes('employee') || lower.includes('staff') || lower.includes('associate')) {
     return UserRole.EMPLOYEE;
   }
   // Try the username (matches INITIAL_REGISTRY entries like "supervisor sales", "admin")
@@ -414,7 +422,7 @@ function inferKpiRole(roleName: string, username: string | undefined): UserRole 
 }
 
 function inferKpiDepartment(roleName: string, employee: Record<string, unknown> | null | undefined): string | undefined {
-  const candidates = [roleName, employeeDepartment(employee)]
+  const candidates = [roleName, employeeDepartmentFromRow(employee)]
     .map((s) => s.toLowerCase())
     .filter(Boolean);
 
