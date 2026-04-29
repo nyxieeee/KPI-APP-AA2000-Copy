@@ -367,12 +367,20 @@ export function mapPortalSessionToUser(data: PortalSessionResponse): User | null
 
   const labelFromEmployee = employeeRoleLabelFromRow(emp);
   const labelFromAccount = accountRoleLabel(acc);
-  const labelForInference = labelFromEmployee || labelFromAccount;
+  // KPI tier follows the **security account** first (same as portal RBAC). Employee job
+  // titles often contain "Manager"/"Supervisor" and must not override an Admin account.
+  const labelForInference = labelFromAccount || labelFromEmployee;
   const usernameForInference = accountUsername(acc);
 
-  const role = roleFromId ?? inferKpiRole(labelForInference, usernameForInference);
+  const inferredFromLabels = inferKpiRole(labelForInference, usernameForInference);
+  const inferredFromAccountOnly = inferKpiRole(labelFromAccount, usernameForInference);
+  let role = roleFromId ?? inferredFromLabels;
+  if (labelFromAccount && inferredFromAccountOnly === UserRole.ADMIN && role !== UserRole.ADMIN) {
+    role = UserRole.ADMIN;
+  }
   const department =
-    deptFromId ?? inferKpiDepartment(`${labelForInference} ${labelFromAccount}`.trim(), emp);
+    deptFromId ??
+    inferKpiDepartment(`${labelFromAccount} ${labelFromEmployee}`.trim(), emp);
 
   const fullName =
     employeeFullNameFromRow(emp) || accountDisplayName(acc) || accountUsername(acc);
