@@ -20,7 +20,7 @@ const DEFAULT_SESSION_PATH_PREFIXES = [
   '/api/security/session',
 ];
 
-const DEFAULT_SESSION_LOOKUP_TIMEOUT_MS = 1800;
+const DEFAULT_SESSION_LOOKUP_TIMEOUT_MS = 7000;
 
 function getApiBaseUrls(): string[] {
   const multi = import.meta.env.VITE_API_BASE_URLS;
@@ -98,22 +98,30 @@ export async function fetchPortalSessionByToken(sessionToken: string): Promise<P
 
   const encodedToken = encodeURIComponent(token);
   const timeoutMs = getSessionLookupTimeoutMs();
+  const timeoutMsWithBuffer = Math.max(3000, timeoutMs);
 
   for (const base of bases) {
     for (const sessionPrefix of orderedPrefixes) {
       const url = `${base}${prefix}${sessionPrefix}/${encodedToken}`;
       const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+      const timeoutId = window.setTimeout(() => controller.abort(), timeoutMsWithBuffer);
       try {
         const res = await fetch(url, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
           signal: controller.signal,
         });
         if (!res.ok) continue;
-        const ct = res.headers.get('content-type') || '';
-        if (!ct.includes('application/json')) continue;
-        const data = (await res.json()) as PortalSessionResponse;
+        const raw = await res.text();
+        if (!raw) continue;
+        let data: PortalSessionResponse | null = null;
+        try {
+          data = JSON.parse(raw) as PortalSessionResponse;
+        } catch {
+          data = null;
+        }
+        if (!data) continue;
         if (data && typeof data === 'object' && data.account) {
           preferredSessionPrefix = sessionPrefix;
           return data;
