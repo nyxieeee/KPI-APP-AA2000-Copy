@@ -35,9 +35,9 @@ import {
   APP_NAV_SIDENAV_TOP,
 } from '../constants/navbarLayout';
 
-import { 
-  Settings, 
-  Terminal, 
+import {
+  Settings,
+  Terminal,
   Download,
   CheckCircle2,
   Users,
@@ -80,7 +80,9 @@ import {
   Menu,
   ChevronRight,
   ChevronLeft,
-  LogOut
+  LogOut,
+  PhoneCall,
+  ListChecks
 } from 'lucide-react';
 import { useAuthActions } from '../contexts/AuthActionsContext';
 import { useMobileSidenav } from '../contexts/MobileSidenavContext';
@@ -88,6 +90,34 @@ import { useRoleSidenavRail } from '../contexts/RoleSidenavRailContext';
 import { ValidationTabs } from '../components/forms/ValidationTabs';
 import { GradingWeightControl } from '../components/forms/GradingWeightControl';
 import { AnnualSummaryPanel } from '../components/panels/AnnualSummaryPanel';
+import { TechnicalLogDetailAuditReview } from '../components/panels/TechnicalLogDetailAuditReview';
+import AttachmentLivePreviewPanel from '../components/panels/AttachmentLivePreviewPanel';
+import { getEmployeeCategoryIcon } from '../utils/employeeCategoryIcons';
+import { GradingExpiredBadge } from '../components/status/GradingExpiredBadge';
+import { isPendingGradingConfigExpired } from '../utils/gradingConfigSignature';
+import {
+  computeIncentivePctFromFinal,
+  getSortedIncentiveTiersDesc,
+  getIncentiveTierForScore,
+  formatIncentiveTierPayoutDisplay,
+  getSupervisorTierRowStyle,
+} from '../utils/incentiveTiers';
+import {
+  getTechnicalWeightedKpiSum,
+  getDepartmentCategoryRawScoresForSupervisor,
+} from '../utils/technicalWeightedKpi';
+import { hydrateAttachmentData, type HydratableAttachment } from '../utils/attachmentStore';
+import {
+  Shield,
+  MessageSquare,
+  Eye,
+  Clock,
+  Paperclip,
+  Zap,
+  MessageCircle,
+  FileSearch,
+  Check
+} from 'lucide-react';
 
 interface Props {
   user: User;
@@ -103,14 +133,110 @@ interface Props {
   onUpdateRegistry: (newRegistry: any[]) => void;
   onUpdateAdminUsers: (newAdminUsers: Record<string, string[]>) => void;
   onClearEmployeeAudits: () => void;
-  /**
-   * Admin finalizes grades by setting `status` (moves pending → history).
-   * Supervisor-only grading is handled via `onSupervisorGrade`.
-   */
   onValidate: (id: string, overrides?: SystemStats, status?: 'validated' | 'rejected') => void;
 }
 
 const INITIAL_DEPARTMENTS = ['Technical', 'IT', 'Sales', 'Marketing', 'Accounting', 'Admin'];
+
+const DEPARTMENT_CHECKLIST_CONTENT: Record<string, Record<string, string[]>> = {
+  Technical: {
+    'Project Execution Quality': [
+      'Zero Back-Job Rate (25 points)',
+      'First-Time Fix Quality (12 points)',
+      'Technical Compliance & Standards (7 points)',
+      'Schedule Adherence (6 points)'
+    ],
+    'Client Satisfaction & Turnover': [
+      'Client Satisfaction Score - CSAT (15 points)',
+      'Smooth Turnover Rate (5 points)',
+      'Zero Client Complaints/Escalations (5 points)'
+    ],
+    'Team Leadership & Accountability': [
+      'Team Performance Under Supervision (7 points)',
+      'Safety Record - Zero Incidents (4 points) - CRITICAL',
+      'Accountability & Ownership (4 points)'
+    ],
+    'Additional Responsibilities': [
+      'Extra assignments and coverage (3 points)',
+    ],
+    'Administrative Excellence': [
+      'Report Submission Timeliness (1 point)',
+      'Report Accuracy (1 point)'
+    ],
+    'Attendance & Discipline': [
+      'Attendance Reliability (3 points)',
+      'Punctuality & Timekeeping (1 point)',
+      'Operational Preparedness (1 point)'
+    ]
+  },
+  Accounting: {
+    'Accounting Excellence': [
+      'Financial reports submitted accurately and on time',
+      'Accounts Receivable aging within acceptable limits',
+      'Bank reconciliations completed without discrepancies',
+      'Ledger entries verified for accuracy',
+      'Month-end closing procedures completed on schedule',
+      'Compliance with internal accounting standards',
+    ],
+    'Purchasing Excellence': [
+      'Cost savings targets met or exceeded',
+      'Vendor performance and quality evaluated',
+      'Purchase Orders processed within SLA',
+      'Alternative suppliers sourced for better rates',
+      'Inventory levels optimized to reduce holding costs',
+      'Procurement policies strictly followed',
+    ],
+    'Purchasing/Admin Excellence': [
+      'Procurement and administrative coordination',
+      'PO documentation and filing accuracy',
+    ],
+    'Administrative Excellence': [
+      'Front-office and filing tasks completed on time',
+      'Internal policy and SLA adherence',
+    ],
+    'Additional Responsibilities': [],
+    'Attendance & Discipline': [],
+  },
+  Sales: {},
+  IT: {},
+  Marketing: {},
+};
+
+const DEPARTMENT_CATEGORY_ICONS: Record<string, any> = {
+  'Project Execution Quality': Wrench,
+  'Client Satisfaction & Turnover': Handshake,
+  'Team Leadership & Accountability': Users2,
+  'Additional Responsibilities': TrendingUp,
+  'Administrative Excellence': FileStack,
+  'Attendance & Discipline': ShieldCheck,
+  'Accounting Excellence': Calculator,
+  'Purchasing Excellence': DollarSign,
+  'Purchasing/Admin Excellence': FileSearch,
+  'Revenue Score': DollarSign,
+  'Revenue Achievement': DollarSign,
+  'End-User Accounts Closed': UserPlus,
+  'Accounts Score': UserPlus,
+  'Sales Activities': PhoneCall,
+  'Activities Score': PhoneCall,
+  'Quotation Management': ListChecks,
+  'Quotation Mgmt': ListChecks,
+};
+
+const SALES_LABEL_TO_KEY: Record<string, string> = {
+  'Revenue Score': 'revenueScore',
+  'Revenue Achievement': 'revenueScore',
+  'End-User Accounts Closed': 'accountsScore',
+  'Accounts Score': 'accountsScore',
+  'Sales Activities': 'activitiesScore',
+  'Activities Score': 'activitiesScore',
+  'Quotation Mgmt': 'quotationScore',
+  'Quotation Management': 'quotationScore',
+  'Attendance & Discipline': 'attendanceScore',
+  'Additional Responsibilities': 'additionalRespScore',
+  'Administrative Excellence': 'administrativeExcellenceScore',
+  'Attendance': 'attendanceScore',
+  'Additional Responsibility': 'additionalRespScore',
+};
 const DEFAULT_NODE_PASSKEY = "123";
 const ADMIN_PROVISION_KEY = "123";
 
@@ -176,7 +302,7 @@ const AdminDashboard: React.FC<Props> = ({
   const { setConfig: setMobileNavConfig } = useMobileSidenav();
   const scrollRef = useRef<HTMLDivElement>(null);
   const deptTabsRef = useRef<HTMLDivElement>(null);
-  
+
   // Navigation State
   const [activeTab, setActiveTab] = useState<AdminTab>('registry');
   const [activeDept, setActiveDept] = useState<string>('Technical');
@@ -200,7 +326,7 @@ const AdminDashboard: React.FC<Props> = ({
 
     return () => setMobileNavConfig(null);
   }, [setMobileNavConfig, activeTab]);
-  
+
   // Registry Management State
   const [registrySearch, setRegistrySearch] = useState('');
   const [registryStatusFilter, setRegistryStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -216,6 +342,118 @@ const AdminDashboard: React.FC<Props> = ({
   const [transferringNode, setTransferringNode] = useState<string | null>(null);
   const [unenrollConfirmName, setUnenrollConfirmName] = useState<string | null>(null);
   const [registryVersion, setRegistryVersion] = useState(0);
+
+  // Grading & Review State
+  const [selectedReviewItem, setSelectedReviewItem] = useState<Transmission | null>(null);
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [grading, setGrading] = useState<Record<string, number>>({});
+  const [overrideReason, setOverrideReason] = useState('');
+  const [activeAttachmentIndex, setActiveAttachmentIndex] = useState(0);
+  const [previewFile, setPreviewFile] = useState<{ name: string; type?: string; size?: string; data?: string; storageKey?: string } | null>(null);
+  const initialGradingRef = useRef<Record<string, number> | null>(null);
+  const justificationTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleOpenReview = useCallback((item: Transmission, readOnly: boolean = false) => {
+    setSelectedReviewItem(item);
+    setIsReadOnly(readOnly);
+
+    const dept = item.department || 'Technical';
+    const checklists = DEPARTMENT_CHECKLIST_CONTENT[dept] || {};
+    const labels = departmentWeights[dept]?.map((c) => c.label) ?? Object.keys(checklists);
+
+    let next: Record<string, number> = {};
+    const snapshot = item.ratings?.logDetailSnapshot;
+
+    if (snapshot?.length) {
+      for (const s of snapshot) {
+        if (s?.name && typeof s.score === 'number') next[s.name] = s.score;
+      }
+    } else {
+      const raw = getDepartmentCategoryRawScoresForSupervisor(item, departmentWeights, dept as any, checklists);
+      labels.forEach((label) => {
+        next[label] = raw[label] ?? 0;
+      });
+    }
+
+    labels.forEach((label) => {
+      if (next[label] === undefined) next[label] = 0;
+    });
+
+    setGrading(next);
+    initialGradingRef.current = { ...next };
+    setOverrideReason(item.supervisorComment || '');
+    setActiveAttachmentIndex(0);
+  }, [departmentWeights]);
+
+  const calculatedReviewScore = useMemo(() => {
+    if (!selectedReviewItem) return { final: 0, gradeInfo: getGradeForScore(0), incentivePct: 0 };
+
+    const dept = selectedReviewItem.department || 'Technical';
+    const weights = departmentWeights[dept];
+    let total = 0;
+
+    if (weights?.length) {
+      weights.forEach((c) => {
+        const score = grading[c.label] ?? 0;
+        total += score * (c.weightPct / 100);
+      });
+    } else {
+      const labels = Object.keys(grading);
+      if (labels.length > 0) {
+        labels.forEach(l => total += grading[l] / labels.length);
+      }
+    }
+
+    const final = Math.round(total * 100) / 100;
+    const gradeInfo = getGradeForScore(final);
+    const incentiveTiers = getIncentiveTiersFromStorage();
+    const incentivePct = computeIncentivePctFromFinal(final, incentiveTiers);
+    return { final, gradeInfo, incentivePct };
+  }, [grading, selectedReviewItem, departmentWeights]);
+
+  // Hydrate preview when index or selected item changes
+  useEffect(() => {
+    if (!selectedReviewItem?.attachments?.length) {
+      setPreviewFile(null);
+      return;
+    }
+    const file = selectedReviewItem.attachments[activeAttachmentIndex];
+    if (file) {
+      hydrateAttachmentData(file).then(setPreviewFile);
+    }
+  }, [selectedReviewItem, activeAttachmentIndex]);
+
+  const handleGradingAction = useCallback((type: 'APPROVE' | 'REJECT') => {
+    if (!selectedReviewItem || isReadOnly) return;
+
+    const dept = selectedReviewItem.department || 'Technical';
+    const weights = departmentWeights[dept] || [];
+
+    const logDetailSnapshot = weights.map((c) => ({
+      name: c.label,
+      weightPct: c.weightPct,
+      score: grading[c.label] ?? 0
+    }));
+
+    const ratings = {
+      finalScore: calculatedReviewScore.final,
+      incentivePct: calculatedReviewScore.incentivePct,
+      logDetailSnapshot
+    };
+
+    if (type === 'REJECT') {
+      onValidate(selectedReviewItem.id, { ratings, supervisorComment: overrideReason } as any, 'rejected');
+    } else {
+      onValidate(selectedReviewItem.id, { ratings, supervisorComment: overrideReason } as any, 'validated');
+    }
+
+    setSelectedReviewItem(null);
+    onAddAuditEntry(
+      type === 'APPROVE' ? 'KPI_APPROVED' : 'KPI_REJECTED',
+      `Admin ${type === 'APPROVE' ? 'approved' : 'requested changes on'} submission ${selectedReviewItem.id}.`,
+      type === 'APPROVE' ? 'OK' : 'WARN'
+    );
+  }, [selectedReviewItem, isReadOnly, grading, calculatedReviewScore, overrideReason, departmentWeights, onValidate, onAddAuditEntry]);
 
   // UI State
   const [isAtBottom] = useState(true);
@@ -250,8 +488,8 @@ const AdminDashboard: React.FC<Props> = ({
         const data = await res.json();
         const names = Array.isArray(data)
           ? data
-              .map((x: any) => String(x?.r_name ?? '').trim())
-              .filter((name: string) => name.length > 0)
+            .map((x: any) => String(x?.r_name ?? '').trim())
+            .filter((name: string) => name.length > 0)
           : [];
         if (names.length > 0) return names;
       } catch {
@@ -624,14 +862,15 @@ const AdminDashboard: React.FC<Props> = ({
   useLockBodyScroll(
     Boolean(
       isProvisioning ||
-        dataDeleteCountdownOpen ||
-        dataAutoPurgeConfirmOpen ||
-        dataPurgeOpen ||
-        gradingEditDept ||
-        editingNode ||
-        unenrollConfirmName ||
-        loadStandardConfirmOpen ||
-        setStandardConfirmOpen
+      dataDeleteCountdownOpen ||
+      dataAutoPurgeConfirmOpen ||
+      dataPurgeOpen ||
+      gradingEditDept ||
+      editingNode ||
+      unenrollConfirmName ||
+      loadStandardConfirmOpen ||
+      setStandardConfirmOpen ||
+      selectedReviewItem
     )
   );
 
@@ -920,9 +1159,9 @@ const AdminDashboard: React.FC<Props> = ({
 
   // Derived State
   const roleMap = useMemo(() => {
-    return registry.reduce((acc: Record<string, any>, u: any) => ({ 
-      ...acc, 
-      [u.name]: { role: u.role, isActive: u.isActive !== false, department: u.department } 
+    return registry.reduce((acc: Record<string, any>, u: any) => ({
+      ...acc,
+      [u.name]: { role: u.role, isActive: u.isActive !== false, department: u.department }
     }), {});
   }, [registry]);
 
@@ -1365,7 +1604,7 @@ const AdminDashboard: React.FC<Props> = ({
       [activeDept]: (adminUsers[activeDept] || []).map(u => u === originalName ? trimmedName : u)
     });
 
-    const updatedReg = registry.map((u: any) => 
+    const updatedReg = registry.map((u: any) =>
       u.name === originalName ? { ...u, name: trimmedName, role: role } : u
     );
     onUpdateRegistry(updatedReg);
@@ -1378,7 +1617,7 @@ const AdminDashboard: React.FC<Props> = ({
   const handleCommitProvision = () => {
     if (!newEmployeeName.trim()) return;
     const name = newEmployeeName.trim();
-    
+
     if (activeDept === 'Admin' && adminAuthKey !== ADMIN_PROVISION_KEY) {
       triggerToast('Auth Refused', 'Invalid Master Authorization Key.');
       onAddAuditEntry('ADMIN_PROVISION_FAIL', `Unauthorized attempt to provision Admin user: ${name}`, 'WARN');
@@ -1402,15 +1641,15 @@ const AdminDashboard: React.FC<Props> = ({
     };
 
     onUpdateRegistry([...registry, newUser]);
-    
+
     onUpdateAdminUsers({
       ...adminUsers,
       [activeDept]: [...(adminUsers[activeDept] || []), name]
     });
-    
+
     onAddAuditEntry('ADMIN_PROVISION', `New user added: ${name} in ${activeDept} as ${newEmployeeRole}`, 'OK');
     triggerToast('User added', `${name} was added to the directory.`);
-    
+
     setNewEmployeeName('');
     setAdminAuthKey('');
     setIsProvisioning(false);
@@ -1428,7 +1667,7 @@ const AdminDashboard: React.FC<Props> = ({
         return;
       }
     }
-    const updatedReg = registry.map((u: any) => 
+    const updatedReg = registry.map((u: any) =>
       u.name === userName ? { ...u, isActive: u.isActive === false } : u
     );
     onUpdateRegistry(updatedReg);
@@ -1439,7 +1678,7 @@ const AdminDashboard: React.FC<Props> = ({
 
   const handleExecuteTransfer = (userName: string, targetDept: string) => {
     if (!userName) return;
-    
+
     let sourceDept = activeDept;
     Object.keys(adminUsers).forEach(dept => {
       if (adminUsers[dept].includes(userName)) {
@@ -1448,15 +1687,15 @@ const AdminDashboard: React.FC<Props> = ({
     });
 
     if (sourceDept === targetDept) return;
-    
+
     let targetRole = roleMap[userName]?.role || UserRole.EMPLOYEE;
     if (targetDept === 'Admin') targetRole = UserRole.ADMIN;
 
     const sourceUsers = (adminUsers[sourceDept] || []).filter(u => u !== userName);
     const targetUsers = [...(adminUsers[targetDept] || []), userName];
     onUpdateAdminUsers({ ...adminUsers, [sourceDept]: sourceUsers, [targetDept]: targetUsers });
-    
-    const updatedReg = registry.map((u: any) => 
+
+    const updatedReg = registry.map((u: any) =>
       u.name === userName ? { ...u, department: targetDept, role: targetRole } : u
     );
     onUpdateRegistry(updatedReg);
@@ -1596,16 +1835,14 @@ const AdminDashboard: React.FC<Props> = ({
                 return (
                   <div
                     key={emp.name}
-                    className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
-                      isTop3
-                        ? `${medalBg[i]} shadow-sm`
-                        : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900'
-                    }`}
+                    className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${isTop3
+                      ? `${medalBg[i]} shadow-sm`
+                      : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900'
+                      }`}
                   >
                     {/* Rank */}
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-lg ${
-                      isTop3 ? medalColors[i] : 'text-slate-300'
-                    }`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-lg ${isTop3 ? medalColors[i] : 'text-slate-300'
+                      }`}>
                       {i < 3 ? <Medal className="w-6 h-6" /> : <span className="text-sm font-black text-slate-400 dark:text-slate-500 dark:text-slate-500">#{i + 1}</span>}
                     </div>
 
@@ -1617,11 +1854,10 @@ const AdminDashboard: React.FC<Props> = ({
 
                     {/* Compare with last month */}
                     {diff != null && (
-                      <div className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wide shrink-0 ${
-                        diff > 0 ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600' :
+                      <div className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wide shrink-0 ${diff > 0 ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600' :
                         diff < 0 ? 'bg-red-50 dark:bg-red-900/30 text-red-600' :
-                        'bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 dark:text-slate-500'
-                      }`}>
+                          'bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 dark:text-slate-500'
+                        }`}>
                         {diff > 0 ? <TrendingUp className="w-3 h-3" /> : diff < 0 ? <TrendingDown className="w-3 h-3" /> : null}
                         {diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : '='} vs last mo.
                       </div>
@@ -1639,9 +1875,8 @@ const AdminDashboard: React.FC<Props> = ({
                           </div>
                         );
                       })()}
-                      <div className={`text-2xl font-black tabular-nums ${
-                        emp.score >= 90 ? 'text-emerald-600' : emp.score >= 75 ? 'text-blue-600' : 'text-slate-700 dark:text-slate-300'
-                      }`}>
+                      <div className={`text-2xl font-black tabular-nums ${emp.score >= 90 ? 'text-emerald-600' : emp.score >= 75 ? 'text-blue-600' : 'text-slate-700 dark:text-slate-300'
+                        }`}>
                         {emp.score}%
                       </div>
                     </div>
@@ -1691,55 +1926,53 @@ const AdminDashboard: React.FC<Props> = ({
             return (
               <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-3xl shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-0 text-[10px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500 px-5 py-3 border-b border-slate-100 dark:border-slate-700 min-w-[340px]">
-                  <span>Employee</span>
-                  <span className="text-center px-4">Last Month</span>
-                  <span className="text-center px-4">This Month</span>
-                  <span className="text-center px-4">Change</span>
-                </div>
-                {rows.map(row => {
-                  const diff = row.current != null && row.last != null ? row.current - row.last : null;
-                  return (
-                    <div key={row.name} className="grid grid-cols-[1fr_auto_auto_auto] gap-0 items-center px-5 py-2 border-b border-slate-50 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors min-w-[340px]">
-                      <div>
-                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{row.name}</p>
-                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">{row.dept}</p>
+                  <div className="grid grid-cols-[1fr_auto_auto_auto] gap-0 text-[10px] font-black uppercase tracking-wide text-slate-400 dark:text-slate-500 dark:text-slate-500 px-5 py-3 border-b border-slate-100 dark:border-slate-700 min-w-[340px]">
+                    <span>Employee</span>
+                    <span className="text-center px-4">Last Month</span>
+                    <span className="text-center px-4">This Month</span>
+                    <span className="text-center px-4">Change</span>
+                  </div>
+                  {rows.map(row => {
+                    const diff = row.current != null && row.last != null ? row.current - row.last : null;
+                    return (
+                      <div key={row.name} className="grid grid-cols-[1fr_auto_auto_auto] gap-0 items-center px-5 py-2 border-b border-slate-50 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors min-w-[340px]">
+                        <div>
+                          <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{row.name}</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">{row.dept}</p>
+                        </div>
+                        <div className="text-center px-4 text-sm font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 tabular-nums flex flex-col items-center gap-0.5">
+                          {row.last != null ? (
+                            <>
+                              <span>{row.last}%</span>
+                              <span className="text-[8px] font-bold opacity-60">({getGradeForScore(row.last).letter})</span>
+                            </>
+                          ) : '—'}
+                        </div>
+                        <div className={`text-center px-4 text-sm font-black tabular-nums flex flex-col items-center gap-0.5 ${row.current != null ? 'text-slate-900 dark:text-slate-100' : 'text-slate-300'
+                          }`}>
+                          {row.current != null ? (
+                            <>
+                              <span>{row.current}%</span>
+                              <span className="text-[9px] font-black opacity-80" style={{ color: getGradeColorClasses(getGradeForScore(row.current).color).text.split(' ')[0].replace('text-', '') }}>
+                                {getGradeForScore(row.current).letter}
+                              </span>
+                            </>
+                          ) : '—'}
+                        </div>
+                        <div className={`flex items-center justify-center gap-1 px-3 py-1 mx-2 rounded-xl text-[10px] font-black uppercase tracking-wide ${diff == null ? 'text-slate-300' :
+                          diff > 0 ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600' :
+                            diff < 0 ? 'bg-red-50 dark:bg-red-900/30 text-red-600' :
+                              'bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 dark:text-slate-500'
+                          }`}>
+                          {diff != null && diff !== 0 && (diff > 0
+                            ? <TrendingUp className="w-3 h-3" />
+                            : <TrendingDown className="w-3 h-3" />
+                          )}
+                          {diff == null ? '—' : diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : '±0'}
+                        </div>
                       </div>
-                      <div className="text-center px-4 text-sm font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 tabular-nums flex flex-col items-center gap-0.5">
-                        {row.last != null ? (
-                          <>
-                            <span>{row.last}%</span>
-                            <span className="text-[8px] font-bold opacity-60">({getGradeForScore(row.last).letter})</span>
-                          </>
-                        ) : '—'}
-                      </div>
-                      <div className={`text-center px-4 text-sm font-black tabular-nums flex flex-col items-center gap-0.5 ${
-                        row.current != null ? 'text-slate-900 dark:text-slate-100' : 'text-slate-300'
-                      }`}>
-                        {row.current != null ? (
-                          <>
-                            <span>{row.current}%</span>
-                            <span className="text-[9px] font-black opacity-80" style={{ color: getGradeColorClasses(getGradeForScore(row.current).color).text.split(' ')[0].replace('text-', '') }}>
-                              {getGradeForScore(row.current).letter}
-                            </span>
-                          </>
-                        ) : '—'}
-                      </div>
-                      <div className={`flex items-center justify-center gap-1 px-3 py-1 mx-2 rounded-xl text-[10px] font-black uppercase tracking-wide ${
-                        diff == null ? 'text-slate-300' :
-                        diff > 0 ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600' :
-                        diff < 0 ? 'bg-red-50 dark:bg-red-900/30 text-red-600' :
-                        'bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 dark:text-slate-500'
-                      }`}>
-                        {diff != null && diff !== 0 && (diff > 0
-                          ? <TrendingUp className="w-3 h-3" />
-                          : <TrendingDown className="w-3 h-3" />
-                        )}
-                        {diff == null ? '—' : diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : '±0'}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
                 </div>{/* end overflow-x-auto */}
               </div>
             );
@@ -1925,8 +2158,8 @@ const AdminDashboard: React.FC<Props> = ({
             {renderLogs('h-[75vh] max-h-[75vh]')}
           </div>
 
-            <div className="flex flex-col gap-6 h-[75vh] max-h-[75vh]">
-              <div className="relative bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm p-7 flex flex-col flex-[1.4] min-h-0 overflow-hidden">
+          <div className="flex flex-col gap-6 h-[75vh] max-h-[75vh]">
+            <div className="relative bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm p-7 flex flex-col flex-[1.4] min-h-0 overflow-hidden">
               <div className="absolute top-6 right-6 w-10 h-10 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-100 dark:border-slate-700 shadow-sm">
                 <Users className="w-5 h-5" />
               </div>
@@ -1940,9 +2173,8 @@ const AdminDashboard: React.FC<Props> = ({
                   type="button"
                   onClick={buildEmployeeAuditsZip}
                   disabled={dataZipBusy}
-                  className={`px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-600/20 text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-2 ${
-                    dataZipBusy ? 'opacity-70 cursor-not-allowed' : ''
-                  }`}
+                  className={`px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-600/20 text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-2 ${dataZipBusy ? 'opacity-70 cursor-not-allowed' : ''
+                    }`}
                   title="Download all employee audits as ZIP"
                 >
                   <Download className="w-4 h-4 text-white" />
@@ -1962,9 +2194,8 @@ const AdminDashboard: React.FC<Props> = ({
                           type="button"
                           onClick={() => buildDepartmentAuditsZip(dept)}
                           disabled={dataZipBusy || count === 0}
-                          className={`px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shadow-sm text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-1.5 ${
-                            dataZipBusy || count === 0 ? 'opacity-70 cursor-not-allowed' : ''
-                          }`}
+                          className={`px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all shadow-sm text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-1.5 ${dataZipBusy || count === 0 ? 'opacity-70 cursor-not-allowed' : ''
+                            }`}
                           title={`Download ${dept} validated + rejected audits as ZIP`}
                         >
                           <Download className="w-3.5 h-3.5 text-blue-600" />
@@ -2048,11 +2279,10 @@ const AdminDashboard: React.FC<Props> = ({
         >
           <div className="flex items-center gap-4">
             <div
-              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-xs font-black shadow-sm border-2 shrink-0 ${
-                isActive
-                  ? 'border-blue-700 text-blue-700 dark:text-blue-400'
-                  : 'border-red-400 text-red-500'
-              }`}
+              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-xs font-black shadow-sm border-2 shrink-0 ${isActive
+                ? 'border-blue-700 text-blue-700 dark:text-blue-400'
+                : 'border-red-400 text-red-500'
+                }`}
             >
               {userName.charAt(0)}
             </div>
@@ -2075,23 +2305,20 @@ const AdminDashboard: React.FC<Props> = ({
                 onClick={() => handleToggleStatus(userName)}
                 disabled={isLastActiveAdmin}
                 title={isLastActiveAdmin ? 'At least one admin must remain active' : undefined}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-[0.18em] transition-all min-w-[96px] justify-center ${
-                  isLastActiveAdmin
-                    ? 'border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-[#0d1526] text-slate-400 dark:text-slate-500 dark:text-slate-500 cursor-not-allowed opacity-70'
-                    : isActive
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-[0.18em] transition-all min-w-[96px] justify-center ${isLastActiveAdmin
+                  ? 'border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-[#0d1526] text-slate-400 dark:text-slate-500 dark:text-slate-500 cursor-not-allowed opacity-70'
+                  : isActive
                     ? 'border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700'
                     : 'border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/30 text-red-700'
-                }`}
+                  }`}
               >
                 <span
-                  className={`relative inline-flex items-center w-10 h-5 rounded-full transition-colors ${
-                    isActive ? 'bg-emerald-400/80' : 'bg-red-300/80'
-                  }`}
+                  className={`relative inline-flex items-center w-10 h-5 rounded-full transition-colors ${isActive ? 'bg-emerald-400/80' : 'bg-red-300/80'
+                    }`}
                 >
                   <span
-                    className={`absolute w-4 h-4 rounded-full bg-white dark:bg-slate-800 shadow-sm transition-transform ${
-                      isActive ? 'translate-x-5' : 'translate-x-1'
-                    }`}
+                    className={`absolute w-4 h-4 rounded-full bg-white dark:bg-slate-800 shadow-sm transition-transform ${isActive ? 'translate-x-5' : 'translate-x-1'
+                      }`}
                   />
                 </span>
                 <span>{isActive ? 'On' : 'Off'}</span>
@@ -2107,11 +2334,10 @@ const AdminDashboard: React.FC<Props> = ({
                 <div className="relative" data-transfer-menu="true">
                   <button
                     onClick={() => setTransferringNode(transferringNode === userName ? null : userName)}
-                    className={`p-1.5 sm:p-2.5 rounded-xl transition-all ${
-                      transferringNode === userName
-                        ? 'text-blue-600'
-                        : 'text-slate-300 hover:text-blue-500 hover:bg-slate-50 dark:hover:bg-slate-900'
-                    }`}
+                    className={`p-1.5 sm:p-2.5 rounded-xl transition-all ${transferringNode === userName
+                      ? 'text-blue-600'
+                      : 'text-slate-300 hover:text-blue-500 hover:bg-slate-50 dark:hover:bg-slate-900'
+                      }`}
                     title="Move user"
                   >
                     <Share2 className="w-4 h-4" />
@@ -2153,9 +2379,9 @@ const AdminDashboard: React.FC<Props> = ({
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                 <Users className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">
                   User directory
                 </p>
                 <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-none">
@@ -2173,11 +2399,10 @@ const AdminDashboard: React.FC<Props> = ({
               <button
                 key={dept}
                 onClick={() => setActiveDept(dept)}
-                className={`px-6 py-3 rounded-lg text-[10px] font-black uppercase tracking-wide whitespace-nowrap transition-all duration-300 ease-out transform-gpu ${
-                  activeDept === dept
-                    ? 'bg-[#0F2F6F] text-white shadow-lg shadow-[#0F2F6F]/20 ring-1 ring-[#0F2F6F]/40 -translate-y-0.5'
-                    : 'bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:-translate-y-0.5 hover:shadow-md'
-                }`}
+                className={`px-6 py-3 rounded-lg text-[10px] font-black uppercase tracking-wide whitespace-nowrap transition-all duration-300 ease-out transform-gpu ${activeDept === dept
+                  ? 'bg-[#0F2F6F] text-white shadow-lg shadow-[#0F2F6F]/20 ring-1 ring-[#0F2F6F]/40 -translate-y-0.5'
+                  : 'bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 hover:-translate-y-0.5 hover:shadow-md'
+                  }`}
               >
                 {dept} <span className="ml-2 opacity-50">{(adminUsers[dept] || []).length}</span>
               </button>
@@ -2346,7 +2571,7 @@ const AdminDashboard: React.FC<Props> = ({
               </div>
             </div>
           </div>
-      </div>
+        </div>
 
         <div className="space-y-4 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800/70 shadow-sm p-4 sm:p-6">
           <div className="flex flex-col gap-4">
@@ -2373,17 +2598,16 @@ const AdminDashboard: React.FC<Props> = ({
                       key={filter}
                       type="button"
                       onClick={() => setRegistryStatusFilter(filter)}
-                      className={`w-full py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.18em] transition-all ${
-                        (registryStatusFilter ?? 'all') === filter
-                          ? 'bg-blue-600 text-white shadow-md'
-                          : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-500'
-                      }`}
+                      className={`w-full py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.18em] transition-all ${(registryStatusFilter ?? 'all') === filter
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-500'
+                        }`}
                     >
                       {filter === 'all' ? 'All' : filter === 'active' ? 'Active' : 'Inactive'}
                     </button>
                   ))}
                 </div>
-                  <button
+                <button
                   onClick={() => setIsProvisioning(true)}
                   className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-[10px] font-black uppercase tracking-wide shadow-md shadow-blue-600/25 hover:bg-blue-500 active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
@@ -2417,117 +2641,115 @@ const AdminDashboard: React.FC<Props> = ({
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-blue-600/60 uppercase tracking-wide ml-1">Full Name</label>
-                <input 
-                  type="text"
-                  placeholder="Enter Name"
-                  className="w-full bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
-                  value={newEmployeeName}
-                  onChange={(e) => setNewEmployeeName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-blue-600/60 uppercase tracking-wide ml-1">Designation</label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="w-full pl-4 pr-10 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg font-bold text-sm text-slate-900 dark:text-slate-100 cursor-pointer text-left outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 flex items-center disabled:opacity-60"
-                    aria-haspopup="listbox"
-                    aria-expanded={provisionRoleOpen}
-                    onClick={() => setProvisionRoleOpen(v => !v)}
-                    disabled={activeDept === 'Admin'}
-                  >
-                    <span className="flex-1">
-                      {newEmployeeRole}
-                    </span>
-                    <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-500 pointer-events-none transition-transform ${provisionRoleOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {provisionRoleOpen && (
-                    <div
-                      className="absolute left-0 right-0 top-full mt-1.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm shadow-slate-200/50 z-50 overflow-hidden"
-                      role="listbox"
-                    >
-                      {(activeDept === 'Admin'
-                        ? [UserRole.ADMIN]
-                        : Object.values(UserRole).filter(role => role !== UserRole.ADMIN)
-                      ).map(role => (
-                        <button
-                          key={role}
-                          type="button"
-                          role="option"
-                          aria-selected={newEmployeeRole === role}
-                          onClick={() => { setNewEmployeeRole(role as UserRole); setProvisionRoleOpen(false); }}
-                          className={`w-full px-4 py-2.5 text-left text-sm font-bold transition-colors first:pt-3 last:pb-3 ${
-                            newEmployeeRole === role
-                              ? 'bg-blue-600 text-white'
-                              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                          }`}
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-blue-600/60 uppercase tracking-wide ml-1">Full Name</label>
+                    <input
+                      type="text"
+                      placeholder="Enter Name"
+                      className="w-full bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
+                      value={newEmployeeName}
+                      onChange={(e) => setNewEmployeeName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-blue-600/60 uppercase tracking-wide ml-1">Designation</label>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        className="w-full pl-4 pr-10 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg font-bold text-sm text-slate-900 dark:text-slate-100 cursor-pointer text-left outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 flex items-center disabled:opacity-60"
+                        aria-haspopup="listbox"
+                        aria-expanded={provisionRoleOpen}
+                        onClick={() => setProvisionRoleOpen(v => !v)}
+                        disabled={activeDept === 'Admin'}
+                      >
+                        <span className="flex-1">
+                          {newEmployeeRole}
+                        </span>
+                        <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-500 pointer-events-none transition-transform ${provisionRoleOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {provisionRoleOpen && (
+                        <div
+                          className="absolute left-0 right-0 top-full mt-1.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm shadow-slate-200/50 z-50 overflow-hidden"
+                          role="listbox"
                         >
-                          {role}
-                        </button>
-                      ))}
+                          {(activeDept === 'Admin'
+                            ? [UserRole.ADMIN]
+                            : Object.values(UserRole).filter(role => role !== UserRole.ADMIN)
+                          ).map(role => (
+                            <button
+                              key={role}
+                              type="button"
+                              role="option"
+                              aria-selected={newEmployeeRole === role}
+                              onClick={() => { setNewEmployeeRole(role as UserRole); setProvisionRoleOpen(false); }}
+                              className={`w-full px-4 py-2.5 text-left text-sm font-bold transition-colors first:pt-3 last:pb-3 ${newEmployeeRole === role
+                                ? 'bg-blue-600 text-white'
+                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                                }`}
+                            >
+                              {role}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-blue-600/60 uppercase tracking-wide ml-1">Department</label>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        className="w-full pl-4 pr-10 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg font-bold text-sm text-slate-900 dark:text-slate-100 cursor-pointer text-left outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 flex items-center"
+                        aria-haspopup="listbox"
+                        aria-expanded={provisionDeptOpen}
+                        onClick={() => setProvisionDeptOpen(v => !v)}
+                      >
+                        <span className="flex-1">
+                          {activeDept}
+                        </span>
+                        <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-500 pointer-events-none transition-transform ${provisionDeptOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {provisionDeptOpen && (
+                        <div
+                          className="absolute left-0 right-0 top-full mt-1.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm shadow-slate-200/50 z-50 overflow-hidden"
+                          role="listbox"
+                        >
+                          {availableDepts.map(dept => (
+                            <button
+                              key={dept}
+                              type="button"
+                              role="option"
+                              aria-selected={activeDept === dept}
+                              onClick={() => { setActiveDept(dept); setProvisionDeptOpen(false); }}
+                              className={`w-full px-4 py-2.5 text-left text-sm font-bold transition-colors first:pt-3 last:pb-3 ${activeDept === dept
+                                ? 'bg-blue-600 text-white'
+                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                                }`}
+                            >
+                              {dept}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {activeDept === 'Admin' && (
+                    <div className="space-y-1.5 animate-in fade-in slide-in-from-left-2">
+                      <label className="text-[9px] font-black text-red-600 uppercase tracking-wide ml-1 flex items-center gap-1.5">
+                        <Key className="w-2.5 h-2.5" /> Master Auth Key Required
+                      </label>
+                      <input
+                        type="password"
+                        placeholder="Enter Master Auth Key"
+                        className="w-full bg-white dark:bg-slate-800 border border-red-200 dark:border-red-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-red-500/5 transition-all"
+                        value={adminAuthKey}
+                        onChange={(e) => setAdminAuthKey(e.target.value)}
+                      />
                     </div>
                   )}
                 </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-blue-600/60 uppercase tracking-wide ml-1">Department</label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="w-full pl-4 pr-10 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg font-bold text-sm text-slate-900 dark:text-slate-100 cursor-pointer text-left outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 flex items-center"
-                    aria-haspopup="listbox"
-                    aria-expanded={provisionDeptOpen}
-                    onClick={() => setProvisionDeptOpen(v => !v)}
-                  >
-                    <span className="flex-1">
-                      {activeDept}
-                    </span>
-                    <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-500 pointer-events-none transition-transform ${provisionDeptOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {provisionDeptOpen && (
-                    <div
-                      className="absolute left-0 right-0 top-full mt-1.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm shadow-slate-200/50 z-50 overflow-hidden"
-                      role="listbox"
-                    >
-                      {availableDepts.map(dept => (
-                        <button
-                          key={dept}
-                          type="button"
-                          role="option"
-                          aria-selected={activeDept === dept}
-                          onClick={() => { setActiveDept(dept); setProvisionDeptOpen(false); }}
-                          className={`w-full px-4 py-2.5 text-left text-sm font-bold transition-colors first:pt-3 last:pb-3 ${
-                            activeDept === dept
-                              ? 'bg-blue-600 text-white'
-                              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                          }`}
-                        >
-                          {dept}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-                {activeDept === 'Admin' && (
-                <div className="space-y-1.5 animate-in fade-in slide-in-from-left-2">
-                  <label className="text-[9px] font-black text-red-600 uppercase tracking-wide ml-1 flex items-center gap-1.5">
-                    <Key className="w-2.5 h-2.5" /> Master Auth Key Required
-                  </label>
-                  <input 
-                    type="password"
-                    placeholder="Enter Master Auth Key"
-                    className="w-full bg-white dark:bg-slate-800 border border-red-200 dark:border-red-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-red-500/5 transition-all"
-                    value={adminAuthKey}
-                    onChange={(e) => setAdminAuthKey(e.target.value)}
-                  />
-                </div>
-              )}
-            </div>
                 <div className="flex justify-end gap-3 pt-2">
                   <button onClick={() => setIsProvisioning(false)} className="px-4 py-2 text-slate-400 dark:text-slate-500 dark:text-slate-500 text-[10px] font-black uppercase tracking-wide">Cancel</button>
                   <button onClick={handleCommitProvision} className="px-8 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-wide rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all">Save user changes</button>
@@ -2582,8 +2804,8 @@ const AdminDashboard: React.FC<Props> = ({
               <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">REAL-TIME AUDITS</p>
             </div>
           </div>
-          
-          <button 
+
+          <button
             onClick={handleExportLogs}
             className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm text-[9px] font-black uppercase tracking-wide flex items-center gap-1.5 shrink-0 whitespace-nowrap"
           >
@@ -2596,7 +2818,7 @@ const AdminDashboard: React.FC<Props> = ({
           <div className="space-y-1.5">
             <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Department</label>
             <div className="relative">
-              <select 
+              <select
                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-[10px] font-bold text-slate-700 dark:text-slate-300 outline-none appearance-none cursor-pointer focus:border-blue-600"
                 value={logFilterDept}
                 onChange={(e) => setLogFilterDept(e.target.value)}
@@ -2610,7 +2832,7 @@ const AdminDashboard: React.FC<Props> = ({
           <div className="space-y-1.5">
             <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Employee</label>
             <div className="relative">
-              <select 
+              <select
                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-[10px] font-bold text-slate-700 dark:text-slate-300 outline-none appearance-none cursor-pointer focus:border-blue-600"
                 value={logFilterUser}
                 onChange={(e) => setLogFilterUser(e.target.value)}
@@ -2624,7 +2846,7 @@ const AdminDashboard: React.FC<Props> = ({
           <div className="space-y-1.5">
             <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Severity Tier</label>
             <div className="relative">
-              <select 
+              <select
                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 text-[10px] font-bold text-slate-700 dark:text-slate-300 outline-none appearance-none cursor-pointer focus:border-blue-600"
                 value={logFilterSeverity}
                 onChange={(e) => setLogFilterSeverity(e.target.value)}
@@ -2638,7 +2860,7 @@ const AdminDashboard: React.FC<Props> = ({
             </div>
           </div>
           <div className="flex items-end">
-            <button 
+            <button
               onClick={() => { setLogFilterDept('all'); setLogFilterUser('all'); setLogFilterSeverity('all'); }}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-wide hover:bg-slate-800 transition-all"
             >
@@ -2648,7 +2870,7 @@ const AdminDashboard: React.FC<Props> = ({
           </div>
         </div>
       </div>
-      
+
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
         {filteredLogs.length === 0 ? (
           <div className="min-h-[360px] flex flex-col items-center justify-center space-y-4 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/70">
@@ -2682,12 +2904,12 @@ const AdminDashboard: React.FC<Props> = ({
     const recommendedLabel = (s: Transmission['supervisorRecommendation']) =>
       s === 'rejected' ? 'Changes Requested' : 'Supervisor Approved';
 
-    // Pending: in pendingTransmissions, supervisor already graded, not yet finalized
+    // Pending: in pendingTransmissions, not yet finalized (no supervisor step needed)
     const pendingCandidates = pendingTransmissions.filter((t) => {
       const u = roleMap[t.userName];
       const dept = u?.department || 'Unknown';
       if (dept !== activeDept) return false;
-      return t.status !== 'validated' && t.status !== 'rejected' && !!t.supervisorRecommendation;
+      return t.status !== 'validated' && t.status !== 'rejected';
     });
 
     // Validated: moved to history with status 'validated'
@@ -2708,29 +2930,29 @@ const AdminDashboard: React.FC<Props> = ({
       validationStatusTab === 'pending'
         ? pendingCandidates
         : validationStatusTab === 'validated'
-        ? validatedCandidates
-        : rejectedCandidates;
+          ? validatedCandidates
+          : rejectedCandidates;
 
     const term = validationSearch.trim().toLowerCase();
     const filtered = !term
       ? activeCandidates
       : activeCandidates.filter((t) =>
-          t.userName.toLowerCase().includes(term) ||
-          t.id.toLowerCase().includes(term) ||
-          (t.jobId || '').toLowerCase().includes(term) ||
-          (t.jobType || '').toLowerCase().includes(term)
-        );
+        t.userName.toLowerCase().includes(term) ||
+        t.id.toLowerCase().includes(term) ||
+        (t.jobId || '').toLowerCase().includes(term) ||
+        (t.jobType || '').toLowerCase().includes(term)
+      );
 
     const statusTabConfig = [
-      { key: 'pending' as const,   label: 'Pending',   count: pendingCandidates.length,   color: 'amber'   },
+      { key: 'pending' as const, label: 'Pending', count: pendingCandidates.length, color: 'amber' },
       { key: 'validated' as const, label: 'Validated', count: validatedCandidates.length, color: 'emerald' },
-      { key: 'rejected' as const,  label: 'Rejected',  count: rejectedCandidates.length,  color: 'red'     },
+      { key: 'rejected' as const, label: 'Rejected', count: rejectedCandidates.length, color: 'red' },
     ] as const;
 
     const emptyMessages = {
-      pending:   { icon: <ClipboardCheck className="w-12 h-12 text-slate-300" />, title: 'No pending submissions', desc: 'Once supervisors finish grading, their submissions will show up here for approval or rejection.' },
+      pending: { icon: <ClipboardCheck className="w-12 h-12 text-slate-300" />, title: 'No pending submissions', desc: 'Once supervisors finish grading, their submissions will show up here for approval or rejection.' },
       validated: { icon: <ClipboardCheck className="w-12 h-12 text-slate-300" />, title: 'No validated submissions yet', desc: 'Approved submissions will appear here.' },
-      rejected:  { icon: <ClipboardCheck className="w-12 h-12 text-slate-300" />, title: 'No rejected submissions', desc: 'Submissions returned for revision will appear here.' },
+      rejected: { icon: <ClipboardCheck className="w-12 h-12 text-slate-300" />, title: 'No rejected submissions', desc: 'Submissions returned for revision will appear here.' },
     };
 
     return (
@@ -2776,9 +2998,9 @@ const AdminDashboard: React.FC<Props> = ({
             {statusTabConfig.map(({ key, label, count, color }) => {
               const isActive = validationStatusTab === key;
               const colorMap = {
-                amber:   { active: 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-600 text-amber-800 dark:text-amber-300', badge: 'bg-amber-200 text-amber-800', inactive: 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900' },
+                amber: { active: 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-600 text-amber-800 dark:text-amber-300', badge: 'bg-amber-200 text-amber-800', inactive: 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900' },
                 emerald: { active: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-600 text-emerald-800 dark:text-emerald-300', badge: 'bg-emerald-200 text-emerald-800', inactive: 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900' },
-                red:     { active: 'bg-red-50 dark:bg-red-900/30 border-red-300 dark:border-red-600 text-red-800 dark:text-red-300', badge: 'bg-red-200 text-red-800', inactive: 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900' },
+                red: { active: 'bg-red-50 dark:bg-red-900/30 border-red-300 dark:border-red-600 text-red-800 dark:text-red-300', badge: 'bg-red-200 text-red-800', inactive: 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900' },
               } as const;
               const c = colorMap[color];
               return (
@@ -2874,13 +3096,21 @@ const AdminDashboard: React.FC<Props> = ({
                         <div className="flex items-center gap-2 w-full sm:w-auto sm:shrink-0">
                           <button
                             type="button"
+                            onClick={() => handleOpenReview(t)}
+                            className="px-4 py-3 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-blue-700 transition-colors flex items-center gap-2"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Review & Grade
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => {
                               onValidate(t.id, undefined, 'validated');
                               triggerToast('Approved', `Submission finalized and approved.`);
                             }}
                             className="px-4 py-3 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-emerald-700 transition-colors"
                           >
-                            Approve
+                            Quick Approve
                           </button>
                           <button
                             type="button"
@@ -2890,7 +3120,20 @@ const AdminDashboard: React.FC<Props> = ({
                             }}
                             className="px-4 py-3 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-red-700 transition-colors"
                           >
-                            Request Changes
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                      {/* View details for validated/rejected */}
+                      {validationStatusTab !== 'pending' && (
+                        <div className="flex items-center gap-2 w-full sm:w-auto sm:shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReview(t, true)}
+                            className="px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase tracking-wide hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center gap-2"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View Details
                           </button>
                         </div>
                       )}
@@ -2909,295 +3152,295 @@ const AdminDashboard: React.FC<Props> = ({
 
     return (
       <>
-      <div className="bg-transparent rounded-none p-0 shadow-none border-0 animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col space-y-6">
-        {/* Header */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4 min-w-0">
-              <div className="w-10 h-10 shrink-0 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Scale className="w-5 h-5 text-white" />
-        </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Configuration</p>
-                <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-none">
-                  Grading systems
-                </h3>
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mt-1">Set department score weights and bonus thresholds</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Department grading in depth */}
-        <div className="space-y-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1">
-            <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide shrink-0">
-              Score weights by department
-            </h4>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={handleOpenSetStandardConfirm}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-[10px] font-black uppercase tracking-wide text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-500 transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:hover:bg-slate-800 disabled:hover:border-slate-200 dark:hover:border-slate-600"
-              >
-                <Save className="w-4 h-4 text-blue-600" />
-                Set as standard
-              </button>
-              <button
-                type="button"
-                onClick={handleOpenLoadStandardConfirm}
-                title={
-                  !standardSnapshotExists
-                      ? 'No saved standard yet. Use Set as standard first.'
-                      : undefined
-                }
-                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[9px] font-black uppercase tracking-wide shadow-sm transition-colors ${
-                  standardSnapshotExists
-                    ? 'border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-800 hover:bg-blue-100 hover:border-blue-300 dark:hover:border-blue-600'
-                    : 'cursor-not-allowed border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 dark:text-slate-500'
-                }`}
-              >
-                <Download className="w-4 h-4" />
-                Load standard
-              </button>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {gradingDepts.map((dept) => {
-              const accentClases = 'from-blue-500/10 to-transparent border-blue-200 dark:border-blue-700/60 text-blue-700 dark:text-blue-400';
-              const weightClases = 'text-blue-600';
-              const categories = departmentWeights[dept] || [];
-              const deptSum = categories.reduce((s, c) => s + c.weightPct, 0);
-              const sumValid = deptSum === 100;
-              return (
-              <div key={dept} className="group bg-white dark:bg-slate-800 rounded-[1.75rem] border border-slate-200 dark:border-slate-600/90 shadow-lg shadow-slate-200/50 overflow-hidden transition-all duration-300 hover:shadow-sm hover:shadow-slate-200/60 hover:border-slate-300 dark:hover:border-slate-500/80">
-                <div className={`px-6 py-2 bg-gradient-to-br ${accentClases} border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3`}>
-        <div>
-                    <h5 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">{dept}</h5>
-                    <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-[0.25em] mt-1">Category weights</p>
-            </div>
-                  <div className="flex items-center gap-2 flex-wrap justify-end">
-                    <span className={`text-[10px] font-black uppercase tracking-wide ${sumValid ? 'text-emerald-600' : 'text-amber-600'}`}>
-                      Total: {deptSum}%
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleResetDepartmentWeights(dept)}
-                      title="Replace this department with its copy from the saved standard (Set as standard), or built-in defaults if none."
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 dark:text-slate-400 text-[9px] font-black uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:hover:bg-slate-800/80"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      Reset
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setGradingEditDept(dept)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-500 transition-all shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:hover:bg-slate-800 disabled:hover:border-slate-200 dark:hover:border-slate-600"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      Edit weighted scores
-                    </button>
-                  </div>
+        <div className="bg-transparent rounded-none p-0 shadow-none border-0 animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col space-y-6">
+          {/* Header */}
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-10 h-10 shrink-0 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Scale className="w-5 h-5 text-white" />
                 </div>
-                <div className="p-5">
-                  {categories.map((cat, idx) => (
-                    <div key={idx} className="flex items-center justify-between gap-3 py-2.5 px-1 border-b border-slate-100 dark:border-slate-700/80 last:border-0">
-                      <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide leading-snug min-w-0 flex-1">{cat.label}</span>
-                      <span className={`text-xs font-black tabular-nums shrink-0 ${weightClases}`}>{cat.weightPct}%</span>
-                    </div>
-                  ))}
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Configuration</p>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-none">
+                    Grading systems
+                  </h3>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mt-1">Set department score weights and bonus thresholds</p>
                 </div>
               </div>
-            );})}
-        </div>
-      </div>
-
-        {/* Incentive matrix */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-6 md:p-5">
-          <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-200 dark:border-slate-600 pb-6 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600/10 border border-blue-200 dark:border-blue-700 rounded-xl flex items-center justify-center shadow-sm">
-                <TrendingUp className="w-5 h-5 text-blue-600" />
             </div>
-                  <div>
-                <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Bonus eligibility thresholds</h4>
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Applies to all departments & employees</p>
-                  </div>
-                </div>
-            <button
-              onClick={handleSaveMatrix}
-              className="flex items-center gap-2 px-5 py-3 rounded-lg text-[10px] font-black uppercase tracking-wide bg-emerald-600 text-white hover:bg-emerald-500 shadow-md transition-all active:scale-[0.98]"
-            >
-              <Save className="w-4 h-4" />
-              Save Changes
-            </button>
           </div>
-          <div className="space-y-4">
-            {incentiveTiers.map((tier, i) => (
-              <div
-                key={i}
-                className="group bg-white dark:bg-slate-800 rounded-[1.75rem] border border-slate-200 dark:border-slate-600/90 shadow-lg shadow-slate-200/50 overflow-hidden transition-all duration-300 hover:shadow-sm hover:shadow-slate-200/60 hover:border-slate-300 dark:hover:border-slate-500/80"
-              >
-                <div className="px-6 py-2 bg-gradient-to-br from-blue-500/10 to-transparent border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-[200px]">
-                    <h5 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">{tier.status || 'Tier'}</h5>
-                    <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-[0.25em] mt-1">{tier.outcome || 'Outcome'}</p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap justify-end">
-                    <span className="text-[10px] font-black uppercase tracking-wide text-blue-700 dark:text-blue-400 bg-white dark:bg-slate-800/80 border border-blue-200 dark:border-blue-700/80 px-3 py-1.5 rounded-xl">
-                      Min {tier.minScore}% · Yield {tier.yield}%
-                    </span>
-                  </div>
-                </div>
-                <div className="p-5 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">Tier designation</label>
-                <input 
-                        type="text"
-                        value={tier.status}
-                        onChange={(e) => handleUpdateMatrix(i, 'status', e.target.value)}
-                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">Yield outcome</label>
-                      <input
-                        type="text"
-                        value={tier.outcome}
-                        onChange={(e) => handleUpdateMatrix(i, 'outcome', e.target.value)}
-                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">Min score requirement</label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          value={tier.minScore}
-                          onChange={(e) => handleUpdateMatrix(i, 'minScore', e.target.value)}
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl pl-4 pr-10 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500">%</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">Payout Yield</label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          value={tier.yield}
-                          onChange={(e) => handleUpdateMatrix(i, 'yield', e.target.value)}
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl pl-4 pr-10 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500">%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">
-                      Payout range (supervisor Yield cards)
-                    </label>
-                    <input
-                      type="text"
-                      value={tier.payoutRange ?? ''}
-                      onChange={(e) => handleUpdateMatrix(i, 'payoutRange', e.target.value)}
-                      placeholder="e.g. ₱9k - ₱12k"
-                      className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
-                    />
-                    <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 mt-1 uppercase tracking-wide">
-                      Shown on department supervisor dashboards; leave blank to show Yield % instead.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      {loadStandardConfirmOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[10050] flex items-center justify-center p-4 bg-slate-900/45 backdrop-blur-[2px]"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="load-standard-title"
-            onClick={() => setLoadStandardConfirmOpen(false)}
-          >
-            <div
-              className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-600/90 bg-white dark:bg-slate-800 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.18)]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h4 id="load-standard-title" className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">
-                Load saved standard?
+          {/* Department grading in depth */}
+          <div className="space-y-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1">
+              <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide shrink-0">
+                Score weights by department
               </h4>
-              <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 dark:text-slate-400 leading-relaxed">
-                This replaces the current department grading weights and criteria with your saved standard for all departments.
-              </p>
-              <div className="mt-6 flex justify-end gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setLoadStandardConfirmOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-[10px] font-black uppercase tracking-wide text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm transition-colors"
+                  onClick={handleOpenSetStandardConfirm}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-3 text-[10px] font-black uppercase tracking-wide text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-500 transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:hover:bg-slate-800 disabled:hover:border-slate-200 dark:hover:border-slate-600"
                 >
-                  Cancel
+                  <Save className="w-4 h-4 text-blue-600" />
+                  Set as standard
                 </button>
                 <button
                   type="button"
-                  onClick={handleConfirmLoadStandard}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-wide shadow-lg shadow-blue-600/25 hover:bg-blue-700 transition-colors"
+                  onClick={handleOpenLoadStandardConfirm}
+                  title={
+                    !standardSnapshotExists
+                      ? 'No saved standard yet. Use Set as standard first.'
+                      : undefined
+                  }
+                  className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[9px] font-black uppercase tracking-wide shadow-sm transition-colors ${standardSnapshotExists
+                    ? 'border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-800 hover:bg-blue-100 hover:border-blue-300 dark:hover:border-blue-600'
+                    : 'cursor-not-allowed border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 dark:text-slate-500'
+                    }`}
                 >
+                  <Download className="w-4 h-4" />
                   Load standard
                 </button>
               </div>
             </div>
-          </div>,
-          document.body
-        )}
-      {setStandardConfirmOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[10051] flex items-center justify-center p-4 bg-slate-900/45 backdrop-blur-[2px]"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="set-standard-title"
-            onClick={() => setSetStandardConfirmOpen(false)}
-          >
-            <div
-              className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-600/90 bg-white dark:bg-slate-800 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.18)]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h4 id="set-standard-title" className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">
-                Save current grading as standard?
-              </h4>
-              <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 dark:text-slate-400 leading-relaxed">
-                This will overwrite the saved grading standard with the current department grading breakdown (weights + criteria).
-              </p>
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSetStandardConfirmOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-[10px] font-black uppercase tracking-wide text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmSetStandard}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-wide shadow-lg shadow-blue-600/25 hover:bg-blue-700 transition-colors"
-                >
-                  Save as standard
-                </button>
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {gradingDepts.map((dept) => {
+                const accentClases = 'from-blue-500/10 to-transparent border-blue-200 dark:border-blue-700/60 text-blue-700 dark:text-blue-400';
+                const weightClases = 'text-blue-600';
+                const categories = departmentWeights[dept] || [];
+                const deptSum = categories.reduce((s, c) => s + c.weightPct, 0);
+                const sumValid = deptSum === 100;
+                return (
+                  <div key={dept} className="group bg-white dark:bg-slate-800 rounded-[1.75rem] border border-slate-200 dark:border-slate-600/90 shadow-lg shadow-slate-200/50 overflow-hidden transition-all duration-300 hover:shadow-sm hover:shadow-slate-200/60 hover:border-slate-300 dark:hover:border-slate-500/80">
+                    <div className={`px-6 py-2 bg-gradient-to-br ${accentClases} border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3`}>
+                      <div>
+                        <h5 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">{dept}</h5>
+                        <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-[0.25em] mt-1">Category weights</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap justify-end">
+                        <span className={`text-[10px] font-black uppercase tracking-wide ${sumValid ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          Total: {deptSum}%
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleResetDepartmentWeights(dept)}
+                          title="Replace this department with its copy from the saved standard (Set as standard), or built-in defaults if none."
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 dark:text-slate-400 text-[9px] font-black uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:hover:bg-slate-800/80"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          Reset
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setGradingEditDept(dept)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-500 transition-all shadow-sm disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white dark:hover:bg-slate-800 disabled:hover:border-slate-200 dark:hover:border-slate-600"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          Edit weighted scores
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-5">
+                      {categories.map((cat, idx) => (
+                        <div key={idx} className="flex items-center justify-between gap-3 py-2.5 px-1 border-b border-slate-100 dark:border-slate-700/80 last:border-0">
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide leading-snug min-w-0 flex-1">{cat.label}</span>
+                          <span className={`text-xs font-black tabular-nums shrink-0 ${weightClases}`}>{cat.weightPct}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>,
-          document.body
-        )}
-    </>
+          </div>
+
+          {/* Incentive matrix */}
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm p-6 md:p-5">
+            <div className="flex items-center justify-between flex-wrap gap-4 border-b border-slate-200 dark:border-slate-600 pb-6 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600/10 border border-blue-200 dark:border-blue-700 rounded-xl flex items-center justify-center shadow-sm">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Bonus eligibility thresholds</h4>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide">Applies to all departments & employees</p>
+                </div>
+              </div>
+              <button
+                onClick={handleSaveMatrix}
+                className="flex items-center gap-2 px-5 py-3 rounded-lg text-[10px] font-black uppercase tracking-wide bg-emerald-600 text-white hover:bg-emerald-500 shadow-md transition-all active:scale-[0.98]"
+              >
+                <Save className="w-4 h-4" />
+                Save Changes
+              </button>
+            </div>
+            <div className="space-y-4">
+              {incentiveTiers.map((tier, i) => (
+                <div
+                  key={i}
+                  className="group bg-white dark:bg-slate-800 rounded-[1.75rem] border border-slate-200 dark:border-slate-600/90 shadow-lg shadow-slate-200/50 overflow-hidden transition-all duration-300 hover:shadow-sm hover:shadow-slate-200/60 hover:border-slate-300 dark:hover:border-slate-500/80"
+                >
+                  <div className="px-6 py-2 bg-gradient-to-br from-blue-500/10 to-transparent border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-[200px]">
+                      <h5 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">{tier.status || 'Tier'}</h5>
+                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-[0.25em] mt-1">{tier.outcome || 'Outcome'}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                      <span className="text-[10px] font-black uppercase tracking-wide text-blue-700 dark:text-blue-400 bg-white dark:bg-slate-800/80 border border-blue-200 dark:border-blue-700/80 px-3 py-1.5 rounded-xl">
+                        Min {tier.minScore}% · Yield {tier.yield}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">Tier designation</label>
+                        <input
+                          type="text"
+                          value={tier.status}
+                          onChange={(e) => handleUpdateMatrix(i, 'status', e.target.value)}
+                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">Yield outcome</label>
+                        <input
+                          type="text"
+                          value={tier.outcome}
+                          onChange={(e) => handleUpdateMatrix(i, 'outcome', e.target.value)}
+                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">Min score requirement</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={tier.minScore}
+                            onChange={(e) => handleUpdateMatrix(i, 'minScore', e.target.value)}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl pl-4 pr-10 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500">%</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">Payout Yield</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={tier.yield}
+                            onChange={(e) => handleUpdateMatrix(i, 'yield', e.target.value)}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl pl-4 pr-10 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500">%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide block mb-1">
+                        Payout range (supervisor Yield cards)
+                      </label>
+                      <input
+                        type="text"
+                        value={tier.payoutRange ?? ''}
+                        onChange={(e) => handleUpdateMatrix(i, 'payoutRange', e.target.value)}
+                        placeholder="e.g. ₱9k - ₱12k"
+                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-200 dark:border-blue-700 transition-all"
+                      />
+                      <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 mt-1 uppercase tracking-wide">
+                        Shown on department supervisor dashboards; leave blank to show Yield % instead.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        {loadStandardConfirmOpen &&
+          createPortal(
+            <div
+              className="fixed inset-0 z-[10050] flex items-center justify-center p-4 bg-slate-900/45 backdrop-blur-[2px]"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="load-standard-title"
+              onClick={() => setLoadStandardConfirmOpen(false)}
+            >
+              <div
+                className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-600/90 bg-white dark:bg-slate-800 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.18)]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h4 id="load-standard-title" className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">
+                  Load saved standard?
+                </h4>
+                <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 dark:text-slate-400 leading-relaxed">
+                  This replaces the current department grading weights and criteria with your saved standard for all departments.
+                </p>
+                <div className="mt-6 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLoadStandardConfirmOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-[10px] font-black uppercase tracking-wide text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmLoadStandard}
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-wide shadow-lg shadow-blue-600/25 hover:bg-blue-700 transition-colors"
+                  >
+                    Load standard
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
+        {setStandardConfirmOpen &&
+          createPortal(
+            <div
+              className="fixed inset-0 z-[10051] flex items-center justify-center p-4 bg-slate-900/45 backdrop-blur-[2px]"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="set-standard-title"
+              onClick={() => setSetStandardConfirmOpen(false)}
+            >
+              <div
+                className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-600/90 bg-white dark:bg-slate-800 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.18)]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h4 id="set-standard-title" className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">
+                  Save current grading as standard?
+                </h4>
+                <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 dark:text-slate-400 leading-relaxed">
+                  This will overwrite the saved grading standard with the current department grading breakdown (weights + criteria).
+                </p>
+                <div className="mt-6 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSetStandardConfirmOpen(false)}
+                    className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-[10px] font-black uppercase tracking-wide text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmSetStandard}
+                    className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-wide shadow-lg shadow-blue-600/25 hover:bg-blue-700 transition-colors"
+                  >
+                    Save as standard
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
+      </>
     );
   };
 
@@ -3216,7 +3459,7 @@ const AdminDashboard: React.FC<Props> = ({
                   <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-1">Final confirmation window</p>
                 </div>
               </div>
-          <button 
+              <button
                 type="button"
                 onClick={() => setDataDeleteCountdownOpen(false)}
                 className="p-2.5 rounded-xl text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-800 transition-all"
@@ -3224,7 +3467,7 @@ const AdminDashboard: React.FC<Props> = ({
               >
                 <X className="w-5 h-5" />
               </button>
-              </div>
+            </div>
 
             <div className="px-8 py-7 space-y-5">
               <div className="text-center">
@@ -3232,8 +3475,8 @@ const AdminDashboard: React.FC<Props> = ({
                 <div className="mt-3 flex items-center justify-center">
                   <div className="w-28 h-28 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-100 flex items-center justify-center shadow-sm">
                     <span className="text-6xl font-black text-red-700 tabular-nums tracking-tight">{dataDeleteSecondsLeft}</span>
-              </div>
-            </div>
+                  </div>
+                </div>
                 <p className="mt-4 text-sm font-bold text-slate-700 dark:text-slate-300 leading-relaxed">
                   Employee audits will be deleted when the timer reaches <span className="font-black">0</span>.
                 </p>
@@ -3250,10 +3493,10 @@ const AdminDashboard: React.FC<Props> = ({
                   className="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all"
                 >
                   Cancel deletion
-          </button>
+                </button>
                 <div className="flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wide bg-red-50 dark:bg-red-900/30 text-red-700 border border-red-100 text-center tabular-nums">
                   Deleting in {dataDeleteSecondsLeft}s
-        </div>
+                </div>
               </div>
             </div>
           </div>
@@ -3276,14 +3519,14 @@ const AdminDashboard: React.FC<Props> = ({
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20">
                   <ShieldCheck className="w-5 h-5" />
-            </div>
-              <div>
+                </div>
+                <div>
                   <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Enable Year-End Auto Clear</h3>
                   <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-1">
                     Requires ZIP backup + admin password confirmation
-                </p>
+                  </p>
+                </div>
               </div>
-            </div>
               <button
                 type="button"
                 onClick={() => setDataAutoPurgeConfirmOpen(false)}
@@ -3292,7 +3535,7 @@ const AdminDashboard: React.FC<Props> = ({
               >
                 <X className="w-5 h-5" />
               </button>
-          </div>
+            </div>
 
             <div className="relative px-10 py-8 space-y-6">
               <p className="text-[13px] font-bold text-slate-700 dark:text-slate-300 leading-7">
@@ -3301,7 +3544,7 @@ const AdminDashboard: React.FC<Props> = ({
                 to enter the admin password. This action can’t be undone.
               </p>
 
-               <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setDataAutoPurgeConfirmOpen(false)}
@@ -3341,15 +3584,15 @@ const AdminDashboard: React.FC<Props> = ({
                   <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Delete employee audits</h3>
                   <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-1">Admin confirmation required</p>
                 </div>
-               </div>
-               <button 
+              </div>
+              <button
                 type="button"
                 onClick={() => { setDataPurgeOpen(false); setDataPurgePwd(''); setDataPurgeErr(null); }}
                 className="relative p-2.5 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
-               </button>
+              </button>
             </div>
 
             <div className="relative px-10 py-8 space-y-6">
@@ -3367,13 +3610,12 @@ const AdminDashboard: React.FC<Props> = ({
                     type="button"
                     disabled={dataZipBusy}
                     onClick={buildEmployeeAuditsZip}
-                    className={`mt-3 w-full px-5 py-3 rounded-lg text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${
-                      dataZipBusy
-                        ? 'bg-slate-100 dark:bg-[#0d1526] text-slate-400 dark:text-slate-500 dark:text-slate-500 border border-slate-200 dark:border-slate-600'
-                        : dataBackupDone
-                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                          : 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10'
-                    }`}
+                    className={`mt-3 w-full px-5 py-3 rounded-lg text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${dataZipBusy
+                      ? 'bg-slate-100 dark:bg-[#0d1526] text-slate-400 dark:text-slate-500 dark:text-slate-500 border border-slate-200 dark:border-slate-600'
+                      : dataBackupDone
+                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
+                        : 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10'
+                      }`}
                   >
                     <Download className="w-4 h-4" />
                     {dataZipBusy ? 'Preparing ZIP…' : dataBackupDone ? 'Backup downloaded' : 'Download ZIP backup'}
@@ -3381,7 +3623,7 @@ const AdminDashboard: React.FC<Props> = ({
                   <p className="mt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400">
                     ZIP structure: <span className="font-black">Department / (validated|pending|rejected)</span>
                   </p>
-                    </div>
+                </div>
               )}
 
               <div className="space-y-2">
@@ -3396,9 +3638,9 @@ const AdminDashboard: React.FC<Props> = ({
                 {dataPurgeErr && (
                   <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-700 border border-red-100 text-[10px] font-black uppercase tracking-wide">
                     {dataPurgeErr}
-                    </div>
-                )}
                   </div>
+                )}
+              </div>
 
               <div className="flex items-center gap-3 pt-2">
                 <button
@@ -3429,8 +3671,8 @@ const AdminDashboard: React.FC<Props> = ({
                 >
                   Confirm delete
                 </button>
-                      </div>
-                    </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -3464,236 +3706,235 @@ const AdminDashboard: React.FC<Props> = ({
             />
             <div className="fixed inset-0 z-[5001] flex items-center justify-center p-4 pointer-events-none" aria-hidden="true">
               <div className="bg-white dark:bg-slate-800 rounded-[1.75rem] w-full max-w-5xl max-h-[90vh] flex flex-col shadow-sm shadow-slate-900/10 border border-slate-200 dark:border-slate-600/90 overflow-hidden animate-in zoom-in-95 duration-200 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="px-6 py-2 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between gap-4 flex-wrap bg-slate-50 dark:bg-slate-900/60 shrink-0 overflow-visible">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-600/25">
-                    <Scale className="w-5 h-5 text-white" />
+                <div className="px-6 py-2 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between gap-4 flex-wrap bg-slate-50 dark:bg-slate-900/60 shrink-0 overflow-visible">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-600/25">
+                      <Scale className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Edit weighted scores</h3>
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-0.5">{dept} · Name, icon, weight & grading content</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Edit weighted scores</h3>
-                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide mt-0.5">{dept} · Name, icon, weight & grading content</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border font-semibold text-sm tabular-nums tracking-tight ${isTotalWeightValid ? 'bg-emerald-500/10 border-emerald-200/80 text-emerald-700' : 'bg-amber-500/10 border-amber-200 dark:border-amber-700/80 text-amber-700'}`}>
-                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">Total weight</span>
-                    <span className="font-black">{totalWeight}%</span>
-                  </span>
-                  <button
-                    type="button"
-                    disabled={!canCommitGrading}
-                    title={
-                      canCommitGrading
-                        ? undefined
-                        : !isTotalWeightValid
+                  <div className="flex items-center gap-4">
+                    <span className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border font-semibold text-sm tabular-nums tracking-tight ${isTotalWeightValid ? 'bg-emerald-500/10 border-emerald-200/80 text-emerald-700' : 'bg-amber-500/10 border-amber-200 dark:border-amber-700/80 text-amber-700'}`}>
+                      <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">Total weight</span>
+                      <span className="font-black">{totalWeight}%</span>
+                    </span>
+                    <button
+                      type="button"
+                      disabled={!canCommitGrading}
+                      title={
+                        canCommitGrading
+                          ? undefined
+                          : !isTotalWeightValid
                             ? 'Changes cannot be confirmed until total weight equals 100%.'
                             : 'Changes cannot be confirmed until each category\u2019s criterion points total its weighted impact % (e.g. 35% \u2192 35 pts).'
-                    }
-                    onClick={async () => {
-                      if (
-                        gradingEditDraft &&
-                        gradingEditDept &&
-                        isTotalWeightValid &&
-                        areAllCategoryContentsValid
-                      ) {
-                        const merged: DepartmentWeights = {
-                          ...departmentWeights,
-                          [gradingEditDept]: gradingEditDraft,
-                        };
-                        const next = normalizeDepartmentWeightsForUi(
-                          JSON.parse(JSON.stringify(merged)) as DepartmentWeights
-                        );
-                        onUpdateDepartmentWeights(next);
-                        const synced = await syncCriteriaAdminSnapshot(gradingEditDept, gradingEditDraft);
-                        if (synced) {
-                          triggerToast('Saved', 'Department weights saved and synced to backend API.');
-                        } else {
-                          triggerToast('Saved locally only', 'Department weights were saved in this app.');
+                      }
+                      onClick={async () => {
+                        if (
+                          gradingEditDraft &&
+                          gradingEditDept &&
+                          isTotalWeightValid &&
+                          areAllCategoryContentsValid
+                        ) {
+                          const merged: DepartmentWeights = {
+                            ...departmentWeights,
+                            [gradingEditDept]: gradingEditDraft,
+                          };
+                          const next = normalizeDepartmentWeightsForUi(
+                            JSON.parse(JSON.stringify(merged)) as DepartmentWeights
+                          );
+                          onUpdateDepartmentWeights(next);
+                          const synced = await syncCriteriaAdminSnapshot(gradingEditDept, gradingEditDraft);
+                          if (synced) {
+                            triggerToast('Saved', 'Department weights saved and synced to backend API.');
+                          } else {
+                            triggerToast('Saved locally only', 'Department weights were saved in this app.');
+                          }
+                          clearGradingEditSession();
                         }
-                        clearGradingEditSession();
-                      }
-                      setGradingEditDept(null);
-                      setGradingIconPickerOpen(null);
-                      setGradingEditDraft(null);
-                    }}
-                    className="px-5 py-3 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-wide shadow-lg shadow-slate-900/25 hover:bg-slate-800 hover:shadow-sm hover:shadow-slate-900/30 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-900 disabled:hover:shadow-lg"
-                  >
-                    Save changes
-                  </button>
-                  {!canCommitGrading ? (
-                    <span className="text-[10px] font-black uppercase tracking-wide text-amber-700">
-                      {!isTotalWeightValid
-                        ? 'Save is disabled: total weight must be exactly 100%.'
-                        : 'Save is disabled: each category criteria total must match its weight (%).'}
-                    </span>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const draft = gradingEditDraft || [];
-                      const snapshot = gradingEditInitialSnapshot || [];
-                      const hasChanges = JSON.stringify(draft) !== JSON.stringify(snapshot);
-                      if (hasChanges) {
-                        setGradingExitConfirmOpen(true);
-                      } else {
-                        clearGradingEditSession();
                         setGradingEditDept(null);
-                        setGradingEditDraft(null);
                         setGradingIconPickerOpen(null);
-                        setGradingExitConfirmOpen(false);
-                      }
-                    }}
-                    className="p-2.5 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-200 dark:hover:border-red-700 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600/80 shadow-sm hover:shadow transition-all duration-200"
-                    aria-label="Close"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                  {gradingExitConfirmOpen && createPortal(
-                    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/20" onClick={() => setGradingExitConfirmOpen(false)}>
-                      <div className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-5 shadow-sm shadow-slate-900/10" onClick={(e) => e.stopPropagation()}>
-                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Exit without saving? Your changes will not be saved.</p>
-                        <div className="flex gap-2 justify-end">
-                          <button
-                            type="button"
-                            onClick={() => setGradingExitConfirmOpen(false)}
-                            className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wide hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              clearGradingEditSession();
-                              setGradingEditDept(null);
-                              setGradingEditDraft(null);
-                              setGradingIconPickerOpen(null);
-                              setGradingExitConfirmOpen(false);
-                            }}
-                            className="px-3 py-2 rounded-lg bg-red-600 text-white text-[11px] font-bold uppercase tracking-wide hover:bg-red-700 transition-colors"
-                          >
-                            Exit
-                          </button>
+                        setGradingEditDraft(null);
+                      }}
+                      className="px-5 py-3 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-wide shadow-lg shadow-slate-900/25 hover:bg-slate-800 hover:shadow-sm hover:shadow-slate-900/30 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-900 disabled:hover:shadow-lg"
+                    >
+                      Save changes
+                    </button>
+                    {!canCommitGrading ? (
+                      <span className="text-[10px] font-black uppercase tracking-wide text-amber-700">
+                        {!isTotalWeightValid
+                          ? 'Save is disabled: total weight must be exactly 100%.'
+                          : 'Save is disabled: each category criteria total must match its weight (%).'}
+                      </span>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const draft = gradingEditDraft || [];
+                        const snapshot = gradingEditInitialSnapshot || [];
+                        const hasChanges = JSON.stringify(draft) !== JSON.stringify(snapshot);
+                        if (hasChanges) {
+                          setGradingExitConfirmOpen(true);
+                        } else {
+                          clearGradingEditSession();
+                          setGradingEditDept(null);
+                          setGradingEditDraft(null);
+                          setGradingIconPickerOpen(null);
+                          setGradingExitConfirmOpen(false);
+                        }
+                      }}
+                      className="p-2.5 rounded-xl text-slate-400 dark:text-slate-500 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-200 dark:hover:border-red-700 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600/80 shadow-sm hover:shadow transition-all duration-200"
+                      aria-label="Close"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                    {gradingExitConfirmOpen && createPortal(
+                      <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/20" onClick={() => setGradingExitConfirmOpen(false)}>
+                        <div className="w-full max-w-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-5 shadow-sm shadow-slate-900/10" onClick={(e) => e.stopPropagation()}>
+                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Exit without saving? Your changes will not be saved.</p>
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setGradingExitConfirmOpen(false)}
+                              className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-[11px] font-bold uppercase tracking-wide hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                clearGradingEditSession();
+                                setGradingEditDept(null);
+                                setGradingEditDraft(null);
+                                setGradingIconPickerOpen(null);
+                                setGradingExitConfirmOpen(false);
+                              }}
+                              className="px-3 py-2 rounded-lg bg-red-600 text-white text-[11px] font-bold uppercase tracking-wide hover:bg-red-700 transition-colors"
+                            >
+                              Exit
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </div>,
-                    document.body
-                  )}
+                      </div>,
+                      document.body
+                    )}
+                  </div>
                 </div>
-              </div>
 
 
-              <div className="p-6 overflow-y-auto flex-1 min-h-0">
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mb-4">Edit category name, icon, and weight (%).</p>
-                <div className="space-y-4">
-                  <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">KPI categories</p>
-                  {categories.map((cat, idx) => {
-                    const effectiveIcon = cat.icon ?? presetIcons[idx] ?? 'FileText';
-                    const IconComponent = CATEGORY_ICON_MAP[effectiveIcon] || FileText;
-                    const content = cat.content ?? [];
-                    const contentPointSum = categoryContentPointSums[idx] ?? 0;
-                    const isContentPointSumValid = contentPointSum === cat.weightPct;
-                    return (
-                      <div
-                        key={idx}
-                        className={`rounded-xl border overflow-visible shadow-sm ${isContentPointSumValid ? 'border-slate-200 dark:border-slate-600/90 bg-slate-50 dark:bg-slate-900/40' : 'border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30'}`}
-                      >
-                        <div className="p-4 space-y-3">
+                <div className="p-6 overflow-y-auto flex-1 min-h-0">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide mb-4">Edit category name, icon, and weight (%).</p>
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide">KPI categories</p>
+                    {categories.map((cat, idx) => {
+                      const effectiveIcon = cat.icon ?? presetIcons[idx] ?? 'FileText';
+                      const IconComponent = CATEGORY_ICON_MAP[effectiveIcon] || FileText;
+                      const content = cat.content ?? [];
+                      const contentPointSum = categoryContentPointSums[idx] ?? 0;
+                      const isContentPointSumValid = contentPointSum === cat.weightPct;
+                      return (
+                        <div
+                          key={idx}
+                          className={`rounded-xl border overflow-visible shadow-sm ${isContentPointSumValid ? 'border-slate-200 dark:border-slate-600/90 bg-slate-50 dark:bg-slate-900/40' : 'border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30'}`}
+                        >
+                          <div className="p-4 space-y-3">
                             <div className="grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_minmax(0,240px)_1fr_auto] gap-3 items-center min-w-0">
-                            <div className="relative shrink-0" style={{ zIndex: gradingIconPickerOpen === idx ? 5100 : undefined }}>
-                              <button
-                                type="button"
-                                onClick={() => { setGradingIconPickerOpen(gradingIconPickerOpen === idx ? null : idx); }}
-                                className="w-10 h-10 rounded-xl bg-blue-500/10 border border-slate-200 dark:border-slate-600 flex items-center justify-center shadow-sm hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
-                                title="Choose icon"
-                              >
-                                <IconComponent className="w-5 h-5 text-blue-600" />
-                              </button>
-                              {gradingIconPickerOpen === idx && (
-                                <div className="absolute top-full left-0 mt-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-2 z-[5100] box-border shadow-[0_0_12px_rgba(15,23,42,0.08)] w-fit">
-                                  <div className="grid gap-1.5 w-max" style={{ gridTemplateRows: 'repeat(4, 28px)', gridTemplateColumns: `repeat(${Math.ceil(CATEGORY_ICON_KEYS.length / 4)}, 52px)` }}>
-                                    {CATEGORY_ICON_KEYS.map((key) => {
-                                      const Icon = CATEGORY_ICON_MAP[key];
-                                      const selected = effectiveIcon === key;
-                                      return (
-                                        <button
-                                          key={key}
-                                          type="button"
-                                          onClick={() => { handleUpdateCategoryIcon(dept, idx, key); setGradingIconPickerOpen(null); }}
-                                          className={`w-9 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${selected ? 'bg-blue-500/20 border-2 border-blue-500 text-blue-600' : 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500'}`}
-                                          title={key}
-                                        >
-                                          {Icon && <Icon className="w-5 h-5" />}
-                                        </button>
-                                      );
-                                    })}
+                              <div className="relative shrink-0" style={{ zIndex: gradingIconPickerOpen === idx ? 5100 : undefined }}>
+                                <button
+                                  type="button"
+                                  onClick={() => { setGradingIconPickerOpen(gradingIconPickerOpen === idx ? null : idx); }}
+                                  className="w-10 h-10 rounded-xl bg-blue-500/10 border border-slate-200 dark:border-slate-600 flex items-center justify-center shadow-sm hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
+                                  title="Choose icon"
+                                >
+                                  <IconComponent className="w-5 h-5 text-blue-600" />
+                                </button>
+                                {gradingIconPickerOpen === idx && (
+                                  <div className="absolute top-full left-0 mt-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-2 z-[5100] box-border shadow-[0_0_12px_rgba(15,23,42,0.08)] w-fit">
+                                    <div className="grid gap-1.5 w-max" style={{ gridTemplateRows: 'repeat(4, 28px)', gridTemplateColumns: `repeat(${Math.ceil(CATEGORY_ICON_KEYS.length / 4)}, 52px)` }}>
+                                      {CATEGORY_ICON_KEYS.map((key) => {
+                                        const Icon = CATEGORY_ICON_MAP[key];
+                                        const selected = effectiveIcon === key;
+                                        return (
+                                          <button
+                                            key={key}
+                                            type="button"
+                                            onClick={() => { handleUpdateCategoryIcon(dept, idx, key); setGradingIconPickerOpen(null); }}
+                                            className={`w-9 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${selected ? 'bg-blue-500/20 border-2 border-blue-500 text-blue-600' : 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500'}`}
+                                            title={key}
+                                          >
+                                            {Icon && <Icon className="w-5 h-5" />}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
-                            </div>
-                            <input
-                              type="text"
-                              value={cat.label}
-                              onChange={(e) => handleUpdateCategoryLabel(dept, idx, e.target.value)}
-                              className="w-full min-w-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-sm truncate"
-                              placeholder="Category name"
-                            />
-                            <div className="flex items-center justify-end gap-2 min-h-[20px] min-w-0 px-2 py-1">
-                              <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide shrink-0">Weighted impact</span>
-                              <select
-                                value={cat.weightPct}
-                                onChange={(e) => {
-                                  const val = parseInt(e.target.value, 10);
-                                  const otherTotal = totalWeight - cat.weightPct;
-                                  if (otherTotal + val <= 100) {
-                                    handleUpdateDepartmentWeight(dept, idx, val);
-                                  }
-                                }}
-                                className={`w-28 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-sm font-black tabular-nums outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-sm ${weightClases}`}
-                              >
-                                {[1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map(w => {
-                                  const otherTotal = totalWeight - cat.weightPct;
-                                  const wouldExceed = otherTotal + w > 100;
-                                  return (
-                                    <option key={w} value={w} disabled={wouldExceed && w !== cat.weightPct}>
-                                      {w}%{wouldExceed && w !== cat.weightPct ? ' (over 100%)' : ''}
-                                    </option>
-                                  );
-                                })}
-                              </select>
-                            </div>
-                            <div className="flex items-center justify-end gap-2 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => handleResetCategory(dept, idx)}
-                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 dark:text-slate-400 text-[9px] font-black uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm transition-colors shrink-0"
-                                title="Reset this category to default"
-                              >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                                Reset
-                              </button>
-                              <button
-                                type="button"
-                                disabled={categories.length <= 1}
-                                onClick={() => handleRemoveCategory(dept, idx)}
-                                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-[9px] font-black uppercase tracking-wide shadow-sm transition-colors shrink-0 ${
-                                  categories.length <= 1
+                                )}
+                              </div>
+                              <input
+                                type="text"
+                                value={cat.label}
+                                onChange={(e) => handleUpdateCategoryLabel(dept, idx, e.target.value)}
+                                className="w-full min-w-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-sm truncate"
+                                placeholder="Category name"
+                              />
+                              <div className="flex items-center justify-end gap-2 min-h-[20px] min-w-0 px-2 py-1">
+                                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 dark:text-slate-400 uppercase tracking-wide shrink-0">Weighted impact</span>
+                                <select
+                                  value={cat.weightPct}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value, 10);
+                                    const otherTotal = totalWeight - cat.weightPct;
+                                    if (otherTotal + val <= 100) {
+                                      handleUpdateDepartmentWeight(dept, idx, val);
+                                    }
+                                  }}
+                                  className={`w-28 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-1.5 text-sm font-black tabular-nums outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 shadow-sm ${weightClases}`}
+                                >
+                                  {[1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map(w => {
+                                    const otherTotal = totalWeight - cat.weightPct;
+                                    const wouldExceed = otherTotal + w > 100;
+                                    return (
+                                      <option key={w} value={w} disabled={wouldExceed && w !== cat.weightPct}>
+                                        {w}%{wouldExceed && w !== cat.weightPct ? ' (over 100%)' : ''}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                              </div>
+                              <div className="flex items-center justify-end gap-2 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetCategory(dept, idx)}
+                                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 dark:text-slate-400 text-[9px] font-black uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm transition-colors shrink-0"
+                                  title="Reset this category to default"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  Reset
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={categories.length <= 1}
+                                  onClick={() => handleRemoveCategory(dept, idx)}
+                                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-[9px] font-black uppercase tracking-wide shadow-sm transition-colors shrink-0 ${categories.length <= 1
                                     ? 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-300 cursor-not-allowed opacity-70'
                                     : 'border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/30 text-red-600 hover:bg-red-100 hover:border-red-300 dark:hover:border-red-600'
-                                }`}
-                                title={categories.length <= 1 ? 'At least one category is required' : 'Remove this category'}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                Remove
-                              </button>
+                                    }`}
+                                  title={categories.length <= 1 ? 'At least one category is required' : 'Remove this category'}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  Remove
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
             </div>
           </>
         );
@@ -3715,15 +3956,15 @@ const AdminDashboard: React.FC<Props> = ({
             <div className="space-y-6 relative">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Rename Identity</label>
-                <input type="text" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-5 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all" value={editingNode.name} onChange={(e) => setEditingNode({...editingNode, name: e.target.value})} />
+                <input type="text" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-5 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all" value={editingNode.name} onChange={(e) => setEditingNode({ ...editingNode, name: e.target.value })} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-500 uppercase tracking-wide ml-1">Access Designation</label>
                 <div className="relative">
-                  <select 
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-5 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 appearance-none cursor-pointer disabled:opacity-50" 
-                    value={editingNode.role} 
-                    onChange={(e) => setEditingNode({...editingNode, role: e.target.value as UserRole})} 
+                  <select
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-5 py-2 text-sm font-black text-slate-900 dark:text-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 appearance-none cursor-pointer disabled:opacity-50"
+                    value={editingNode.role}
+                    onChange={(e) => setEditingNode({ ...editingNode, role: e.target.value as UserRole })}
                     disabled={activeDept === 'Admin'}
                   >
                     {activeDept === 'Admin' ? (
@@ -3792,6 +4033,262 @@ const AdminDashboard: React.FC<Props> = ({
         </div>
       )}
 
+      {/* Grading Review Overlay — opens when Admin clicks "Review & Grade" on a pending submission */}
+      {selectedReviewItem && (() => {
+        const dept = selectedReviewItem.department || 'Technical';
+        const weights = departmentWeights[dept] || [];
+        const labels = weights.map(c => c.label);
+
+        return createPortal(
+          <div
+            className="fixed inset-0 z-[8000] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setSelectedReviewItem(null)}
+          >
+            <div
+              className="bg-white dark:bg-slate-800 rounded-[1.75rem] w-full max-w-6xl max-h-[90vh] flex flex-col shadow-sm border border-slate-200 dark:border-slate-600/90 overflow-hidden animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md">
+                    <Scale className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide truncate">
+                      {isReadOnly ? 'Score Details' : 'Grade Submission'}
+                    </h3>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mt-0.5 truncate">
+                      {selectedReviewItem.userName} · {dept} · {selectedReviewItem.id}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {/* Live score */}
+                  <div className={`flex flex-col items-center px-4 py-2 rounded-xl border ${calculatedReviewScore.final >= 90 ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-600' :
+                    calculatedReviewScore.final >= 75 ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-600' :
+                      calculatedReviewScore.final >= 60 ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-600' :
+                        'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-600'
+                    }`}>
+                    <span className="text-2xl font-black tabular-nums text-slate-900 dark:text-slate-100">{calculatedReviewScore.final}%</span>
+                    <span className={`text-[9px] font-black uppercase tracking-wide ${getGradeColorClasses(calculatedReviewScore.gradeInfo.color).text
+                      }`}>
+                      {calculatedReviewScore.gradeInfo.letter} — {calculatedReviewScore.gradeInfo.label}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedReviewItem(null)}
+                    className="p-2.5 rounded-xl text-slate-400 dark:text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body — Two-column layout on desktop */}
+              <div className="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0">
+                {/* Left Column: Evidence / Documents */}
+                <div className="w-full md:w-1/2 flex flex-col border-r border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20">
+                  <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                    <h4 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Paperclip className="w-3.5 h-3.5" />
+                      Submitted Evidence
+                    </h4>
+                    {selectedReviewItem.attachments && selectedReviewItem.attachments.length > 1 && (
+                      <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase">
+                        {activeAttachmentIndex + 1} of {selectedReviewItem.attachments.length}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+                    {/* Attachment Preview */}
+                    <div className="flex-1">
+                      {selectedReviewItem.attachments && selectedReviewItem.attachments.length > 0 ? (
+                        <AttachmentLivePreviewPanel file={previewFile} />
+                      ) : (
+                        <div className="h-48 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800/50">
+                          <Paperclip className="w-8 h-8 text-slate-300 mb-2" />
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">No attachments provided</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Attachment List / Selector */}
+                    {selectedReviewItem.attachments && selectedReviewItem.attachments.length > 1 && (
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        {selectedReviewItem.attachments.map((file, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setActiveAttachmentIndex(idx)}
+                            className={`p-2 rounded-xl border text-left transition-all ${
+                              activeAttachmentIndex === idx
+                                ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-600 ring-2 ring-blue-500/10'
+                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                            }`}
+                          >
+                            <p className={`text-[9px] font-black uppercase tracking-tight truncate ${
+                              activeAttachmentIndex === idx ? 'text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-400'
+                            }`}>
+                              {file.name}
+                            </p>
+                            <p className="text-[8px] font-bold text-slate-400 mt-0.5">{file.size}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Submitter Note */}
+                    {selectedReviewItem.projectReport && (
+                      <div className="bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
+                        <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">Submitter's Report / Note</label>
+                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                          {selectedReviewItem.projectReport}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Column: Grading Control */}
+                <div className="w-full md:w-1/2 flex flex-col">
+                  <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800">
+                    <h4 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Scale className="w-3.5 h-3.5" />
+                      Adjust Weighted Scores
+                    </h4>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                    {/* Category sliders */}
+                    {labels.map((label, idx) => {
+                      const weight = weights[idx];
+                      if (!weight) return null;
+                      const score = grading[label] ?? 0;
+                      const maxScore = weight.weightPct;
+                      const pct = maxScore > 0 ? Math.min(100, (score / maxScore) * 100) : 0;
+                      const barColor = pct >= 90 ? 'bg-emerald-500' : pct >= 75 ? 'bg-blue-500' : pct >= 60 ? 'bg-amber-500' : 'bg-red-400';
+
+                      return (
+                        <div key={label} className="bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-600/80 p-4">
+                          <div className="flex items-center justify-between gap-3 mb-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide truncate">{label}</span>
+                              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide shrink-0">
+                                ({weight.weightPct}% weight)
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <input
+                                type="number"
+                                min={0}
+                                max={maxScore}
+                                step={1}
+                                value={score}
+                                disabled={isReadOnly}
+                                onChange={(e) => {
+                                  const v = Math.max(0, Math.min(maxScore, Number(e.target.value) || 0));
+                                  setGrading(prev => ({ ...prev, [label]: v }));
+                                }}
+                                className="w-16 text-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-sm font-black text-slate-900 dark:text-slate-100 tabular-nums outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 disabled:opacity-60"
+                              />
+                              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">/ {maxScore}</span>
+                            </div>
+                          </div>
+                          {/* Slider */}
+                          <input
+                            type="range"
+                            min={0}
+                            max={maxScore}
+                            step={1}
+                            value={score}
+                            disabled={isReadOnly}
+                            onChange={(e) => {
+                              const v = Number(e.target.value);
+                              setGrading(prev => ({ ...prev, [label]: v }));
+                            }}
+                            className="w-full h-2 appearance-none cursor-pointer rounded-full bg-slate-200 dark:bg-slate-700 accent-blue-600 disabled:cursor-default"
+                          />
+                          {/* Progress bar */}
+                          <div className="mt-1.5 w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-300 ${barColor}`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Justification / Comment */}
+                    <div className="bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-600/80 p-4">
+                      <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wide block mb-2">
+                        <MessageSquare className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
+                        Admin Feedback / Justification
+                      </label>
+                      <textarea
+                        ref={justificationTextareaRef}
+                        value={overrideReason}
+                        onChange={(e) => setOverrideReason(e.target.value)}
+                        disabled={isReadOnly}
+                        placeholder="Explain any adjustments or provide feedback..."
+                        className="w-full h-24 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none disabled:opacity-60"
+                      />
+                    </div>
+
+                    {/* Incentive info */}
+                    {calculatedReviewScore.incentivePct > 0 && (
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-600">
+                        <DollarSign className="w-5 h-5 text-emerald-600 shrink-0" />
+                        <div>
+                          <p className="text-[10px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-wide">
+                            Incentive eligibility: {calculatedReviewScore.incentivePct}% payout
+                          </p>
+                          <p className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                            Based on final score of {calculatedReviewScore.final}%
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer actions */}
+              {!isReadOnly && (
+                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between gap-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedReviewItem(null)}
+                    className="px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors shadow-sm"
+                  >
+                    Cancel
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleGradingAction('REJECT')}
+                      className="px-5 py-3 rounded-xl bg-red-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-red-700 transition-colors shadow-md shadow-red-600/20"
+                    >
+                      Request Changes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleGradingAction('APPROVE')}
+                      className="px-5 py-3 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wide hover:bg-emerald-700 transition-colors shadow-md shadow-emerald-600/20 flex items-center gap-2"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Approve & Finalize
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        );
+      })()}
+
       <div className="flex-grow flex flex-col min-h-0">
         {/* Mobile header (navigation moved to burger drawer) */}
         {/* Mobile header */}
@@ -3811,9 +4308,8 @@ const AdminDashboard: React.FC<Props> = ({
         {/* Desktop layout: fixed sidenav + content (reference-style) */}
         <div className="hidden lg:block">
           <aside
-            className={`fixed left-0 ${APP_NAV_SIDENAV_TOP} z-[60] ${APP_NAV_SIDENAV_HEIGHT} overflow-hidden border-r border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm transition-[width] duration-200 ease-out ${
-              railOpen ? 'w-[272px]' : 'w-[76px]'
-            }`}
+            className={`fixed left-0 ${APP_NAV_SIDENAV_TOP} z-[60] ${APP_NAV_SIDENAV_HEIGHT} overflow-hidden border-r border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm transition-[width] duration-200 ease-out ${railOpen ? 'w-[272px]' : 'w-[76px]'
+              }`}
             aria-label="Admin sidenav"
           >
             <div className="flex h-full min-h-0 flex-col">
@@ -3835,17 +4331,15 @@ const AdminDashboard: React.FC<Props> = ({
                       type="button"
                       onClick={() => setActiveTab(item.id as AdminTab)}
                       title={!railOpen ? item.label : undefined}
-                      className={`group relative flex w-full min-w-0 items-center justify-start rounded-lg border transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400/40 gap-3 px-2 py-2 text-left ${
-                        active
-                          ? 'border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-300 shadow-sm'
-                          : 'border-transparent text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:border-slate-100 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100'
-                      }`}
+                      className={`group relative flex w-full min-w-0 items-center justify-start rounded-lg border transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400/40 gap-3 px-2 py-2 text-left ${active
+                        ? 'border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-300 shadow-sm'
+                        : 'border-transparent text-slate-600 dark:text-slate-400 dark:text-slate-400 hover:border-slate-100 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100'
+                        }`}
                       aria-current={active ? 'page' : undefined}
                     >
                       <span
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors ${
-                          active ? 'border-blue-300 dark:border-blue-600 bg-blue-100' : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 group-hover:bg-slate-100 dark:hover:bg-slate-700'
-                        }`}
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors ${active ? 'border-blue-300 dark:border-blue-600 bg-blue-100' : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 group-hover:bg-slate-100 dark:hover:bg-slate-700'
+                          }`}
                       >
                         <Icon className={`h-[17px] w-[17px] ${active ? 'text-blue-600' : 'text-slate-700 dark:text-slate-300'}`} aria-hidden />
                       </span>
@@ -3870,9 +4364,8 @@ const AdminDashboard: React.FC<Props> = ({
                   type="button"
                   onClick={toggleRail}
                   title={!railOpen ? 'Expand sidebar' : undefined}
-                  className={`flex w-full items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-400 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400/40 ${
-                    railOpen ? 'gap-2 px-3 py-2' : 'p-2'
-                  }`}
+                  className={`flex w-full items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 dark:text-slate-400 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400/40 ${railOpen ? 'gap-2 px-3 py-2' : 'p-2'
+                    }`}
                   aria-expanded={railOpen}
                   aria-label={railOpen ? 'Collapse sidebar' : 'Expand sidebar'}
                 >
@@ -3884,19 +4377,17 @@ const AdminDashboard: React.FC<Props> = ({
               </div>
 
               <div
-                className={`shrink-0 ${
-                  railOpen
-                    ? 'border-t border-slate-100 dark:border-slate-700 px-3 pb-4 pt-3'
-                    : 'px-2 pb-3'
-                }`}
+                className={`shrink-0 ${railOpen
+                  ? 'border-t border-slate-100 dark:border-slate-700 px-3 pb-4 pt-3'
+                  : 'px-2 pb-3'
+                  }`}
               >
                 <button
                   type="button"
                   onClick={logout}
                   title={!railOpen ? 'Sign out' : undefined}
-                  className={`flex w-full items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400/30 ${
-                    railOpen ? 'gap-2 px-4 py-2.5 text-[11px] font-semibold' : 'p-2'
-                  }`}
+                  className={`flex w-full items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400/30 ${railOpen ? 'gap-2 px-4 py-2.5 text-[11px] font-semibold' : 'p-2'
+                    }`}
                   aria-label="Sign out"
                 >
                   <LogOut className="h-4 w-4 shrink-0" aria-hidden />

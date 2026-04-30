@@ -23,13 +23,12 @@ export const ValidationTabs: React.FC<ValidationTabsProps> = ({
   activeTab,
   onTabChange,
 }) => {
-  // Count pending submissions that have a supervisor recommendation (for badge display on department tabs)
+  // Count pending submissions for badge display on department tabs (no supervisor step required)
   const getPendingCount = (dept: Department) => pendingTransmissions.filter(tx => {
     const employee = registry.find(u => u.name === tx.userName);
     return employee?.department === dept &&
       tx.status !== 'validated' &&
-      tx.status !== 'rejected' &&
-      !!tx.supervisorRecommendation;
+      tx.status !== 'rejected';
   }).length;
 
   return (

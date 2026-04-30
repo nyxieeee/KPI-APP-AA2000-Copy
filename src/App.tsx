@@ -34,7 +34,6 @@ import {
   stripAttachmentPayloadFromTransmission,
   type AuditBuckets,
 } from './utils/auditStore';
-import { notifyDepartmentSupervisorsOnSubmission } from './utils/notificationUtils';
 import {
   readPortalLaunchFromUrl,
   clearPortalLaunchFromUrl,
@@ -50,7 +49,7 @@ const PORTAL_LAUNCH_TOKEN_STORAGE_KEY = 'aa2000-portal-launch-token';
 const PORTAL_LAUNCH_ACCOUNT_STORAGE_KEY = 'aa2000-portal-launch-account-id';
 const DEV_FALLBACK_ROLE_FINANCIALS: Record<UserRole, { base: number; target: number }> = {
   [UserRole.EMPLOYEE]: { base: 62000, target: 12000 },
-  [UserRole.SUPERVISOR]: { base: 88000, target: 18000 },
+  [UserRole.SUPERVISOR]: { base: 82000, target: 18000 },
   [UserRole.ADMIN]: { base: 105000, target: 25000 },
 };
 
@@ -124,24 +123,19 @@ function NoPortalSession() {
 
 const INITIAL_REGISTRY = [
   { name: 'employee sales', password: '123', department: 'Sales', role: UserRole.EMPLOYEE, isActive: true },
-  { name: 'supervisor sales', password: 'supervisor', department: 'Sales', role: UserRole.SUPERVISOR, isActive: true },
   { name: 'employee technical', password: '123', department: 'Technical', role: UserRole.EMPLOYEE, isActive: true },
-  { name: 'supervisor technical', password: 'supervisor', department: 'Technical', role: UserRole.SUPERVISOR, isActive: true },
   { name: 'employee marketing', password: '123', department: 'Marketing', role: UserRole.EMPLOYEE, isActive: true },
-  { name: 'supervisor marketing', password: 'supervisor', department: 'Marketing', role: UserRole.SUPERVISOR, isActive: true },
   { name: 'employee IT', password: '123', department: 'IT', role: UserRole.EMPLOYEE, isActive: true },
-  { name: 'supervisor IT', password: 'supervisor', department: 'IT', role: UserRole.SUPERVISOR, isActive: true },
   { name: 'employee accounting', password: '123', department: 'Accounting', role: UserRole.EMPLOYEE, isActive: true },
-  { name: 'supervisor accounting', password: 'supervisor', department: 'Accounting', role: UserRole.SUPERVISOR, isActive: true },
   { name: 'admin', password: 'admin', department: 'Admin', role: UserRole.ADMIN, isActive: true }
 ];
 
 const INITIAL_ADMIN_USERS: Record<string, string[]> = {
-  'Technical': ['employee technical', 'supervisor technical'],
-  'IT': ['employee IT', 'supervisor IT'],
-  'Sales': ['employee sales', 'supervisor sales'],
-  'Marketing': ['employee marketing', 'supervisor marketing'],
-  'Accounting': ['employee accounting', 'supervisor accounting'],
+  'Technical': ['employee technical'],
+  'IT': ['employee IT'],
+  'Sales': ['employee sales'],
+  'Marketing': ['employee marketing'],
+  'Accounting': ['employee accounting'],
   'Admin': ['admin']
 };
 
@@ -612,79 +606,26 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
       return next;
     });
 
-    // Notify only supervisors of the same department
-    const deptNotifications = notifyDepartmentSupervisorsOnSubmission(
-      withDept,
-      dept,
-      registry,
-      user.id
-    );
-    setNotifications(prev => [...deptNotifications, ...prev].slice(0, 100));
+    // Notify only admins
+    const admins = adminUsers['Admin'] || [];
+    admins.forEach((adminName: string) => {
+      const adminId = btoa(adminName);
+      addNotification(
+        `New submission ${withDept.id} received from ${withDept.userName} (${dept}).`,
+        adminId,
+        'INFO'
+      );
+    });
 
     // Notify the submitting employee that their submission was received
     addNotification(
-      `Your submission ${withDept.id} has been received and is pending supervisor review.`,
+      `Your submission ${withDept.id} has been received and is pending admin review.`,
       user.id,
       'INFO'
     );
 
     addAuditEntry('DATA_TRANSMIT', `${transmission.id} queued`, 'INFO', transmission.userName);
-  }, [user, registry, addAuditEntry, addNotification, setNotifications]);
-
-  /**
-   * Two-step grading flow:
-   * - Supervisor grades but does NOT finalize (`status` stays pending).
-   * - Admin later finalizes by setting `status` to validated/rejected (which moves pending → history).
-   */
-  const handleSupervisorGrade = useCallback(
-    (
-      transmissionId: string,
-      overrides?: any,
-      supervisorRecommendation: 'approved' | 'rejected' = 'approved'
-    ) => {
-      const transmission = pendingTransmissions.find((t) => t.id === transmissionId);
-      if (!transmission || !user) return;
-
-      const statsToUse = overrides ?? {
-        responseTime: transmission.responseTime,
-        accuracy: transmission.accuracy,
-        uptime: transmission.uptime,
-      };
-
-      const dept = (transmission.department || user.department || 'Unknown').trim() || 'Unknown';
-      const finalTransmission: Transmission = {
-        ...transmission,
-        ...statsToUse,
-        supervisorRecommendation,
-        department: dept,
-      };
-
-      setAuditBuckets((prev) => {
-        const next: AuditBuckets = { ...prev };
-        const b = next[dept] ?? { pending: [], history: [] };
-        next[dept] = { pending: [...(b.pending || [])], history: [...(b.history || [])] };
-        upsertAudit(next, dept, 'pending', finalTransmission);
-        return next;
-      });
-
-      // Notify the employee their submission has been reviewed
-      const employeeId = btoa(transmission.userName);
-      const recLabel = supervisorRecommendation === 'approved' ? 'Approved' : 'Changes Requested';
-      addNotification(`Your submission ${transmissionId} has been reviewed by your supervisor (${recLabel}). Awaiting admin finalization.`, employeeId, 'INFO');
-
-      // Notify admin that there is a pending report ready for their approval
-      const admins = adminUsers['Admin'] || [];
-      admins.forEach((adminName: string) => {
-        const adminId = btoa(adminName);
-        addNotification(
-          `You have a pending report to approve. ${transmission.userName} (${dept}) — submission ${transmissionId} has been graded by supervisor (${recLabel}) and is awaiting your final approval.`,
-          adminId,
-          'ALERT'
-        );
-      });
-    },
-    [pendingTransmissions, user, adminUsers, addNotification]
-  );
+  }, [user, adminUsers, addAuditEntry, addNotification]);
 
   const handleValidate = useCallback((transmissionId: string, overrides?: SystemStats, status: 'validated' | 'rejected' = 'validated') => {
     const transmission = pendingTransmissions.find((t) => t.id === transmissionId);
@@ -737,12 +678,6 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
     const dept = transmission.department || user.department || 'Unknown';
     addAuditEntry('DATA_EDIT', `Submission ${transmission.id} edited by ${user.name}`, 'INFO', user.name);
 
-    // Notify supervisor(s)
-    const deptSupervisors = registry.filter((u: any) => u.department === dept && u.role === UserRole.SUPERVISOR && u.isActive);
-    deptSupervisors.forEach((sup: any) => {
-      const supId = btoa(sup.name);
-      addNotification(`${user.name} edited submission ${transmission.id}.`, supId, 'INFO');
-    });
     // Notify admin
     const admins = adminUsers['Admin'] || [];
     admins.forEach((adminName: string) => {
@@ -900,7 +835,6 @@ const AppInner: React.FC<AppInnerProps> = ({ onUserChange }) => {
                         onEditSubmission={handleEditSubmission}
                         onClearMyLogs={handleClearMyLogs}
                         onValidate={handleValidate}
-                        onSupervisorGrade={handleSupervisorGrade}
                         onPostAnnouncement={handlePostAnnouncement}
                         onDeleteAnnouncement={handleDeleteAnnouncement}
                         onAddAuditEntry={addAuditEntry}

@@ -1,7 +1,6 @@
 import React from 'react';
 import { User, UserRole, Transmission, SystemStats, AuditEntry, Announcement, DepartmentWeights, SystemNotification } from '../../types';
 import EmployeeDashboard from '../../dashboards/EmployeeDashboard.tsx';
-import SupervisorDashboard from '../../dashboards/departments/SupervisorDashboard.tsx';
 import AdminDashboard from '../../dashboards/AdminDashboard.tsx';
 import type { AuditBuckets } from '../../utils/auditStore';
 
@@ -17,11 +16,6 @@ interface DashboardProps {
   onEditSubmission?: (t: Transmission) => void;
   onClearMyLogs?: () => void;
   onValidate: (id: string, overrides?: SystemStats, status?: 'validated' | 'rejected') => void;
-  /**
-   * Supervisor grades but does NOT finalize.
-   * Admin later finalizes by setting `status` to validated/rejected.
-   */
-  onSupervisorGrade: (id: string, overrides?: any, supervisorRecommendation?: 'approved' | 'rejected') => void;
   onPostAnnouncement: (message: string) => void;
   onDeleteAnnouncement: (id: string) => void;
   onAddAuditEntry: (action: string, details: string, type?: 'INFO' | 'OK' | 'WARN', userName?: string) => void;
@@ -68,12 +62,6 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
             notifications={props.notifications}
             onDeleteNotification={props.onDeleteNotification}
           />
-        </div>
-      );
-    case UserRole.SUPERVISOR:
-      return (
-        <div className={wrapperClass}>
-          <SupervisorDashboard {...supervisorRest} departmentWeights={props.departmentWeights} />
         </div>
       );
     case UserRole.ADMIN:
